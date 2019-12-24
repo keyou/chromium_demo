@@ -1,0 +1,74 @@
+import("//mojo/public/tools/bindings/mojom.gni")
+
+executable("demo") {
+  sources = [
+    "demo.cc",
+  ]
+
+  deps = [
+    "//base",
+#    "//build/config:exe_and_shlib_deps",
+#    "//:test_test",
+  ]
+}
+
+executable("demo_messageloop") {
+  sources = [
+    "messagedemo.cc",
+  ]
+
+  defines = ["DEMO_MESSAGE_LOOP"]
+
+  deps = [
+    "//base",
+#    "//build/config:exe_and_shlib_deps",
+#    "//:test_test",
+  ]
+}
+
+executable("demo_task") {
+  sources = [
+    "messagedemo.cc",
+  ]
+
+  defines = ["DEMO_TASK"]
+
+  deps = [
+    "//base",
+#    "//build/config:exe_and_shlib_deps",
+#    "//:test_test",
+  ]
+}
+
+executable("demo_mojo") {
+  testonly = true
+  sources = [
+    "demo_mojo.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+  ]
+  deps += [ "//services/service_manager:all" ]
+}
+
+executable("demo_mojo_cpp") {
+  testonly = true
+  sources = [
+    "demo_mojo_cpp.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+    ":test_mojom",
+  ]
+  deps += [ "//services/service_manager:all" ]
+}
+
+mojom("test_mojom") {
+  sources = [
+    "mojom/test.mojom",
+  ]
+}
