@@ -7,43 +7,37 @@ executable("demo") {
 
   deps = [
     "//base",
-#    "//build/config:exe_and_shlib_deps",
-#    "//:test_test",
   ]
 }
 
 executable("demo_messageloop") {
   sources = [
-    "messagedemo.cc",
+    "demo_tasks.cc",
   ]
 
   defines = ["DEMO_MESSAGE_LOOP"]
 
   deps = [
     "//base",
-#    "//build/config:exe_and_shlib_deps",
-#    "//:test_test",
   ]
 }
 
-executable("demo_task") {
+executable("demo_tasks") {
   sources = [
-    "messagedemo.cc",
+    "demo_tasks.cc",
   ]
 
   defines = ["DEMO_TASK"]
 
   deps = [
     "//base",
-#    "//build/config:exe_and_shlib_deps",
-#    "//:test_test",
   ]
 }
 
-executable("demo_mojo") {
+executable("demo_mojo_single_process") {
   testonly = true
   sources = [
-    "demo_mojo.cc",
+    "demo_mojo_single_process.cc",
   ]
 
   deps = [
@@ -53,21 +47,21 @@ executable("demo_mojo") {
   deps += [ "//services/service_manager:all" ]
 }
 
-executable("demo_mojo_cpp") {
+executable("demo_mojo_multiple_process") {
   testonly = true
   sources = [
-    "demo_mojo_cpp.cc",
+    "demo_mojo_multiple_process.cc",
   ]
 
   deps = [
     "//base",
     "//mojo/public",
-    ":test_mojom",
+    ":mojom_test",
   ]
   deps += [ "//services/service_manager:all" ]
 }
 
-mojom("test_mojom") {
+mojom("mojom_test") {
   sources = [
     "mojom/test.mojom",
   ]
