@@ -81,8 +81,8 @@ class PipeReader {
 };
 
 void MojoProducer() {
-  // Under the hood, this is essentially always an OS pipe (domain socket pair,
-  // Windows named pipe, Fuchsia channel, etc).
+  // 创建一条系统级的IPC通信通道
+  // 在linux上是 socket pair, Windows 是 named pipe
   mojo::PlatformChannel channel;
   LOG(INFO) << "local: "
             << channel.local_endpoint().platform_handle().GetFD().get()
@@ -90,8 +90,7 @@ void MojoProducer() {
             << channel.remote_endpoint().platform_handle().GetFD().get();
 
   mojo::OutgoingInvitation invitation;
-  // Attach a message pipe to be extracted by the receiver. The other end of the
-  // pipe is returned for us to use locally.
+  // 创建2个Ｍessage Pipe用来和其他进程通信
   mojo::ScopedMessagePipeHandle pipe =
       invitation.AttachMessagePipe("my raw pipe");
   mojo::ScopedMessagePipeHandle binding_pipe =
@@ -123,6 +122,7 @@ void MojoProducer() {
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "send: " << kMessage;
   }
+  // 没有对应的C++ platform API用来给message填充内容，所以此demo无效
   // mojo::ScopedMessageHandle message;
   // result = mojo::CreateMessage(&message);
   // DCHECK_EQ(result, MOJO_RESULT_OK);
@@ -380,10 +380,8 @@ void MojoConsumer() {
 int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
-  // Build UI thread message loop. This is used by platform
-  // implementations for event polling & running background tasks.
+  // 创建主线程消息循环
   base::MessageLoop message_loop;
-  // base::TaskScheduler::CreateAndStartWithDefaultParams("OzoneDemo");
   base::RunLoop run_loop;
 
   // Init会创建一个sokcetpair和一条pipe，共4个fd
@@ -392,9 +390,7 @@ int main(int argc, char** argv) {
   ipc_thread.StartWithOptions(
       base::Thread::Options(base::MessageLoop::TYPE_IO, 0));
 
-  // As long as this object is alive, all Mojo API surface relevant to IPC
-  // connections is usable, and message pipes which span a process boundary will
-  // continue to function.
+  // 初始化mojo的后台线程，用来异步收发消息存储到缓存
   mojo::core::ScopedIPCSupport ipc_support(
       ipc_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
@@ -405,9 +401,6 @@ int main(int argc, char** argv) {
     MojoConsumer();
   }
 
-  LOG(INFO) << "wait running...";
-  // getchar();
-  // sleep(10);
   LOG(INFO) << "running...";
   run_loop.Run();
   return 0;
