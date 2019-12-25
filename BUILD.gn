@@ -72,6 +72,7 @@ executable("demo_mojo_multiple_process_binding") {
     ":mojom_test",
     ":mojom_test2",
     ":mojom_test3",
+    ":mojom_test4",
   ]
   deps += [ "//services/service_manager:all" ]
 }
@@ -91,5 +92,11 @@ mojom("mojom_test2") {
 mojom("mojom_test3") {
   sources = [
     "mojom/test3.mojom",
+  ]
+}
+
+mojom("mojom_test4") {
+  sources = [
+    "mojom/test4.mojom",
   ]
 }

@@ -67,7 +67,7 @@ class PipeReader {
 
 void MojoProducer() {
   // 创建一条系统级的IPC通信通道
-  // 在linux上是 socket pair, Windows 是 named pipe，该通道用于支持ＭessagePipe
+  // 在linux上是 domain socket, Windows 是 named pipe，MacOS是Mach Port,该通道用于支持夸进程的消息通信
   mojo::PlatformChannel channel;
   LOG(INFO) << "local: "
             << channel.local_endpoint().platform_handle().GetFD().get()
@@ -75,7 +75,7 @@ void MojoProducer() {
             << channel.remote_endpoint().platform_handle().GetFD().get();
 
   mojo::OutgoingInvitation invitation;
-  // 创建2个Ｍessage Pipe用来和其他进程通信
+  // 创建1个Ｍessage Pipe用来和其他进程通信
   mojo::ScopedMessagePipeHandle pipe =
       invitation.AttachMessagePipe("my raw pipe");
   LOG(INFO) << "pipe: " << pipe->value();
@@ -83,6 +83,9 @@ void MojoProducer() {
   base::LaunchOptions options;
   base::CommandLine command_line(
       base::CommandLine::ForCurrentProcess()->GetProgram());
+  // 将PlatformChannel中的RemoteEndpoint的fd作为参数传递给子进程
+  // 在posix中，fd会被复制到新的随机的fd，fd号改变
+  // 在windows中，fd被复制后会直接进行传递，fd号不变
   channel.PrepareToPassRemoteEndpoint(&options, &command_line);
   base::Process child_process = base::LaunchProcess(command_line, options);
   channel.RemoteProcessLaunchAttempted();
@@ -361,8 +364,10 @@ int main(int argc, char** argv) {
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
   if (argc < 2) {
+    logging::SetLogPrefix("producer");
     MojoProducer();
   } else {
+    logging::SetLogPrefix("consumer");
     MojoConsumer();
   }
 

@@ -24,6 +24,7 @@
 #include "demo/mojom/test.mojom.h"
 #include "demo/mojom/test2.mojom.h"
 #include "demo/mojom/test3.mojom.h"
+#include "demo/mojom/test4.mojom.h"
 #include "mojo/public/cpp/bindings/binding.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 
@@ -47,9 +48,9 @@ template<class T> using PendingAssociatedRemote = mojo::AssociatedInterfacePtrIn
 template<class T> using AssociatedReceiver = mojo::AssociatedBinding<T>;
 template<class T> using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
-
 using namespace demo::mojom;
 
+#pragma region Test
 class TestImpl : public demo::mojom::Test {
  public:
   void Hello(const std::string& who) override {
@@ -65,7 +66,9 @@ class TestImpl : public demo::mojom::Test {
  private:
   std::string who_;
 };
+#pragma endregion
 
+#pragma region Test2
 class Test2Impl : public demo::mojom::Test2 {
 public:
   explicit Test2Impl(PendingReceiver<demo::mojom::Test2> receiver)
@@ -109,7 +112,9 @@ private:
   Receiver<Api2> receiver_;
   AssociatedReceiver<Api2> associated_receiver_;
 };
+#pragma endregion
 
+#pragma region Test3
 class Test3Impl : public demo::mojom::Test3 {
  public:
   explicit Test3Impl(PendingReceiver<Test3> receiver)
@@ -127,7 +132,7 @@ class Test3Impl : public demo::mojom::Test3 {
   }
 
  private:
-  std::unique_ptr<Api> api_;
+  std::unique_ptr<ApiImpl> api_;
   Remote<Api2> remote_api2_;
   Receiver<Test3> receiver_;
 };
@@ -149,12 +154,56 @@ class Test32Impl : public demo::mojom::Test32 {
   }
 
  private:
-  std::unique_ptr<Api> api_;
+  std::unique_ptr<ApiImpl> api_;
   AssociatedRemote<Api2> remote_api2_;
   Receiver<Test32> receiver_;
 };
+#pragma endregion
 
+#pragma region Test4
+class Interface1Impl : public Interface1 {
+public:
+    explicit Interface1Impl(PendingReceiver<Interface1> receiver)
+    : receiver_(this,std::move(receiver)){}
+    void Hello(const std::string& who) override {
+      LOG(INFO) << "Interface1 run: Hello " << who;
+    }
+private:
+  Receiver<Interface1> receiver_;
+};
 
+class Interface2Impl : public Interface2 {
+public:
+    explicit Interface2Impl(PendingReceiver<Interface2> receiver)
+    : receiver_(this,std::move(receiver)){}
+
+    void Hi(const std::string& who) override {
+      LOG(INFO) << "Interface2 run: Hi " << who;
+    }
+private:
+  Receiver<Interface2> receiver_;
+};
+class InterfaceBrokerImpl : public InterfaceBroker {
+public:
+  explicit InterfaceBrokerImpl(PendingReceiver<InterfaceBroker> receiver)
+    : receiver_(this,std::move(receiver)){}
+  
+  void GetInterface(const std::string& name, mojo::ScopedMessagePipeHandle pipe_handle) override {
+    std::move(map_[name]).Run(std::move(pipe_handle));
+  }
+
+  template<class InterfaceT,class InterfaceImplT>
+  void AddMap(const std::string& name) {
+    map_.emplace(name,base::BindRepeating([](mojo::ScopedMessagePipeHandle handle){
+      new InterfaceImplT(PendingReceiver<InterfaceT>(std::move(handle)));
+    }));
+  }
+
+private:
+  std::map<std::string,base::RepeatingCallback<void(mojo::ScopedMessagePipeHandle)>> map_;
+  Receiver<InterfaceBroker> receiver_;
+};
+#pragma endregion
 
 void MojoProducer() {
   // 创建一条系统级的IPC通信通道
@@ -266,6 +315,21 @@ void MojoProducer() {
     test32->SetApi2(PendingAssociatedRemote<Api2>(std::move(handle00),0));
     LOG(INFO) << "Test32 call: SetApi2";
   }
+  // 封装出通用的 InterfaceBroker 以便支撑任何新的接口
+  {
+    Remote<InterfaceBroker> broker(PendingRemote<InterfaceBroker>(std::move(pipe4),0));
+    mojo::MessagePipe interface1_pipe;
+    Remote<Interface1> interface1(PendingRemote<Interface1>(std::move(interface1_pipe.handle0),0));
+    broker->GetInterface("Interface1",std::move(interface1_pipe.handle1));
+    interface1->Hello("Interface1");
+    LOG(INFO) << "Interface1 call: Hello";
+
+    mojo::MessagePipe interface2_pipe;
+    Remote<Interface2> interface2(PendingRemote<Interface2>(std::move(interface2_pipe.handle0),0));
+    broker->GetInterface("Interface2",std::move(interface2_pipe.handle1));
+    interface2->Hi("Interface2");
+    LOG(INFO) << "Interface2 call: Hi";
+  }
 }
 
 void MojoConsumer() {
@@ -307,6 +371,11 @@ void MojoConsumer() {
   }
   {
     new Test32Impl(PendingReceiver<Test32>(std::move(pipe32)));
+  }
+  {
+    auto test4 = new InterfaceBrokerImpl(PendingReceiver<InterfaceBroker>(std::move(pipe4)));
+    test4->AddMap<Interface1,Interface1Impl>("Interface1");
+    test4->AddMap<Interface2,Interface2Impl>("Interface2");
   }
 }
 

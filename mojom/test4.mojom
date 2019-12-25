@@ -3,15 +3,14 @@
 
 module demo.mojom;
 
-interface Api {
-    PrintApi(string data);
+interface InterfaceBroker {
+    GetInterface(string name,handle<message_pipe> pipe_handle);
 };
 
-interface Api2 {
-    PrintApi2(string data);
+interface Interface1 {
+    Hello(string who);
 };
 
-interface Test4 {
-    GetApi(associated Api& api);
-    SetApi2(associated Api2 api2);
+interface Interface2 {
+    Hi(string who);
 };
