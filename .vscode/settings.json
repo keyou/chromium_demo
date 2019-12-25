@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "string": "cpp"
+        "string": "cpp",
+        "bitset": "cpp",
+        "forward_list": "cpp",
+        "functional": "cpp",
+        "list": "cpp",
+        "memory": "cpp",
+        "tuple": "cpp"
     }
 }

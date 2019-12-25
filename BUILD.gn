@@ -10,6 +10,16 @@ executable("demo") {
   ]
 }
 
+executable("demo_log") {
+  sources = [
+    "demo_log.cc",
+  ]
+
+  deps = [
+    "//base",
+  ]
+}
+
 executable("demo_messageloop") {
   sources = [
     "demo_tasks.cc",

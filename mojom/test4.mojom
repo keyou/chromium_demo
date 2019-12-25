@@ -3,6 +3,13 @@
 
 module demo.mojom;
 
+// generic_pending_receiver 在新版中才有
+// import "mojo/public/mojom/base/generic_pending_receiver.mojom";
+
+// interface Test4 {
+//     TTTT(mojo_base.mojom.GenericPendingReceiver receiver);
+// };
+
 interface InterfaceBroker {
     GetInterface(string name,handle<message_pipe> pipe_handle);
 };
