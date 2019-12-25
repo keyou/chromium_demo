@@ -1,0 +1,17 @@
+
+// Ｃhromium 推荐将mojom文件放在单独的mojom目录下
+
+module demo.mojom;
+
+interface Api {
+    PrintApi(string data);
+};
+
+interface Api2 {
+    PrintApi2(string data);
+};
+
+interface Test4 {
+    GetApi(associated Api& api);
+    SetApi2(associated Api2 api2);
+};

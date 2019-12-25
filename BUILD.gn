@@ -56,7 +56,22 @@ executable("demo_mojo_multiple_process") {
   deps = [
     "//base",
     "//mojo/public",
+  ]
+  deps += [ "//services/service_manager:all" ]
+}
+
+executable("demo_mojo_multiple_process_binding") {
+  testonly = true
+  sources = [
+    "demo_mojo_multiple_process_binding.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
     ":mojom_test",
+    ":mojom_test2",
+    ":mojom_test3",
   ]
   deps += [ "//services/service_manager:all" ]
 }
@@ -64,5 +79,17 @@ executable("demo_mojo_multiple_process") {
 mojom("mojom_test") {
   sources = [
     "mojom/test.mojom",
+  ]
+}
+
+mojom("mojom_test2") {
+  sources = [
+    "mojom/test2.mojom",
+  ]
+}
+
+mojom("mojom_test3") {
+  sources = [
+    "mojom/test3.mojom",
   ]
 }

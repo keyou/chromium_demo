@@ -22,27 +22,12 @@
 
 // For bindings API
 #include "demo/mojom/test.mojom.h"
-#include "mojo/public/cpp/bindings/interface_ptr.h"
+#include "demo/mojom/test2.mojom.h"
 #include "mojo/public/cpp/bindings/binding.h"
+#include "mojo/public/cpp/bindings/interface_ptr.h"
 
 #include <iostream>
 #include <vector>
-
-class TestImpl : public demo::mojom::Test {
- public:
-  void Hello(const std::string& who) override {
-    who_ = who;
-    LOG(INFO) << "run: Hello " << who_;
-  }
-
-  void Hi(HiCallback callback) override { 
-    LOG(INFO) << "run: Hi " << who_;
-    std::move(callback).Run(who_);
-  }
-
- private:
-  std::string who_;
-};
 
 class PipeReader {
  public:
@@ -82,7 +67,7 @@ class PipeReader {
 
 void MojoProducer() {
   // 创建一条系统级的IPC通信通道
-  // 在linux上是 socket pair, Windows 是 named pipe
+  // 在linux上是 socket pair, Windows 是 named pipe，该通道用于支持ＭessagePipe
   mojo::PlatformChannel channel;
   LOG(INFO) << "local: "
             << channel.local_endpoint().platform_handle().GetFD().get()
@@ -93,10 +78,7 @@ void MojoProducer() {
   // 创建2个Ｍessage Pipe用来和其他进程通信
   mojo::ScopedMessagePipeHandle pipe =
       invitation.AttachMessagePipe("my raw pipe");
-  mojo::ScopedMessagePipeHandle binding_pipe =
-      invitation.AttachMessagePipe("my binding pipe");
-  LOG(INFO) << "pipe: " << pipe->value()
-            << ", binding pipe: " << binding_pipe->value();
+  LOG(INFO) << "pipe: " << pipe->value();
 
   base::LaunchOptions options;
   base::CommandLine command_line(
@@ -113,7 +95,6 @@ void MojoProducer() {
 
   MojoResult result;
 
-  // 下面再多的MessagePipe和DataPipe都不会再创建新的通信通道
   // C++ platform API, message pipe read test
   {
     const char kMessage[] = "hello";
@@ -156,9 +137,13 @@ void MojoProducer() {
   }
   // Data Pipe transport by MessagePipe
   {
+    // DataPipe 内部使用Shared Ｍemory实现
+    // TODO: 研究 base::WritableSharedMemoryRegin
     const char kMessage[] = "DataPipe";
     mojo::ScopedDataPipeProducerHandle producer;
     mojo::ScopedDataPipeConsumerHandle consumer;
+    // 内部涉及系统资源的分配，可能会失败，因此不建议使用 mojo::DataPipe
+    // 来创建，会导致崩溃
     result = mojo::CreateDataPipe(nullptr, &producer, &consumer);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     result = mojo::WriteMessageRaw(pipe.get(), kMessage, sizeof(kMessage),
@@ -183,6 +168,8 @@ void MojoProducer() {
     const std::string kMessage("MessagePipe\0", 12);
     mojo::ScopedMessagePipeHandle client;
     mojo::ScopedMessagePipeHandle server;
+    // 也可以使用 mojo::MessagePipe
+    // 来更方便的创建，它内部不涉及系统资源的创建因此不会失败
     result = mojo::CreateMessagePipe(nullptr, &client, &server);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     result = mojo::WriteMessageRaw(pipe.get(), kMessage.c_str(),
@@ -202,6 +189,7 @@ void MojoProducer() {
   }
   // Shared Buffer Test
   {
+    // Shared Buffer 内部也使用 Shared Memory 实现
     const std::string kMessage("SharedBuffer\0", 13);
     mojo::ScopedSharedBufferHandle buffer =
         mojo::SharedBufferHandle::Create(4096);
@@ -247,19 +235,6 @@ void MojoProducer() {
             std::move(pipe)),
         base::TimeDelta::FromSeconds(5));
   }
-  // C++ binding API test
-  {
-    // 在2019年3月之后的代码中这两个类被改了名字，分别为Remote,PendingRemote
-    using TestPtr = mojo::InterfacePtr<demo::mojom::Test>;
-    using TestPtrInfo = mojo::InterfacePtrInfo<demo::mojom::Test>;
-    auto test_ptr = new TestPtr(TestPtrInfo(std::move(binding_pipe),0));
-    auto& test = *test_ptr;
-    test->Hello("World!");
-    LOG(INFO) << "call: Hello";
-    test->Hi(base::BindOnce([](const std::string& who){
-      LOG(INFO) << "response: Hi "<< who;
-    }));
-  }
 }
 
 void MojoConsumer() {
@@ -269,10 +244,7 @@ void MojoConsumer() {
           *base::CommandLine::ForCurrentProcess()));
   mojo::ScopedMessagePipeHandle pipe =
       invitation.ExtractMessagePipe("my raw pipe");
-  mojo::ScopedMessagePipeHandle binding_pipe =
-      invitation.ExtractMessagePipe("my binding pipe");
-  LOG(INFO) << "pipe: " << pipe->value()
-            << ", binding pipe: " << binding_pipe->value();
+  LOG(INFO) << "pipe: " << pipe->value();
 
   MojoResult result;
   // 保证有数据可读
@@ -367,13 +339,6 @@ void MojoConsumer() {
   {
     // 为了测试，故意泄漏
     new PipeReader(std::move(pipe));
-  }
-  // C++ binding API test
-  {
-    // 为了测试，故意泄漏
-    auto test = new TestImpl;
-    auto binding = new mojo::Binding<demo::mojom::Test>(test,demo::mojom::TestRequest(std::move(binding_pipe)));
-    ALLOW_UNUSED_LOCAL(binding);
   }
 }
 
