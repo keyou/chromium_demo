@@ -1,0 +1,15 @@
+{
+    "name": "consumer_service",
+    "display_name": "Consumer Service",
+    "interface_provider_specs": {
+        "service_manager:connector": {
+            "provides": {
+                "root": ["demo.mojom.RootInterface"]
+            },
+            "requires": {
+                "test_service": ["test"],
+                "consumer_service":["root"]
+            }
+        }
+    }
+}

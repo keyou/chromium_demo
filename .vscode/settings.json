@@ -1,11 +1,18 @@
 {
     "files.associations": {
+        "*.gni": "python",
         "string": "cpp",
         "bitset": "cpp",
         "forward_list": "cpp",
         "functional": "cpp",
         "list": "cpp",
         "memory": "cpp",
-        "tuple": "cpp"
-    }
+        "tuple": "cpp",
+        "*.tcc": "cpp",
+        "__tree": "cpp",
+        "algorithm": "cpp",
+        "random": "cpp",
+        "optional": "cpp"
+    },
+    "commentTranslate.targetLanguage": "zh-CN"
 }

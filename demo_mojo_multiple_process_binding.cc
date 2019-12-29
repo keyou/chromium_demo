@@ -1,24 +1,24 @@
-#include <base/command_line.h>
-#include <base/logging.h>
-#include <base/message_loop/message_loop.h>
-#include <base/task/post_task.h>
-#include <base/task/task_scheduler/task_scheduler.h>
-
-#include <base/threading/thread.h>
-#include <mojo/core/embedder/embedder.h>
-#include <mojo/core/embedder/scoped_ipc_support.h>
+#include "base/command_line.h"
+#include "base/logging.h"
+#include "base/message_loop/message_loop.h"
+#include "base/task/post_task.h"
+#include "base/task/task_scheduler/task_scheduler.h"
 #include "base/process/launch.h"
+#include "base/threading/thread.h"
+
+#include "mojo/core/embedder/embedder.h"
+#include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
 #include "mojo/public/cpp/system/invitation.h"
 
-#include <mojo/public/c/system/buffer.h>
-#include <mojo/public/c/system/data_pipe.h>
-#include <mojo/public/c/system/message_pipe.h>
-#include <mojo/public/cpp/system/buffer.h>
-#include <mojo/public/cpp/system/data_pipe.h>
-#include <mojo/public/cpp/system/message_pipe.h>
-#include <mojo/public/cpp/system/simple_watcher.h>
-#include <mojo/public/cpp/system/wait.h>
+#include "mojo/public/c/system/buffer.h"
+#include "mojo/public/c/system/data_pipe.h"
+#include "mojo/public/c/system/message_pipe.h"
+#include "mojo/public/cpp/system/buffer.h"
+#include "mojo/public/cpp/system/data_pipe.h"
+#include "mojo/public/cpp/system/message_pipe.h"
+#include "mojo/public/cpp/system/simple_watcher.h"
+#include "mojo/public/cpp/system/wait.h"
 
 // For bindings API
 #include "demo/mojom/test.mojom.h"
@@ -183,26 +183,34 @@ public:
 private:
   Receiver<Interface2> receiver_;
 };
+
+// 在新版本中InterfaceProvider被改名为InterfaceBroker,这里只是说明它们两个的关系,没有实际作用
+using InterfaceProvider = InterfaceBroker;
 class InterfaceBrokerImpl : public InterfaceBroker {
 public:
   explicit InterfaceBrokerImpl(PendingReceiver<InterfaceBroker> receiver)
     : receiver_(this,std::move(receiver)){}
   
   void GetInterface(const std::string& name, mojo::ScopedMessagePipeHandle pipe_handle) override {
-    std::move(map_[name]).Run(std::move(pipe_handle));
+    std::move(binders_[name]).Run(std::move(pipe_handle));
   }
 
   template<class InterfaceT,class InterfaceImplT>
   void AddMap(const std::string& name) {
-    map_.emplace(name,base::BindRepeating([](mojo::ScopedMessagePipeHandle handle){
+    binders_.emplace(name,base::BindRepeating([](mojo::ScopedMessagePipeHandle handle){
       new InterfaceImplT(PendingReceiver<InterfaceT>(std::move(handle)));
     }));
   }
 
 private:
-  std::map<std::string,base::RepeatingCallback<void(mojo::ScopedMessagePipeHandle)>> map_;
+  // 这里也可以使用service_manager::BinderRegistry
+  using BinderMap =
+      std::map<std::string,
+               base::RepeatingCallback<void(mojo::ScopedMessagePipeHandle)>>;
+  BinderMap binders_;
   Receiver<InterfaceBroker> receiver_;
 };
+using InterfaceProviderImpl = InterfaceBrokerImpl;
 #pragma endregion
 
 void MojoProducer() {
@@ -278,6 +286,9 @@ void MojoProducer() {
     mojo::MessagePipe api_pipe;
     Remote<Api> api(PendingRemote<Api>(std::move(api_pipe.handle0),0));
     test3->GetApi(PendingReceiver<Api>(std::move(api_pipe.handle1)));
+    // 使用MakeRequest结果和上面一样，可以更简单,在更新的版本中Remote中添加了BindNew*方法，用来取代MakeRequest
+    // Remote<Api> api;
+    // test3->GetApi(mojo::MakeRequest(&api));
     LOG(INFO) << "Test3 call: GetApi";
     api->PrintApi("api");
     LOG(INFO) << "Api call: PrintApi";
@@ -318,6 +329,7 @@ void MojoProducer() {
   // 封装出通用的 InterfaceBroker 以便支撑任何新的接口
   {
     Remote<InterfaceBroker> broker(PendingRemote<InterfaceBroker>(std::move(pipe4),0));
+    
     mojo::MessagePipe interface1_pipe;
     Remote<Interface1> interface1(PendingRemote<Interface1>(std::move(interface1_pipe.handle0),0));
     broker->GetInterface("Interface1",std::move(interface1_pipe.handle1));

@@ -1,9 +1,11 @@
-#include <base/command_line.h>
-#include <base/logging.h>
-#include <base/message_loop/message_loop.h>
-#include <base/task/task_scheduler/task_scheduler.h>
+#include "base/at_exit.h"
+#include "base/command_line.h"
+#include "base/logging.h"
+#include "base/message_loop/message_loop.h"
+#include "base/task/task_scheduler/task_scheduler.h"
 
 int main(int argc, char** argv) {
+  base::AtExitManager at_exit;
   // 初始化CommandLine
   base::CommandLine::Init(argc, argv);
   // 设置日志格式

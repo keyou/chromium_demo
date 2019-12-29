@@ -1,4 +1,10 @@
+# for mojo
 import("//mojo/public/tools/bindings/mojom.gni")
+
+# for service
+import("//services/catalog/public/tools/catalog.gni")
+import("//services/service_manager/public/cpp/service.gni")
+import("//services/service_manager/public/service_manifest.gni")
 
 executable("demo") {
   sources = [
@@ -87,6 +93,22 @@ executable("demo_mojo_multiple_process_binding") {
   deps += [ "//services/service_manager:all" ]
 }
 
+executable("demo_services") {
+  testonly = true
+  sources = [
+    "demo_services.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+    "//services/service_manager/embedder",
+    ":mojom_test_service",
+    ":test_service_catalog_source",
+  ]
+  deps += [ "//services/service_manager:all" ]
+}
+
 mojom("mojom_test") {
   sources = [
     "mojom/test.mojom",
@@ -110,3 +132,41 @@ mojom("mojom_test4") {
     "mojom/test4.mojom",
   ]
 }
+
+mojom("mojom_test_service") {
+  sources = [
+    "mojom/test_service.mojom",
+  ]
+}
+
+service_manifest("test_service_manifest") {
+  name = "test_service"
+  source = "mojom/test_service_manifest.json"
+}
+
+service_manifest("consumer_service_manifest") {
+  name = "consumer_service"
+  source = "mojom/consumer_service_manifest.json"
+}
+
+catalog("test_service_catalog") {
+  embedded_services = [ 
+    ":test_service_manifest",
+    ":consumer_service_manifest"
+  ]
+}
+
+catalog_cpp_source("test_service_catalog_source") {
+  catalog = ":test_service_catalog"
+  generated_function_name = "demo::services::CreateTestServiceCatalog"
+}
+
+
+# catalog("consumer_service_catalog") {
+#   embedded_services = [ ":consumer_service_manifest" ]
+# }
+
+# catalog_cpp_source("consumer_service_catalog_source") {
+#   catalog = ":consumer_service_catalog"
+#   generated_function_name = "demo::services::CreateConsumerServiceCatalog"
+# }
