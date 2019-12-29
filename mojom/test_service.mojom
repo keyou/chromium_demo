@@ -5,7 +5,7 @@ module demo.mojom;
 // const string kTestCapability = "test";
 
 interface RootInterface {
-    Run();
+    Hi(string who);
 };
 
 interface TestInterface {

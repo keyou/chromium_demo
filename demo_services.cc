@@ -69,7 +69,12 @@ class TestService : public service_manager::Service {
   TestService(){
     service_binding_ = std::make_unique<service_manager::ServiceBinding>(this);
   }
-  void OnStart() override { LOG(INFO) << "TestService Start."; }
+  void OnStart() override {
+    LOG(INFO) << "TestService Start.";
+    Remote<RootInterface> root;
+    context()->connector()->BindInterface("consumer_service",mojo::MakeRequest(&root));
+    root->Hi("TestService");
+  }
   // 当其他服务调用connector->Connect()时会触发这里
   void OnBindInterface(const service_manager::BindSourceInfo& source,
                        const std::string& interface_name,
@@ -95,8 +100,8 @@ class RootInterfaceImpl : public demo::mojom::RootInterface {
 public:
   RootInterfaceImpl(PendingReceiver<RootInterface> receiver)
       : receiver_(this, std::move(receiver)) {}
-  void Run() override {
-    LOG(INFO) << "Root run";
+  void Hi(const std::string& who) override {
+    LOG(INFO) << "RootInterfaceImpl run: Hi " << who;
   }
 private:
   Receiver<RootInterface> receiver_;
@@ -104,17 +109,14 @@ private:
 
 class ConsumerService : public service_manager::Service {
  public:
+  ConsumerService(){}
   // ConsumerService(service_manager::mojom::ServiceRequest request)
   //     : service_binding_(this, std::move(request)) {}
+  
   void OnStart() override { 
     LOG(INFO) << "ConsumerService Start."; 
   }
-  void Hello() {
-    // Remote<TestInterface> test;
-    // service_binding_.GetConnector()->BindInterface(TestInterface::Name_,
-    //                                                mojo::MakeRequest(&test));
-    // test->Hello("TestInterface");
-  }
+  
   void OnBindInterface(const service_manager::BindSourceInfo& source,
                        const std::string& interface_name,
                        mojo::ScopedMessagePipeHandle interface_pipe) override {
@@ -190,19 +192,21 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
     ServiceProcessLauncherDelegateImpl service_process_launcher_delegate(this);
     service_manager::BackgroundServiceManager service_manager(
         &service_process_launcher_delegate, this->CreateServiceCatalog());
+    
     //service_manager.StartService(service_manager::Identity("test_service"));
     //service_manager.StartService(service_manager::Identity("consumer_service"));
+
     mojom::ServicePtr service;
     context_ = std::make_unique<ServiceContext>(std::make_unique<ConsumerService>(),mojo::MakeRequest(&service));
     service_manager.RegisterService(service_manager::Identity("consumer_service", mojom::kRootUserID),std::move(service),nullptr);
     
-    demo::mojom::RootInterfacePtr root;
-    context_->connector()->BindInterface("consumer_service", &root);
-    root->Run();
+    // demo::mojom::RootInterfacePtr root;
+    // context_->connector()->BindInterface("consumer_service", &root);
+    // root->Hi("consumer_service");
 
     demo::mojom::TestInterfacePtr test;
     context_->connector()->BindInterface("test_service", &test);
-    test->Hello("test_service");
+    test->Hello("consumer_service");
 
     LOG(INFO) << "running...";
     base::RunLoop().Run();
@@ -238,6 +242,7 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
     if(service_name == "test_service"){
       return std::make_unique<TestService>();
     }
+    return nullptr;
   }
 private:
   std::unique_ptr<ServiceContext> context_;

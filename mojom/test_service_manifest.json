@@ -5,6 +5,9 @@
         "service_manager:connector": {
             "provides": {
                 "test": ["demo.mojom.TestInterface"]
+            },
+            "requires": {
+                "consumer_service":["root"]
             }
         }
     }

@@ -7,8 +7,7 @@
                 "root": ["demo.mojom.RootInterface"]
             },
             "requires": {
-                "test_service": ["test"],
-                "consumer_service":["root"]
+                "test_service": ["test"]
             }
         }
     }
