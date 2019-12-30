@@ -109,6 +109,24 @@ executable("demo_services") {
   deps += [ "//services/service_manager:all" ]
 }
 
+executable("demo_ipc") {
+  testonly = true
+  sources = [
+    "demo_ipc.cc",
+    "demo_ipc_messages.h",
+    "demo_ipc_message_generator.h",
+    "demo_ipc_message_generator.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+    "//services/service_manager/embedder",
+  ]
+
+  deps += [ "//services/service_manager:all" ]
+}
+
 mojom("mojom_test") {
   sources = [
     "mojom/test.mojom",
