@@ -45,6 +45,10 @@
 #include "ipc/ipc_channel_mojo.h"
 #include "ipc/ipc_logging.h"
 #include "ipc/ipc_message_macros.h"
+// 不能使用这个类，因为它没有标记为导出，链接的时候会报错
+//#include "ipc/message_filter_router.h"
+#include "ipc/message_router.h"
+#include "ipc/message_filter.h"
 
 #include "demo_ipc_messages.h"
 
@@ -72,7 +76,11 @@ class ProducerListener : public IPC::Listener {
   ~ProducerListener() override = default;
 
  private:
-  // IPC::Listener implementation.
+  
+  void OnChannelConnected(int32_t peer_pid) override {
+    LOG(INFO) << "Producer OnChannelConnected: peer_pid= "<<peer_pid;
+  }
+
   bool OnMessageReceived(const IPC::Message& message) override {
     bool handled = true;
     IPC_BEGIN_MESSAGE_MAP(ProducerListener, message)
@@ -94,19 +102,104 @@ class ConsumerListener : public IPC::Listener {
   ~ConsumerListener() override = default;
 
  private:
-  // IPC::Listener implementation.
   bool OnMessageReceived(const IPC::Message& message) override {
     bool handled = true;
     IPC_BEGIN_MESSAGE_MAP(ConsumerListener, message)
-      IPC_MESSAGE_HANDLER(IPCTestMsg_Hello,OnHello);
+      IPC_MESSAGE_HANDLER(IPCTestMsg_RoutedHello,OnRoutedHello);
       IPC_MESSAGE_UNHANDLED(handled = false);
     IPC_END_MESSAGE_MAP()
     LOG(INFO) << "Consumer OnMessageReceived: handled= " << handled;
     return handled;
   }
-  void OnHello(const std::string& who) {
-    LOG(INFO) << "ConsumerListener run: Hello " << who;
+  void OnRoutedHello(const std::string& who) {
+    LOG(INFO) << "ConsumerListener run: RoutedHello " << who;
   }
+};
+
+class ConsumerFilter : public IPC::MessageFilter {
+public:
+
+  bool AddRoute(int32_t routing_id, IPC::Listener* listener) {
+    return router_.AddRoute(routing_id,listener);
+  }
+
+  bool OnMessageReceived(const IPC::Message& message) override {
+    return router_.RouteMessage(message);
+  }
+
+private:
+  IPC::MessageRouter router_;
+};
+
+// 这不是使用IPC::Channel所必需的，这里是模拟chromium中的使用，用来演示MessageFilter
+class ConsumerChannel : public IPC::Listener, public IPC::Sender {
+public:
+  ConsumerChannel(scoped_refptr<base::SingleThreadTaskRunner> task_runner) 
+    : task_runner_(task_runner){}
+
+  bool Init(IPC::ChannelHandle handle) {
+    channel_ = IPC::Channel::CreateClient(handle,this,task_runner_);
+    LOG(INFO) << "Consumer Connect";
+    bool result = channel_->Connect();
+    if(result) {
+      listener_ = std::make_unique<ConsumerListener>();
+      filter_ = std::make_unique<ConsumerFilter>();
+      // 注册一个 routing_id 为 1 的消息监听器，所有id为1的消息都会被该监听器接收
+      // 在实际项目中要保证在一条通道上，该id要唯一
+      filter_->AddRoute(1,listener_.get());
+      AddFilter(filter_.get());
+    }
+
+    return result;
+  }
+
+  void AddFilter(IPC::MessageFilter* filter) {
+    filters_.push_back(filter);
+  }
+
+  void OnChannelConnected(int32_t peer_pid) override {
+    LOG(INFO) << "Consumer OnChannelConnected: peer_pid= "<<peer_pid;
+  }
+
+  bool OnMessageReceived(const IPC::Message& message) override {
+    LOG(INFO) << "ConsumerChannel OnMessageReceived: message.routing_id()= " << message.routing_id();
+    bool handled = false;
+    if (message.routing_id() == MSG_ROUTING_CONTROL) {
+      handled = OnControlMessageReceived(message);
+    } else {
+      for(auto filter : filters_)
+      {
+        if(filter->OnMessageReceived(message)) {
+          break;
+        }
+      }
+    }
+    return handled;
+  }
+
+  bool OnControlMessageReceived(const IPC::Message& message) {
+    bool handled = true;
+    IPC_BEGIN_MESSAGE_MAP(ConsumerChannel, message)
+      IPC_MESSAGE_HANDLER(IPCTestMsg_Hello,OnHello);
+      IPC_MESSAGE_UNHANDLED(handled = false);
+    IPC_END_MESSAGE_MAP()
+    LOG(INFO) << "ConsumerChannel OnControlMessageReceived: handled= " << handled;
+    return handled;
+  }
+
+  void OnHello(const std::string& who) {
+    LOG(INFO) << "ConsumerChannel run: Hello " << who;
+  }
+
+  bool Send(IPC::Message* message) override {
+    return channel_->Send(message);
+  }
+
+  std::unique_ptr<ConsumerFilter> filter_;
+  std::unique_ptr<ConsumerListener> listener_;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  std::vector<IPC::MessageFilter*> filters_;
+  std::unique_ptr<IPC::Channel> channel_;
 };
 
 void MojoProducer() {
@@ -147,6 +240,7 @@ void MojoProducer() {
   if(result) {
     LOG(INFO) << "Producer Send: IPCTestMsg_Hello Producer";
     ipc_channel->Send(new IPCTestMsg_Hello("Producer"));
+    ipc_channel->Send(new IPCTestMsg_RoutedHello(1,"Producer"));
   }
 
   base::RunLoop run_loop;
@@ -166,13 +260,19 @@ void MojoConsumer() {
   // 创建主线程消息循环
   base::MessageLoop message_loop;
 
-  ConsumerListener listener;
-  std::unique_ptr<IPC::Channel> ipc_channel = IPC::Channel::CreateClient(pipe.release(),&listener,message_loop.task_runner());
-  LOG(INFO) << "Consumer Connect";
-  bool result = ipc_channel->Connect();
+  // ConsumerListener listener;
+  // 这里也可以直接把listener传给Channel，但为了演示使用ConsumerChannel
+  // std::unique_ptr<IPC::Channel> channel = IPC::Channel::CreateClient(pipe.release(),&listener,message_loop.task_runner());
+  // LOG(INFO) << "Consumer Connect";
+  // bool result = channel->Connect();
+
+  ConsumerChannel channel(message_loop.task_runner());
+  bool result = channel.Init(pipe.release());
+  DCHECK(result);
+  
   if(result) {
     LOG(INFO) << "Consumer Send: IPCTestMsg_Hi Consumer";
-    ipc_channel->Send(new IPCTestMsg_Hi("Consumer"));
+    channel.Send(new IPCTestMsg_Hi("Consumer"));
   }
 
   base::RunLoop run_loop;
