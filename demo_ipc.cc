@@ -1,3 +1,8 @@
+/**
+ * 目前 chromium 中的 IPC 机制底层都使用mojo来实现。只有在NaCL中使用以前的IPC通道的机制。
+ * 
+ */
+
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/logging.h"
@@ -69,7 +74,7 @@ class ProducerListener : public IPC::Listener {
  private:
   // IPC::Listener implementation.
   bool OnMessageReceived(const IPC::Message& message) override {
-    bool handled = false;
+    bool handled = true;
     IPC_BEGIN_MESSAGE_MAP(ProducerListener, message)
       IPC_MESSAGE_HANDLER(IPCTestMsg_Hi,OnHi);
       IPC_MESSAGE_UNHANDLED(handled = false);
@@ -91,7 +96,7 @@ class ConsumerListener : public IPC::Listener {
  private:
   // IPC::Listener implementation.
   bool OnMessageReceived(const IPC::Message& message) override {
-    bool handled = false;
+    bool handled = true;
     IPC_BEGIN_MESSAGE_MAP(ConsumerListener, message)
       IPC_MESSAGE_HANDLER(IPCTestMsg_Hello,OnHello);
       IPC_MESSAGE_UNHANDLED(handled = false);

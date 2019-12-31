@@ -71,6 +71,7 @@ class TestService : public service_manager::Service {
   }
   void OnStart() override {
     LOG(INFO) << "TestService Start.";
+    // 演示从一个服务内请求其它服务提供的接口
     Remote<RootInterface> root;
     context()->connector()->BindInterface("consumer_service",mojo::MakeRequest(&root));
     root->Hi("TestService");
@@ -193,17 +194,21 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
     service_manager::BackgroundServiceManager service_manager(
         &service_process_launcher_delegate, this->CreateServiceCatalog());
     
+    // 可以使用以下方式手动启动一个Service
     //service_manager.StartService(service_manager::Identity("test_service"));
     //service_manager.StartService(service_manager::Identity("consumer_service"));
 
+    // 手动注册一个Service实例
     mojom::ServicePtr service;
     context_ = std::make_unique<ServiceContext>(std::make_unique<ConsumerService>(),mojo::MakeRequest(&service));
     service_manager.RegisterService(service_manager::Identity("consumer_service", mojom::kRootUserID),std::move(service),nullptr);
     
+    // 即使服务请求由自己提供的接口也需要权限
     // demo::mojom::RootInterfacePtr root;
     // context_->connector()->BindInterface("consumer_service", &root);
     // root->Hi("consumer_service");
 
+    // 演示通过consumer_service的context请求由test_service服务提供的test接口
     demo::mojom::TestInterfacePtr test;
     context_->connector()->BindInterface("test_service", &test);
     test->Hello("consumer_service");
