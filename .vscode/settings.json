@@ -12,7 +12,8 @@
         "__tree": "cpp",
         "algorithm": "cpp",
         "random": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "system_error": "cpp"
     },
     "commentTranslate.targetLanguage": "zh-CN"
 }

@@ -98,7 +98,7 @@ void MojoProducer() {
 
   MojoResult result;
 
-  // C++ platform API, message pipe read test
+  // C++ platform API, message pipe write test
   {
     const char kMessage[] = "hello";
     result = mojo::WriteMessageRaw(pipe.get(), kMessage, sizeof(kMessage),
@@ -106,20 +106,8 @@ void MojoProducer() {
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "send: " << kMessage;
   }
-  // 没有对应的C++ platform API用来给message填充内容，所以此demo无效
-  // mojo::ScopedMessageHandle message;
-  // result = mojo::CreateMessage(&message);
-  // DCHECK_EQ(result, MOJO_RESULT_OK);
-  // void *buffer;
-  // uint32_t length;
-  // // error usage
-  // result = how to append message data ???
-  // DCHECK_EQ(result, MOJO_RESULT_OK);
-  // result =
-  // mojo::WriteMessageNew(pipe.get(),std::move(message),MOJO_WRITE_MESSAGE_FLAG_NONE);
-  // DCHECK_EQ(result, MOJO_RESULT_OK);
 
-  // C platform API, message pipe read test
+  // C platform API, message pipe write test
   {
     const char kMessage[] = "HELLO";
     MojoMessageHandle message;

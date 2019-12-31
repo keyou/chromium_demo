@@ -5,6 +5,7 @@
 #include "base/task/task_scheduler/task_scheduler.h"
 
 int main(int argc, char** argv) {
+  // 类似C++的 atexit() 方法，用于管理程序的销毁逻辑，base::Singleton类依赖它
   base::AtExitManager at_exit;
   // 初始化CommandLine
   base::CommandLine::Init(argc, argv);

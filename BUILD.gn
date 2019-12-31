@@ -6,6 +6,21 @@ import("//services/catalog/public/tools/catalog.gni")
 import("//services/service_manager/public/cpp/service.gni")
 import("//services/service_manager/public/service_manifest.gni")
 
+group("all") {
+  testonly = true
+  deps = [
+    ":demo",
+    ":demo_log",
+    ":demo_messageloop",
+    ":demo_tasks",
+    ":demo_mojo_single_process",
+    ":demo_mojo_multiple_process",
+    ":demo_mojo_multiple_process_binding",
+    ":demo_services",
+    ":demo_ipc",
+  ]
+}
+
 executable("demo") {
   sources = [
     "demo.cc",
