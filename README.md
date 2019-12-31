@@ -16,6 +16,8 @@ Demo 列表：
 1. `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
 1. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 
+更多文档见 [docs](./docs) 目录。
+
 ## 用法一(推荐)
 
 1. 进入 chromium 的 `src` 目录；
