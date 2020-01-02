@@ -15,5 +15,7 @@
         "optional": "cpp",
         "system_error": "cpp"
     },
-    "commentTranslate.targetLanguage": "zh-CN"
+    "commentTranslate.targetLanguage": "zh-CN",
+    "pasteImage.filePathConfirmInputBoxMode": "onlyName",
+    "pasteImage.path": "${currentFileDir}/images"
 }

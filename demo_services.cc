@@ -247,6 +247,9 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
     if(service_name == "test_service"){
       return std::make_unique<TestService>();
     }
+    if(service_name == "consumer_service") {
+      return std::make_unique<ConsumerService>();
+    }
     return nullptr;
   }
 private:
