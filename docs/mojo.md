@@ -2,7 +2,7 @@
 
 `Mojo` 是一个跨平台 IPC 框架，它诞生于 chromium ，用来实现 chromium 进程内/进程间的通信。目前，它也被用于 ChromeOS。
 
-## Mojo 的分层
+## 一、Mojo 的分层
 
 ![Mojo Stack](images/mojo_stack.png)
 
@@ -16,13 +16,13 @@
 除了上面提到的那些层之外，在 Chromium 中还有2个模块对 Mojo 进行了包装，分别是 Services(//services) 模块和 IPC(//ipc) 模块。
 
 1. `Services`: 一种更高层次的IPC机制，构建于Mojo之上，以`Service`的级别来进行IPC通信，Chromium大量使用这种IPC机制来包装各种服务，用来取代 `Legacy Chrome IPC`，比如device服务，preferences服务，audio服务，viz服务等。
-2. `Legacy Chrome IPC`: 已经不推荐使用的Chrome IPC机制，提供 `IPC::Channel` 接口以及大量的使用宏来定义的 messages 类。目前它底层也是基于 Mojo 来实现的，但是上层接口和旧的 Chrome IPC 保持一致。chromium 中还有很多IPC使用这种方式，但是不应该在新的服务中使用这种机制。可以在[ipc/ipc_message_start.h](https://source.chromium.org/chromium/chromium/src/+/master:ipc/ipc_message_start.h;bpv=1;bpt=0)中察看还有哪些部分在使用这种IPC机制。
+2. `Legacy Chrome IPC`: 已经不推荐使用的Chrome IPC机制，提供 `IPC::Channel` 接口以及大量的使用宏来定义的 messages 类。目前它底层也是基于 Mojo 来实现的，但是上层接口和旧的 Chrome IPC 保持一致。chromium 中还有很多IPC使用这种方式，但是不应该在新的服务中使用这种机制。可以在[ipc/ipc_message_start.h](https://source.chromium.org/chromium/chromium/src/+/master:ipc/ipc_message_start.h;bpv=1;bpt=0)中查看还有哪些部分在使用这种IPC机制。
 
-## Mojo Core 的设计
+## 二、Mojo 的设计思路
 
 在使用 Mojo 之前，先来看一下 Mojo 的设计，这对理解后面的使用至关重要。
 
-Mojo 支持在多个进程之间互相通信，这一点和其他的IPC有很大不同，其他大多只支持2个进程之间进行通信。由Mojo组成的这些可以互相通信的进程就形成了一个网络，在这个网络内的任意两个进程都可以进行通信，并且每个进程只能处于一个Mojo网络中，在这个网络内每一个进程内部有且只有一个`Node`,每一个`Node`可以提供多个`Port`，每个`Port`对应一种服务，这点类似TCP/IP中的IP地址和端口的关系。一个`Node:Port`对可以唯一确定一个服务。`Node`和`Node`之间通过`Channel`来实现通信，在不同平台上`Channel`有不同的实现方式，在Linux上是domain socket,在windows上是name pipe，在MAC OS平台上是 Mach Port。在Port之上，Mojo封装了3个“应用层协议”，分别为`MessagePipe`，`DataPipe`和`SharedBuffer`（类似在TCP上封装了HTTP，SMTP等）。整体结构如下图：
+Mojo 支持在**多个**进程之间互相通信，这一点和其他的IPC有很大不同，其他大多只支持2个进程之间进行通信。由Mojo组成的这些可以互相通信的进程就形成了一个网络，在这个网络内的任意两个进程都可以进行通信，并且每个进程只能处于一个Mojo网络中，在这个网络内每一个进程内部有且只有一个`Node`,每一个`Node`可以提供多个`Port`，每个`Port`对应一种服务，这点类似TCP/IP中的IP地址和端口的关系。一个`Node:Port`对可以唯一确定一个服务。`Node`和`Node`之间通过`Channel`来实现通信，在不同平台上`Channel`有不同的实现方式，在Linux上是domain socket,在windows上是name pipe，在MAC OS平台上是 Mach Port。在Port之上，Mojo封装了3个“应用层协议”，分别为`MessagePipe`，`DataPipe`和`SharedBuffer`（类似在TCP上封装了HTTP，SMTP等）。整体结构如下图：
 
 ![Mojo Core 的设计](images/2020-01-02-16-48-28.png)
 
@@ -41,15 +41,26 @@ Mojo 支持在多个进程之间互相通信，这一点和其他的IPC有很大
 
 需要特别说明的是，Mojo不是只能在不同进程间使用，它从一开始就考虑了在单进程中使用的场景，并且有专门的优化，因此，使用Mojo带来的一个额外好处是，在Mojo的一端进行读写不必知道另一端是运行在当前进程还是外部进程，这非常有利于将单进程程序逐步的使用Mojo拆分为多进程程序，并且可以在调试的时候使用单进程方便调试，在正式环境中使用多进程缩小程序崩溃时的影响范围。
 
-## Mojo 的用法
+## 三、Mojo 的用法
 
-可以使用不同层次的Mojo API来使用Mojo，下面我们一一介绍。
+Mojo 不仅可以在 Chromium 中使用，也可以在任何第三方程序中使用，因为它本身不依赖于 Chromium 中的业务逻辑部分。不过由于它的源码在 Chromium 中，在其他程序中使用可能没有那么方便。
+
+Mojo提供了不同层次的API，外部可以根据自己的需要选择使用的层次，下面我们简单介绍每种API的使用方法，详细信息可以查看对应的demo程序。
+
+> 目前 Mojo 支持 C++/Java/Js，这里只介绍C++相关用法。
 
 ### 初始化 Mojo
 
-初始化Mojo有两种方式，一种适用于静态链接Mojo的程序，一种适用于动态链接Mojo的程序。
+初始化Mojo有两种方式，一种适用于静态链接Mojo的程序，一种适用于动态链接Mojo的程序。以下是静态链接时的初始化方法，动态链接时只需要把`mojo::core::Init()`替换为`MojoInitialize()`即可。
 
-以下是静态链接时的初始化方法：
+初始化接口的头文件为:
+
+```C++
+#include <mojo/core/embedder/embedder.h>
+#include <mojo/core/embedder/scoped_ipc_support.h>
+```
+
+初始化方法如下:
 
 ```C++
 int main(int argc, char** argv) {
@@ -74,17 +85,82 @@ int main(int argc, char** argv) {
 
 ### 使用 `Mojo C API`
 
+Mojo C API 都比较简单，主要的头文件位于:
 
+```C++
+// SharedBuffer API
+#include "mojo/public/c/system/buffer.h"
+// DataPipe API
+#include "mojo/public/c/system/data_pipe.h"
+// MessagePipe API
+#include "mojo/public/c/system/message_pipe.h"
+```
+
+以下是在单进程中使用 MessagePipe 发送和接收数据的方法:
+
+```C++
+// 使用 C 接口创建一条MessagePipe
+// MessagePipe 只是一对数字，只用于ID标识，并不对应任何系统资源
+// 因此可以非常快速，不可能失败的，创建大量的MessagePipe。
+MojoHandle sender_handle, receiver_handle;
+MojoResult result =
+    MojoCreateMessagePipe(NULL, &sender_handle, &receiver_handle);
+DCHECK_EQ(result, MOJO_RESULT_OK);
+// 使用 C 接口发送一条消息
+{
+  // 创建一条 Message
+  MojoMessageHandle message;
+  result = MojoCreateMessage(nullptr, &message);
+  DCHECK_EQ(result, MOJO_RESULT_OK);
+  MojoAppendMessageDataOptions options;
+  options.struct_size = sizeof(options);
+  // 这个选项表示这条消息完整了，底层可以发送了
+  options.flags = MOJO_APPEND_MESSAGE_DATA_FLAG_COMMIT_SIZE;
+  void* buffer;
+  uint32_t buffer_size;
+  // 给 Message 填充数据
+  result = MojoAppendMessageData(message, 6, nullptr, 0, &options, &buffer,&buffer_size);
+  DCHECK_EQ(result, MOJO_RESULT_OK);
+  memcpy(buffer, "hello", 6);
+  LOG(INFO) << "send: " << (const char*)buffer;
+  // 发送 Message
+  result = MojoWriteMessage(sender_handle, message, nullptr);
+  DCHECK_EQ(result, MOJO_RESULT_OK);
+}
+// 使用 C 接口接收一条消息
+{
+  MojoMessageHandle message;
+  MojoResult result = MojoReadMessage(receiver_handle, nullptr, &message);
+  DCHECK_EQ(result, MOJO_RESULT_OK);
+
+  void* buffer = NULL;
+  uint32_t num_bytes;
+  result = MojoGetMessageData(message, nullptr, &buffer, &num_bytes, nullptr,nullptr);
+  LOG(INFO) << "receive: " << (const char*)buffer;
+}
+```
+
+其他关于 `DataPipe` 和 `SharedBuffer` 的使用方法都类似，由于实际项目中很少直接使用 C API，所以其使用方法在这里省略了。
+
+demo 见 [demo_mojo_single_process.cc](../demo_mojo_single_process.cc) .
 
 ### 使用 `Mojo C++ API`
 
+demo 见 [demo_mojo_single_process.cc](../demo_mojo_single_process.cc) 以及 [demo_mojo_multiple_process.cc](../demo_mojo_multiple_process.cc) 。
+
 ### 使用 `Mojo C++ Bindings API`
+
+demo 见 [demo_mojo_multiple_process_binding.cc](../demo_mojo_multiple_process_binding.cc) 。
 
 ### 使用 `Mojo Services`
 
 一个[`Service`](https://source.chromium.org/chromium/chromium/src/+/master:services/service_manager/public/cpp/service.h)通过提供一个或多个Mojo接口来暴露一套服务，一个服务可以通过[`Connector`](https://source.chromium.org/chromium/chromium/src/+/master:services/service_manager/public/cpp/connector.h)来调用其他的服务，但并不是所有的服务之间都可以随意调用，而是通过[`Service Manager`](https://source.chromium.org/chromium/chromium/src/+/master:services/service_manager/service_manager.h)来管理多个 Service 间的依赖关系，只有明确表示有依赖关系的服务才能够被调用，而依赖关系则是通过[`Manifest`](https://source.chromium.org/chromium/chromium/src/+/master:services/service_manager/public/cpp/manifest.h)来定义的。这套机制的实现使用了 Mojom 接口，其中最重要的是 [service_manager](https://source.chromium.org/chromium/chromium/src/+/master:services/service_manager/public/mojom/service_manager.mojom), [service](https://source.chromium.org/chromium/chromium/src/+/master:services/service_manager/public/mojom/service.mojom), [connector](https://source.chromium.org/chromium/chromium/src/+/master:services/service_manager/public/mojom/connector.mojom)。
 
+demo 见 [demo_services.cc](../demo_services.cc) 。
+
 ### 使用 `Legacy Chrome IPC`
+
+demo 见 [demo_ipc.cc](../demo_ipc.cc) 。
 
 --------------
 
