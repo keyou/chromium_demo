@@ -787,23 +787,124 @@ demo 见 [demo_services.cc](../demo_services.cc) 。
 
 ### `Legacy Chrome IPC`
 
-再次强调这种机制是被废弃的，但是因为Chromium非常核心的逻辑依然遗留有大量对它的使用，所以大家目前还是要理解这种用法。
+再次强调这种机制是被废弃的，但是因为Chromium非常核心的逻辑依然遗留有大量对它的使用，所以大家目前还是要理解这种用法。下图这张经典的图可以比较好的说明Chromium中是如何使用Legacy IPC的：
 
-发送消息：
+![chromium multi-process](images/2020-01-03-17-09-31.png)
+
+我们可以看到一下和Legacy IPC相关的信息：
+
+- Browser进程有2个Channel，说明一个进程中可以有多个Channel；
+- 每个Render进程都有一条Legacy IPC和Browser连接；
+- ResourceDispatcher 通过Filter和Channel连接起来；
+
+这里先介绍几个Legacy IPC的关键术语：
+
+- `IPC::Channel`: 一条数据传输通道，提供了数据的发送和接收接口；
+- `IPC::Message`: 在Channel中传输的数据，主要通过宏来定义新的Message；
+- `IPC::Listener`: 提供接收消息的回调，创建Channel的必须提供一个Listener；
+- `IPC::Sender`: 提供发送IPC::Message的Send方法，IPC::Channel就实现了IPC::Sender接口；
+- `IPC::MessageFilter`: 也就是Filter，用来对消息进行过滤，类似管道的机制，它所能过滤的消息必须由其他Filter或者Listener传给它；
+- `IPC::MessageRouter`: 一个用来处理 `Routed Message` 的类（见下文）；
+
+Legacy IPC的本质就是通过IPC::Channel接口发送IPC::Message，IPC::Channel是封装好的类，IPC::Message需要用户自己定义，所以接下来我们先来看一下如何定义Message。
+
+#### Messages
+
+IPC::Message 有两类，一类是路由消息 “routed message”，一类是控制消息 “control message”，他们从消息内容上看唯一的不同就是`routing_id()` 不同，每一个IPC::Message都会有一个routing_id,控制消息的routing_id始终是`MSG_ROUTING_CONTROL`，这是一个常量，除此之外，所有routing_id不是这个常量的消息都是路由消息。这两种消息在处理上也没有什么不同，唯一区别对待它们的地方就在`IPC::MessageRouter`类中，或者自己写代码进行区分。
+
+定义一个消息的方法如下：
 
 ```C++
+// demo_ipc_messages.h
+
+#ifndef DEMO_IPC_MESSAGES_H_
+#define DEMO_IPC_MESSAGES_H_
+
+#include "ipc/ipc_message.h"
+#include "ipc/ipc_message_macros.h"
+#include "ipc/ipc_param_traits.h"
+
+// 使用 IPCTestMsgStart 来测试，它不能随意命名，必须存在于 ipc/ipc_message_start.h 中
+// 详情见 ipc/ipc_message_macros.h 文件头的解释
+#define IPC_MESSAGE_START IPCTestMsgStart
+
+// 定义2个控制消息，宏后面的1表示有1个参数
+IPC_MESSAGE_CONTROL1(IPCTestMsg_Hello,std::string)
+IPC_MESSAGE_CONTROL1(IPCTestMsg_Hi,std::string)
+
+// 定义2个路由消息，宏后面的1表示有1个参数
+IPC_MESSAGE_ROUTED1(IPCTestMsg_RoutedHello,std::string)
+IPC_MESSAGE_ROUTED1(IPCTestMsg_RoutedHi,std::string)
+
+#endif //DEMO_IPC_MESSAGES_H_
+```
+
+这里面有一个“魔数”`IPCTestMsgStart`,这个是不能随便命名的，可以认为它是用来给消息分类的，消息必须属于某一个类，所有的类别可以在 `ipc/ipc_message_start.h` 中查看。
+
+这样定义了之后还不能使用，还要按照添加所谓的`message generator`，具体内容见[demo_ipc_message_generator.h](../demo_ipc_message_generator.h)和[demo_ipc_message_generator.cc](../demo_ipc_message_generator.cc)。
+
+这样之后Message就算定义好了，就可以进行发送了。要发送Message，需要创建IPC::Channel，但是在创建IPC::Channel的时候需要传入一个IPC::Listener用来接收IPC::Channel受到的Message，所以我们先来实现一个IPC::Listener。
+
+#### `IPC::Listener`
+
+IPC::Listener 接口非常简单，最主要的是重写`OnMessageReceived`方法，这个方法会被IPC::Channel调用，在这个方法内部使用`IPC_BEGIN_MESSAGE_MAP`宏来进行消息的分发，这个宏可以处理控制消息也可以处理路由消息。当IPC::Channel收到 IPCTestMsg_Hi消息的时候就会触发OnHi方法。
+
+```C++
+class ProducerListener : public IPC::Listener {
+ private:
+  void OnChannelConnected(int32_t peer_pid) override {
+    LOG(INFO) << "Producer OnChannelConnected: peer_pid= "<<peer_pid;
+  }
+
+  bool OnMessageReceived(const IPC::Message& message) override {
+    bool handled = true;
+    IPC_BEGIN_MESSAGE_MAP(ProducerListener, message)
+      IPC_MESSAGE_HANDLER(IPCTestMsg_Hi,OnHi);
+      IPC_MESSAGE_UNHANDLED(handled = false);
+    IPC_END_MESSAGE_MAP()
+    LOG(INFO) << "Producer OnMessageReceived: handled= " << handled;
+    return handled;
+  }
+  void OnHi(const std::string& who) {
+    LOG(INFO) << "ProducerListener run: Hi " << who;
+  }
+};
+```
+
+#### `IPC::Channel`
+
+前面有提到过，当前的Legacy IPC的底层是使用Mojo（的MessagePipe）实现的，因此要在多进程下使用Legacy IPC，肯定也要涉及MessagePipe的创建，以及进程间MessagePipe的传递，所以我们基于demo_mojo_multiple_process来实现Legacy IPC的demo。
+
+创建IPC::Channel的方法如下：
+
+```C++
+// 假设我们已经通过某种方法获得了一个MessagePipe的句柄
+mojo::ScopedMessagePipeHandle pipe = ...;
+
 ProducerListener listener;
-std::unique_ptr<IPC::Channel> ipc_channel = IPC::Channel::CreateServer(pipe.release(),&listener,message_loop.task_runner());
+// 创建一个Server端的Channel，在底层使用Mojo的情况下Server和Client是等价的（TODO:需要验证）
+std::unique_ptr<IPC::Channel> ipc_channel =
+  IPC::Channel::CreateServer(pipe.release(),&listener,xxx.task_runner());
 LOG(INFO) << "Producer Connect";
 bool result = ipc_channel->Connect();
 if(result) {
-  LOG(INFO) << "Producer Send: IPCTestMsg_Hello Producer";
+  // 发送消息
   ipc_channel->Send(new IPCTestMsg_Hello("Producer"));
   ipc_channel->Send(new IPCTestMsg_RoutedHello(1,"Producer"));
 }
 ```
 
-demo 见 [demo_ipc.cc](../demo_ipc.cc) 。
+在接收端可以使用同样的方法创建一个IPC::Channel。这样两端就可以通过IPC::Channel接口进行Message的收发了。
+
+可以看到，这里完全可以不使用任何的IPC::MessageFilter或者IPC::MessageRouter，这些都不是使用Legacy IPC所必须的，如果你的Listener需要提供Message分发的能力，你可以在自己的Listener中使用这些类。在demo中有演示他们的使用方法，详见 [demo_ipc.cc](../demo_ipc.cc)。
+
+IPC::Channel 的接口并不复杂，只所以在Chromium中显的比较复杂，是因为Chromium对它进行了太多层的包装，这些都是业务的复杂性，并不是Legacy IPC接口的复杂。
+
+## 总结
+
+以上是Chromium中的所用到的绝大部分IPC机制（还有些由base库提供），希望大家在了解了这些IPC的运行机制之后可以对Chromium的多进程架构及服务化架构有更深的理解。
+
+也希望大家能一起研究Chromium中的基础技术，看到Chromium复杂的业务逻辑背后有趣的设计。
 
 --------------
 
@@ -824,3 +925,5 @@ demo 见 [demo_ipc.cc](../demo_ipc.cc) 。
 * [core - Source](https://source.chromium.org/chromium/chromium/src/+/master:mojo/core/)
 * [Is the "Intro to Mojo & Services" documentation up to date - Google Groups](https://groups.google.com/a/chromium.org/forum/#!topic/services-dev/fLtKFDY105o)
 * [Super Simple Services - Google Docs](https://docs.google.com/document/d/1M0-K0gi1xXO0f_-YKSH2LFVh4RJY-xe9T9VaGFOSXb0/edit#)
+* [Inter-process Communication (IPC) - The Chromium Projects](https://www.chromium.org/developers/design-documents/inter-process-communication)
+* [Multi-process Architecture - The Chromium Projects](https://www.chromium.org/developers/design-documents/multi-process-architecture)
