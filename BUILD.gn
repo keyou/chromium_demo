@@ -74,8 +74,8 @@ executable("demo_mojo_single_process") {
   deps = [
     "//base",
     "//mojo/public",
+    "//mojo/core/embedder",
   ]
-  deps += [ "//services/service_manager:all" ]
 }
 
 executable("demo_mojo_multiple_process") {
@@ -87,8 +87,8 @@ executable("demo_mojo_multiple_process") {
   deps = [
     "//base",
     "//mojo/public",
+    "//mojo/core/embedder",
   ]
-  deps += [ "//services/service_manager:all" ]
 }
 
 executable("demo_mojo_multiple_process_binding") {
@@ -100,12 +100,12 @@ executable("demo_mojo_multiple_process_binding") {
   deps = [
     "//base",
     "//mojo/public",
+    "//mojo/core/embedder",
     ":mojom_test",
     ":mojom_test2",
     ":mojom_test3",
     ":mojom_test4",
   ]
-  deps += [ "//services/service_manager:all" ]
 }
 
 executable("demo_services") {
