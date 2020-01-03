@@ -791,7 +791,7 @@ demo 见 [demo_services.cc](../demo_services.cc) 。
 
 ![chromium multi-process](images/2020-01-03-17-09-31.png)
 
-我们可以看到一下和Legacy IPC相关的信息：
+我们可以看到以下和Legacy IPC相关的信息：
 
 - Browser进程有2个Channel，说明一个进程中可以有多个Channel；
 - 每个Render进程都有一条Legacy IPC和Browser连接；
@@ -898,7 +898,7 @@ if(result) {
 
 可以看到，这里完全可以不使用任何的IPC::MessageFilter或者IPC::MessageRouter，这些都不是使用Legacy IPC所必须的，如果你的Listener需要提供Message分发的能力，你可以在自己的Listener中使用这些类。在demo中有演示他们的使用方法，详见 [demo_ipc.cc](../demo_ipc.cc)。
 
-IPC::Channel 的接口并不复杂，只所以在Chromium中显的比较复杂，是因为Chromium对它进行了太多层的包装，这些都是业务的复杂性，并不是Legacy IPC接口的复杂。
+IPC::Channel 的接口并不复杂，之所以在Chromium中显的比较复杂，是因为Chromium对它进行了太多层的包装，这些都是业务的复杂性，并不是Legacy IPC接口的复杂。
 
 ## 总结
 
