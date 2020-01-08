@@ -18,6 +18,12 @@
 1. `Services`: 一种更高层次的IPC机制，构建于Mojo之上，以`Service`的级别来进行IPC通信，Chromium大量使用这种IPC机制来包装各种服务，用来取代 `Legacy Chrome IPC`，比如device服务，preferences服务，audio服务，viz服务等。
 2. `Legacy Chrome IPC`: 已经不推荐使用的Chrome IPC机制，提供 `IPC::Channel` 接口以及大量的使用宏来定义的 messages 类。目前它底层也是基于 Mojo 来实现的，但是上层接口和旧的 Chrome IPC 保持一致。chromium 中还有很多IPC使用这种方式，但是不应该在新的服务中使用这种机制。可以在[ipc/ipc_message_start.h](https://source.chromium.org/chromium/chromium/src/+/master:ipc/ipc_message_start.h;bpv=1;bpt=0)中查看还有哪些部分在使用这种IPC机制。
 
+### Mojo 在Chromium中的分层
+
+![Chromium Mojo Stack](images/chromium-mojo-layer.png)
+
+在Chromium中，还有两个基础模块使用Mojo，分别是Services和IPC::Channel。
+
 ## 二、Mojo 的设计
 
 在使用 Mojo 之前，先来看一下 Mojo 的设计，这对理解后面的使用至关重要。
