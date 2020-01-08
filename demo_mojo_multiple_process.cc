@@ -129,7 +129,7 @@ void MojoProducer() {
   // Data Pipe transport by MessagePipe
   {
     // DataPipe 内部使用Shared Ｍemory实现
-    // TODO: 研究 base::WritableSharedMemoryRegin
+    // TODO: 研究 base::WritableSharedMemoryRegion
     const char kMessage[] = "DataPipe";
     mojo::ScopedDataPipeProducerHandle producer;
     mojo::ScopedDataPipeConsumerHandle consumer;

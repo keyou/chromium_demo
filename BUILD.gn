@@ -18,6 +18,7 @@ group("all") {
     ":demo_mojo_multiple_process_binding",
     ":demo_services",
     ":demo_ipc",
+    ":demo_memory",
   ]
 }
 
@@ -59,6 +60,16 @@ executable("demo_tasks") {
   ]
 
   defines = ["DEMO_TASK"]
+
+  deps = [
+    "//base",
+  ]
+}
+
+executable("demo_memory") {
+  sources = [
+    "demo_memory.cc",
+  ]
 
   deps = [
     "//base",
