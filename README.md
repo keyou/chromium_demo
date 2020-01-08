@@ -15,6 +15,7 @@ Demo 列表：
 1. `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的binding层；
 1. `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
 1. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
+1. `demo_memory`: 演示使用SharedMemory；
 
 更多文档见 [docs](./docs) 目录。
 
