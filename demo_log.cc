@@ -1,5 +1,6 @@
-#include <base/command_line.h>
-#include <base/logging.h>
+#include "base/command_line.h"
+#include "base/logging.h"
+#include "base/debug/stack_trace.h"
 
 int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
@@ -8,7 +9,7 @@ int main(int argc, char** argv) {
 
   logging::SetLogPrefix("demo");
   logging::SetLogItems(true,false,true,false);
-  // 设置为负数启用VLOG
+  // 设置为负数启用VLOG，在chromium中使用 --v=1 达到同样效果
   logging::SetMinLogLevel(loglevel);
 
   logging::LoggingSettings settings;
@@ -18,6 +19,9 @@ int main(int argc, char** argv) {
   settings.delete_old = logging::APPEND_TO_OLD_LOG_FILE;
   bool logging_res = logging::InitLogging(settings);
   CHECK(logging_res);
+
+  // 主动打印堆栈信息
+  LOG(INFO) << "Stack: " << base::debug::StackTrace().ToString();
 
   LOG(INFO) << "set loglevel to: " << loglevel;
 
