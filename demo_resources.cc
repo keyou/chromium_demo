@@ -28,8 +28,8 @@ int main(int argc, char** argv) {
   ui::RegisterPathProvider();
   
   // 初始化locale,也就是本地化/语言资源包
-  // LOAD_COMMON_RESOURCES 会导致代码去加载 chrome_100_percent.pak，chrome_200_percent.pak，locale/xxx.pak
-  // 这些资源如果不存在的,会报WARNING
+  // LOAD_COMMON_RESOURCES 会导致代码去加载 chrome_100_percent.pak，chrome_200_percent.pak
+  // 这些资源如果不存在的,会报WARNING. 注意我本机是有 locale/xxx.pak 文件的
   // 这里传入了空的语言类型，因为在Linux/Android等系统上这个值是没有用的，代码会从系统获取语言类型
   // 具体逻辑见 l10n_util::GetApplicationLocaleInternal
   ui::ResourceBundle::InitSharedInstanceWithLocale(
@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
   // 读取语言内容
   // 本来应该读不到的，因为语言资源包里没有这些资源，但是内部代码为了单元测试
   // 添加了failback到数据资源包的逻辑，所以这里也能读取出来数据资源
+  // 注意我本机是有 locale/xxx.pak 文件的(因为编译过content_shell)
   base::string16 l10n_text1 = l10n_util::GetStringUTF16(IDS_TEXT1);
   base::string16 l10n_text2 = l10n_util::GetStringUTF16(IDS_TEXT2);
 
