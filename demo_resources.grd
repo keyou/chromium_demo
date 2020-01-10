@@ -51,8 +51,8 @@
       information resources you reference an .rc file containing them.-->
     <!-- </structures> -->
   
-    <!-- messages用来定义字符串 -->
-    <messages> <!--first_id="31000"-->
+    <!-- messages用来定义字符串,fallback_to_english可以避免使用伪翻译,而使用英语 -->
+    <messages> <!--first_id="31000"--> <!--fallback_to_english="true"-->
       <!-- TODO add all of your "string table" messages here.  Remember to
       change nontranslateable parts of the messages into placeholders (using the
       <ph> element).  You can also use the 'grit add' tool to help you identify
