@@ -6,6 +6,9 @@ import("//services/catalog/public/tools/catalog.gni")
 import("//services/service_manager/public/cpp/service.gni")
 import("//services/service_manager/public/service_manifest.gni")
 
+# for demo_resources
+import("//tools/grit/grit_rule.gni")
+
 group("all") {
   testonly = true
   deps = [
@@ -19,6 +22,7 @@ group("all") {
     ":demo_services",
     ":demo_ipc",
     ":demo_memory",
+    ":demo_resources",
   ]
 }
 
@@ -73,6 +77,36 @@ executable("demo_memory") {
 
   deps = [
     "//base",
+  ]
+}
+
+executable("demo_resources") {
+  sources = [
+    "demo_resources.cc",
+  ]
+
+  deps = [
+    ":demo_resources_grit",
+    "//base",
+    "//ui/base",
+  ]
+}
+
+grit("demo_resources_grit") {
+  source = "demo_resources.grd"
+  # 设置为""可以使用grd文件中的first_ids_file
+  # resource_ids = ""
+  resource_ids = "demo_resource_ids"
+  outputs = [
+    "grit/demo_gen_resources.h",
+    "grit/demo_gen_resources_map.h",
+    "grit/demo_gen_resources_map.cc",
+    "grit/demo_gen_en_resources.pak",
+    "grit/demo_gen_zh_resources.pak",
+    "grit/demo_gen_en_resources.rc",
+    "grit/demo_gen_zh_resources.rc",
+    "grit/demo_gen_zh_translateable_resources.rc",
+    "grit/demo_gen_zh_nontranslateable_resources.rc",
   ]
 }
 

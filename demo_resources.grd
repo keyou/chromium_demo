@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grit base_dir="." latest_public_release="0" current_release="1"
+      source_lang_id="en"> <!-- first_ids_file="demo_resource_ids" -->
+  <outputs>
+    <!-- TODO add each of your output files.  Modify the three below, and add
+    your own for your various languages.  See the user's guide for more
+    details.
+    Note that all output references are relative to the output directory
+    which is specified at build time. -->
+    <!-- 这个输出是必要的,否则不容易引用资源 -->
+    <output filename="grit/demo_gen_resources.h" type="rc_header" >
+    <!-- 这是为了去除生成头文件中的altres.h,这个文件是windows下的 -->
+      <emit emit_type='prepend'></emit>
+    </output>
+    <!-- 这也是必要的,pak是chromium使用的资源格式,用来存储资源数据 -->
+    <output filename="grit/demo_gen_en_resources.pak" type="data_package" lang="en" />
+    <output filename="grit/demo_gen_zh_resources.pak" type="data_package" lang="zh-CN" />
+    
+    <!-- 以下都不是必要的,根据需要选择是否生成 -->
+    <output filename="grit/demo_gen_resources_map.h" type="resource_map_header" />
+    <output filename="grit/demo_gen_resources_map.cc" type="resource_map_source" />
+    <!-- rc文件是windows使用的资源定义文件 -->
+    <output filename="grit/demo_gen_en_resources.rc" type="rc_all" lang="en" />
+    <output filename="grit/demo_gen_zh_resources.rc" type="rc_all" lang="zh-CN" />
+    <!-- TODO: 为什么这两个没有作用? -->
+    <output filename="grit/demo_gen_zh_translateable_resources.rc" type="rc_translateable" lang="zh-CN" />
+    <output filename="grit/demo_gen_zh_nontranslateable_resources.rc" type="rc_nontranslateable"/>
+  </outputs>
+
+  <translations>
+    <!-- TODO add references to each of the XTB files (from the Translation
+    Console) that contain translations of messages in your project.  Each
+    takes a form like <file path="english.xtb" />.  Remember that all file
+    references are relative to this .grd file. -->
+  </translations>
+
+  <!--这里为了演示允许伪翻译(默认行为),在正式项目中要设置为false !!!-->
+  <release seq="1" allow_pseudo="true"> 
+  
+    <!-- 总共有三类资源,inlcudes可以包含任意存储在其他文件中的资源,比如图片,配置文件等 -->
+    <!-- <includes> -->
+      <!-- TODO add a list of your included resources here, e.g. BMP and GIF
+      resources. -->
+      <!-- <include type="TEXT_TYPE" name="TEXT_NAME" file></include> -->
+    <!-- </includes> -->
+  
+    <!-- structures可以包含所有结构化的资源,参考 tools/grit/grit/testdata/simple-input.xml -->
+    <!-- <structures> -->
+      <!-- TODO add a list of all your structured resources here, e.g. HTML
+      templates, menus, dialogs etc.  Note that for menus, dialogs and version
+      information resources you reference an .rc file containing them.-->
+    <!-- </structures> -->
+  
+    <!-- messages用来定义字符串 -->
+    <messages> <!--first_id="31000"-->
+      <!-- TODO add all of your "string table" messages here.  Remember to
+      change nontranslateable parts of the messages into placeholders (using the
+      <ph> element).  You can also use the 'grit add' tool to help you identify
+      nontranslateable parts and create placeholders for them. -->
+      <if expr="lang == 'en'">
+        <message name="IDS_TEXT1" translateable="false" desc="test text" meaning="test meaning" internal_comment="this is just for test">
+          This is a text from .grd file.
+        </message>
+      </if>
+      <if expr="lang == 'zh-CN'">
+        <message name="IDS_TEXT1" translateable="false" desc="test text" meaning="test meaning" internal_comment="this is just for test">
+          这是来自.grd文件的文本.
+        </message>
+      </if>
+      <message name="IDS_TEXT2">
+        '''    This is the first line prefixed with 4 white space.
+               This is the <ph name="INDEX">%s<ex>fourth</ex></ph> line.    '''
+      </message>
+      <message name="IDS_TEXT3" translateable="false">
+        Hello,Text3.
+      </message>
+      <!-- message默认是translateable的,如果不设置为false,grit会使用内部的算法进行伪翻译,翻译出来的内容看不懂. -->
+      <message name="IDS_TEXT4" translateable="true">
+        Hello,Text4.
+      </message>
+    </messages>
+  </release>
+</grit>
