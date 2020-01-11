@@ -19,28 +19,31 @@
 #include "demo/demo_resources/grit/demo_gen_strings_map.h"
 
 void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
-  // 因为InitSharedInstanceWithLocale只能执行一次，因此这里先清除之前的数据
+  // 因为InitSharedInstanceWithxxx只能执行一次，因此这里先清除之前的数据
   if (ui::ResourceBundle::HasSharedInstance())
     ui::ResourceBundle::CleanupSharedInstance();
 
   // 初始化locale,也就是本地化/语言资源包
-  // LOAD_COMMON_RESOURCES 会导致代码去加载
+  // 会导致代码去加载
   // chrome_100_percent.pak，chrome_200_percent.pak，locale/xxx.pak
-  // 前2个资源如果不存在的,会报WARNING. 我本机是有 locale/xxx.pak 文件
+  // 前2个资源如果不存在的,会报WARNING. 最后一个资源我本机是有的，如果你本地没有会崩溃。
   // 这里传入了空的语言类型，因为在Linux/Android等系统上这个值是没有用的，代码会从系统获取语言类型
   // 具体逻辑见 l10n_util::GetApplicationLocaleInternal
-  ui::ResourceBundle::InitSharedInstanceWithLocale(
-      "", nullptr, ui::ResourceBundle::LOAD_COMMON_RESOURCES);
-
-  ui::ResourceBundle& bundle = ui::ResourceBundle::GetSharedInstance();
-
+  // 实际项目中应该使用这个进行初始化
+  // ui::ResourceBundle::InitSharedInstanceWithLocale(
+  //     "", nullptr, ui::ResourceBundle::LOAD_COMMON_RESOURCES);
+  
   // 加载数据资源包
   base::FilePath resource_path;
   if (base::PathService::Get(base::DIR_MODULE, &resource_path))
     resource_path = resource_path.AppendASCII(resource_file);
-  bundle.AddDataPackFromPath(resource_path, ui::SCALE_FACTOR_NONE);
+  ui::ResourceBundle::InitSharedInstanceWithPakPath(resource_path);
 
-  std::cout << "Load: " << resource_file <<std::endl;
+  ui::ResourceBundle& bundle = ui::ResourceBundle::GetSharedInstance();
+  // 你也可以使用这个方法来加载其他的pak资源
+  // bundle.AddDataPackFromPath(resource_path, ui::SCALE_FACTOR_NONE);
+
+  std::cout << "Load: " << resource_file << std::endl;
 
   // 遍历demo_gen_resources.pak资源
   // text6会显示类似乱码的样子，因为grit使用了伪翻译，详见demo_resources.grd文件
