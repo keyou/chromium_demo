@@ -1,0 +1,11 @@
+{
+  "SRCDIR": ".",
+  # 31000之后的范围留给第三方，所以我们从31000开始
+  "demo_resources.grd": {
+    "messages": [31000],
+  },
+
+  "demo_strings.grd": {
+    "messages": [32000],
+  },
+}

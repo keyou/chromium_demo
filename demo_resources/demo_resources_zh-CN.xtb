@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="zh-CN">
+  <translation id="IDS_TEXT2">xtb:你好，文本2带有4个空格前缀。（use_name_for_id=true）</translation>
+  <translation id="4208311333437884339">xtb:你好，文本4。（可翻译）</translation>
+  <translation id="5236176051987501557">xtb:你好，文本5。这是第<ph name="INDEX"/>个文本。</translation>
+</translationbundle>

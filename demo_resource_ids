@@ -1,7 +1,0 @@
-{
-  "SRCDIR": "..",
-
-  "demo/demo_resources.grd": {
-    "messages": [31000],
-  },
-}

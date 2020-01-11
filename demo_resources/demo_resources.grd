@@ -13,18 +13,18 @@
       <emit emit_type='prepend'></emit>
     </output>
     <!-- 这也是必要的,pak是chromium使用的资源格式,用来存储资源数据 -->
-    <output filename="grit/demo_gen_en_resources.pak" type="data_package" lang="en" />
-    <output filename="grit/demo_gen_zh_resources.pak" type="data_package" lang="zh-CN" />
+    <output filename="grit/demo_gen_resources_en.pak" type="data_package" lang="en" />
+    <output filename="grit/demo_gen_resources_zh-CN.pak" type="data_package" lang="zh-CN" />
     
     <!-- 以下都不是必要的,根据需要选择是否生成 -->
     <output filename="grit/demo_gen_resources_map.h" type="resource_map_header" />
     <output filename="grit/demo_gen_resources_map.cc" type="resource_map_source" />
     <!-- rc文件是windows使用的资源定义文件 -->
-    <output filename="grit/demo_gen_en_resources.rc" type="rc_all" lang="en" />
-    <output filename="grit/demo_gen_zh_resources.rc" type="rc_all" lang="zh-CN" />
-    <!-- TODO: 为什么这两个没有作用? -->
-    <output filename="grit/demo_gen_zh_translateable_resources.rc" type="rc_translateable" lang="zh-CN" />
-    <output filename="grit/demo_gen_zh_nontranslateable_resources.rc" type="rc_nontranslateable"/>
+    <output filename="grit/demo_gen_resources_en.rc" type="rc_all" lang="en" />
+    <output filename="grit/demo_gen_resources_zh-CN.rc" type="rc_all" lang="zh-CN" />
+    <!-- translateable 只在使用xtb时才有用 -->
+    <output filename="grit/demo_gen_resources_translateable_zh-CN.rc" type="rc_translateable" lang="zh-CN" />
+    <output filename="grit/demo_gen_resources_nontranslateable_zh-CN.rc" type="rc_nontranslateable" lang="zh-CN"/>
   </outputs>
 
   <translations>
@@ -32,6 +32,7 @@
     Console) that contain translations of messages in your project.  Each
     takes a form like <file path="english.xtb" />.  Remember that all file
     references are relative to this .grd file. -->
+    <file path="demo_resources_zh-CN.xtb" lang="zh-CN"/>
   </translations>
 
   <!--这里为了演示允许伪翻译(默认行为),在正式项目中要设置为false !!!-->
@@ -57,26 +58,38 @@
       change nontranslateable parts of the messages into placeholders (using the
       <ph> element).  You can also use the 'grit add' tool to help you identify
       nontranslateable parts and create placeholders for them. -->
-      <if expr="lang == 'en'">
+      <if expr="lang != 'zh-CN'">
         <message name="IDS_TEXT1" translateable="false" desc="test text" meaning="test meaning" internal_comment="this is just for test">
-          This is a text from .grd file.
+          grd:Hello,Text1. This is a text from .grd file.
         </message>
       </if>
       <if expr="lang == 'zh-CN'">
         <message name="IDS_TEXT1" translateable="false" desc="test text" meaning="test meaning" internal_comment="this is just for test">
-          这是来自.grd文件的文本.
+          grd:你好，文本1. 这是来自.grd文件的文本.
         </message>
       </if>
-      <message name="IDS_TEXT2">
-        '''    This is the first line prefixed with 4 white space.
-               This is the <ph name="INDEX">%s<ex>fourth</ex></ph> line.    '''
+      <message name="IDS_TEXT2" use_name_for_id="true">
+        '''    grd:Hello,Text2 prefixed with 4 whitespace.(use_name_for_id=true)    '''
       </message>
       <message name="IDS_TEXT3" translateable="false">
-        Hello,Text3.
+        grd:Hello,Text3.(not translateable)
       </message>
-      <!-- message默认是translateable的,如果不设置为false,grit会使用内部的算法进行伪翻译,翻译出来的内容看不懂. -->
       <message name="IDS_TEXT4" translateable="true">
-        Hello,Text4.
+        grd:Hello,Text4.(translateable)
+      </message>
+      <message name="IDS_TEXT5">
+        grd:Hello,Text5. It is the <ph name="INDEX">%s<ex>fourth</ex></ph> text.
+      </message>
+      <!--
+        message默认是translateable的,如果不提供翻译,grit会使用内部的算法进行伪翻译,翻译出来的内容看不懂. 
+        可以有几种方法避免乱码（伪翻译）：
+        1. 在xtb中提供翻译；
+        2. 设置 translateable="true" 禁止翻译；
+        3. 在 mesages 标签中设置 fallback_to_english="true" 当没有翻译时使用英文；
+        4. 在release标签中设置 allow_pseudo="false" 禁止伪翻译；
+      -->
+      <message name="IDS_TEXT6">
+        grd:Hello,Text6.(translateable)
       </message>
     </messages>
   </release>

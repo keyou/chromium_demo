@@ -1,0 +1,80 @@
+
+# for demo_resources
+import("//tools/grit/grit_rule.gni")
+import("//tools/grit/repack.gni")
+
+executable("demo_resources") {
+  sources = [
+    "demo_resources.cc",
+  ]
+
+  deps = [
+    ":demo_resources_pak",
+    "//base",
+    "//ui/base",
+    # 因为使用了xxx_map.cc，因此需要添加对他们的直接依赖
+    ":demo_resources_grit",
+    ":demo_strings_grit",
+  ]
+}
+
+grit("demo_resources_grit") {
+  source = "demo_resources.grd"
+  # 设置为""可以使用grd文件中的first_ids_file
+  # resource_ids = ""
+  resource_ids = "demo_resource_ids"
+  outputs = [
+    "grit/demo_gen_resources.h",
+    "grit/demo_gen_resources_map.h",
+    "grit/demo_gen_resources_map.cc",
+    "grit/demo_gen_resources_en.pak",
+    "grit/demo_gen_resources_zh-CN.pak",
+    "grit/demo_gen_resources_en.rc",
+    "grit/demo_gen_resources_zh-CN.rc",
+    "grit/demo_gen_resources_translateable_zh-CN.rc",
+    "grit/demo_gen_resources_nontranslateable_zh-CN.rc",
+  ]
+}
+
+grit("demo_strings_grit") {
+  source = "demo_strings.grd"
+  resource_ids = "demo_resource_ids"
+  outputs = [
+    "grit/demo_gen_strings.h",
+    "grit/demo_gen_strings_map.h",
+    "grit/demo_gen_strings_map.cc",
+    "grit/demo_gen_strings_en.pak",
+    "grit/demo_gen_strings_zh-CN.pak",
+  ]
+}
+
+repack("demo_resources_pak_en") {
+  sources = [
+    "$root_gen_dir/demo/demo_resources/grit/demo_gen_resources_en.pak",
+    "$root_gen_dir/demo/demo_resources/grit/demo_gen_strings_en.pak",
+  ]
+  output = "$root_gen_dir/demo/demo_resources/grit/demo_gen_pak_en.pak"
+  deps = [
+    ":demo_resources_grit",
+    ":demo_strings_grit",
+  ]
+}
+
+repack("demo_resources_pak_zh-CN") {
+  sources = [
+    "$root_gen_dir/demo/demo_resources/grit/demo_gen_resources_zh-CN.pak",
+    "$root_gen_dir/demo/demo_resources/grit/demo_gen_strings_zh-CN.pak",
+  ]
+  output = "$root_gen_dir/demo/demo_resources/grit/demo_gen_pak_zh-CN.pak"
+  deps = [
+    ":demo_resources_grit",
+    ":demo_strings_grit",
+  ]
+}
+
+group("demo_resources_pak") {
+  deps = [
+    ":demo_resources_pak_en",
+    ":demo_resources_pak_zh-CN",
+  ]
+}

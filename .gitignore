@@ -67,3 +67,6 @@ cscope.po.out
 
 
 # End of https://www.gitignore.io/api/c++,tags,code,ninja
+
+*.xmb
+
