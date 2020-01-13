@@ -26,13 +26,14 @@ void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
   // 初始化locale,也就是本地化/语言资源包
   // 会导致代码去加载
   // chrome_100_percent.pak，chrome_200_percent.pak，locale/xxx.pak
-  // 前2个资源如果不存在的,会报WARNING. 最后一个资源我本机是有的，如果你本地没有会崩溃。
+  // 前2个资源如果不存在的,会报WARNING.
+  // 最后一个资源我本机是有的，如果你本地没有会崩溃。
   // 这里传入了空的语言类型，因为在Linux/Android等系统上这个值是没有用的，代码会从系统获取语言类型
   // 具体逻辑见 l10n_util::GetApplicationLocaleInternal
   // 实际项目中应该使用这个进行初始化
   // ui::ResourceBundle::InitSharedInstanceWithLocale(
   //     "", nullptr, ui::ResourceBundle::LOAD_COMMON_RESOURCES);
-  
+
   // 加载数据资源包
   base::FilePath resource_path;
   if (base::PathService::Get(base::DIR_MODULE, &resource_path))
@@ -41,6 +42,10 @@ void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
 
   ui::ResourceBundle& bundle = ui::ResourceBundle::GetSharedInstance();
   // 你也可以使用这个方法来加载其他的pak资源
+  // SCALE_FATOR
+  // 缩放因子，用来支持高分屏等情况，用户可以根据当前显示的情况选择使用拥有哪一个缩放因子的资源
+  // 在初始化的时候，大多数情况会支持SCALE_FACTOR_100P和SCALE_FACTOR_200P，在IOS上还支持SCALE_FACTOR_300P
+  // 具有相同ID并且SCALE_FATOR相同的资源只能有一个，否则会导致崩溃
   // bundle.AddDataPackFromPath(resource_path, ui::SCALE_FACTOR_NONE);
 
   std::cout << "Load: " << resource_file << std::endl;
@@ -48,7 +53,6 @@ void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
   // 遍历demo_gen_resources.pak资源
   // text6会显示类似乱码的样子，因为grit使用了伪翻译，详见demo_resources.grd文件
   // 这里故意保持乱码以便读者注意这个问题
-  // for(auto resource : kDemoGenResources) {
   for (size_t i = 0; i < kDemoGenResourcesSize; i++) {
     auto resource = kDemoGenResources[i];
 
