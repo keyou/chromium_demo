@@ -2,7 +2,7 @@
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/message_loop/message_loop.h"
-#include "base/task/task_scheduler/task_scheduler.h"
+#include "base/task/thread_pool/thread_pool_instance.h"
 
 int main(int argc, char** argv) {
   // 类似C++的 atexit() 方法，用于管理程序的销毁逻辑，base::Singleton类依赖它
@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
   // 创建主消息循环
   base::MessageLoop message_loop;
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
-  base::TaskScheduler::CreateAndStartWithDefaultParams("Demo");
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
   // 复制当前文件来创建新的demo
   LOG(INFO) << "hello,world!";

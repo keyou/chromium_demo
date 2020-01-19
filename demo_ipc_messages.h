@@ -8,7 +8,7 @@
 // 使用 IPCTestMsgStart 来测试，它不能随意命名，必须存在于 ipc/ipc_message_start.h 中
 // 详情见 ipc/ipc_message_start.h 文件头的解释
 // 关于 IPC 的介绍见 http://www.chromium.org/developers/design-documents/inter-process-communication
-#define IPC_MESSAGE_START IPCTestMsgStart
+#define IPC_MESSAGE_START TestMsgStart
 
 IPC_MESSAGE_CONTROL1(IPCTestMsg_Hello,std::string)
 IPC_MESSAGE_CONTROL1(IPCTestMsg_Hi,std::string)

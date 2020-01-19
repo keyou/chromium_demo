@@ -17,12 +17,12 @@
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/message_loop/message_loop.h"
-#include "base/task/task_scheduler/task_scheduler.h"
+#include "base/task/thread_pool/thread_pool_instance.h"
 
 // For SharedMemoryTest
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/writable_shared_memory_region.h"
-#include "base/sys_info.h"
+#include "base/system/sys_info.h"
 
 // For MemoryPressureTest
 #include "base/memory/memory_pressure_monitor.h"
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
   // 创建主消息循环
   base::MessageLoop message_loop;
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
-  base::TaskScheduler::CreateAndStartWithDefaultParams("Demo");
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
   SharedMemoryTest();
   //MemoryPresureTest();

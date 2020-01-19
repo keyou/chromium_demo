@@ -2,7 +2,7 @@
 #include <base/logging.h>
 #include <base/message_loop/message_loop.h>
 #include <base/task/post_task.h>
-#include <base/task/task_scheduler/task_scheduler.h>
+#include <base/task/thread_pool/thread_pool_instance.h>
 
 #include <base/threading/thread.h>
 #include <mojo/core/embedder/embedder.h>
@@ -211,7 +211,7 @@ void MojoProducer() {
     LOG(INFO) << "send: " << kMessage;
 
     // 延迟5s再次发送消息
-    base::MessageLoopCurrent::Get()->task_runner()->PostDelayedTask(
+    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
         FROM_HERE,
         base::BindOnce(
             [](mojo::ScopedMessagePipeHandle pipe) {
@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
   mojo::core::Init();
   base::Thread ipc_thread("ipc!");
   ipc_thread.StartWithOptions(
-      base::Thread::Options(base::MessageLoop::TYPE_IO, 0));
+      base::Thread::Options(base::MessagePumpType::IO, 0));
 
   // 初始化mojo的后台线程，用来异步收发消息存储到缓存
   mojo::core::ScopedIPCSupport ipc_support(

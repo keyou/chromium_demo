@@ -3,7 +3,7 @@
 #include "base/logging.h"
 #include "base/message_loop/message_loop.h"
 #include "base/path_service.h"
-#include "base/task/task_scheduler/task_scheduler.h"
+#include "base/task/thread_pool/thread_pool_instance.h"
 
 #include <iostream>
 
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
   // 创建主消息循环
   base::MessageLoop message_loop;
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
-  base::TaskScheduler::CreateAndStartWithDefaultParams("Demo");
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
   // 提供 DIR_LOCALE 路径,用于寻找资源
   ui::RegisterPathProvider();

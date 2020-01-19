@@ -8,7 +8,7 @@
 #include "base/logging.h"
 #include "base/message_loop/message_loop.h"
 #include "base/task/post_task.h"
-#include "base/task/task_scheduler/task_scheduler.h"
+#include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/process/launch.h"
 #include "base/threading/thread.h"
 
@@ -287,13 +287,13 @@ int main(int argc, char** argv) {
   LOG(INFO) <<"Command Line: "<< base::CommandLine::ForCurrentProcess()->GetCommandLineString();
   
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
-  base::TaskScheduler::CreateAndStartWithDefaultParams("Demo");
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
   
   // Init会创建一个sokcetpair和一条pipe，共4个fd
   mojo::core::Init();
   base::Thread ipc_thread("ipc!");
   ipc_thread.StartWithOptions(
-      base::Thread::Options(base::MessageLoop::TYPE_IO, 0));
+      base::Thread::Options(base::MessagePumpType::IO, 0));
 
   // 初始化mojo的后台线程，用来异步收发消息存储到缓存
   mojo::core::ScopedIPCSupport ipc_support(
@@ -309,6 +309,6 @@ int main(int argc, char** argv) {
   }
 
   ipc_thread.Stop();
-  base::TaskScheduler::GetInstance()->Shutdown();
+  base::ThreadPoolInstance::Get()->Shutdown();
   return 0;
 }

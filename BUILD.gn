@@ -2,9 +2,6 @@
 import("//mojo/public/tools/bindings/mojom.gni")
 
 # for service
-import("//services/catalog/public/tools/catalog.gni")
-import("//services/service_manager/public/cpp/service.gni")
-import("//services/service_manager/public/service_manifest.gni")
 
 group("all") {
   testonly = true
@@ -97,6 +94,8 @@ executable("demo_mojo_multiple_process") {
   ]
 
   deps = [
+    ":mojom_test",
+    ":mojom_test2",
     "//base",
     "//mojo/public",
     "//mojo/core/embedder",
@@ -127,13 +126,15 @@ executable("demo_services") {
   ]
 
   deps = [
-    "//base",
-    "//mojo/public",
-    "//services/service_manager/embedder",
     ":mojom_test_service",
-    ":test_service_catalog_source",
+    "//base",
+    #TODO: 查明为什么这里必须显式依赖base_static，它明明已经作为base的public_deps了，难道public_deps对静态库（base_static）无效？
+    "//base:base_static",
+    "//mojo/public",
+    "//services/service_manager",
+    "//services/service_manager/embedder",
+    "//services/service_manager/public/cpp/service_executable:support"
   ]
-  deps += [ "//services/service_manager:all" ]
 }
 
 executable("demo_ipc") {
@@ -147,6 +148,7 @@ executable("demo_ipc") {
 
   deps = [
     "//base",
+    "//base:base_static",
     "//mojo/public",
     "//services/service_manager/embedder",
   ]
@@ -184,27 +186,27 @@ mojom("mojom_test_service") {
   ]
 }
 
-service_manifest("test_service_manifest") {
-  name = "test_service"
-  source = "mojom/test_service_manifest.json"
-}
+# service_manifest("test_service_manifest") {
+#   name = "test_service"
+#   source = "mojom/test_service_manifest.json"
+# }
 
-service_manifest("consumer_service_manifest") {
-  name = "consumer_service"
-  source = "mojom/consumer_service_manifest.json"
-}
+# service_manifest("consumer_service_manifest") {
+#   name = "consumer_service"
+#   source = "mojom/consumer_service_manifest.json"
+# }
 
-catalog("test_service_catalog") {
-  embedded_services = [ 
-    ":test_service_manifest",
-    ":consumer_service_manifest"
-  ]
-}
+# catalog("test_service_catalog") {
+#   embedded_services = [ 
+#     ":test_service_manifest",
+#     ":consumer_service_manifest"
+#   ]
+# }
 
-catalog_cpp_source("test_service_catalog_source") {
-  catalog = ":test_service_catalog"
-  generated_function_name = "demo::services::CreateTestServiceCatalog"
-}
+# catalog_cpp_source("test_service_catalog_source") {
+#   catalog = ":test_service_catalog"
+#   generated_function_name = "demo::services::CreateTestServiceCatalog"
+# }
 
 
 # catalog("consumer_service_catalog") {

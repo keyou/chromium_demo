@@ -3,6 +3,7 @@
 #include "base/debug/stack_trace.h"
 
 int main(int argc, char** argv) {
+  // 使用log以来它
   base::CommandLine::Init(argc, argv);
 
   int loglevel = -1;
@@ -13,8 +14,8 @@ int main(int argc, char** argv) {
   logging::SetMinLogLevel(loglevel);
 
   logging::LoggingSettings settings;
-  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
-  settings.log_file = nullptr;
+  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG | logging::LOG_TO_STDERR;
+  settings.log_file_path = nullptr;
   settings.lock_log = logging::DONT_LOCK_LOG_FILE;
   settings.delete_old = logging::APPEND_TO_OLD_LOG_FILE;
   bool logging_res = logging::InitLogging(settings);

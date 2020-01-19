@@ -1,5 +1,6 @@
 #include <base/logging.h>
 #include "base/command_line.h"
+#include "base/message_loop/message_loop.h"
 #include <base/threading/thread.h>
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
@@ -19,7 +20,7 @@ int main(int argc, char** argv) {
   mojo::core::Init();
   base::Thread ipc_thread("ipc!");
   ipc_thread.StartWithOptions(
-      base::Thread::Options(base::MessageLoop::TYPE_IO, 0));
+      base::Thread::Options(base::MessagePumpType::IO, 0));
 
   // As long as this object is alive, all Mojo API surface relevant to IPC
   // connections is usable, and message pipes which span a process boundary will
