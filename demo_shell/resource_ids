@@ -1,0 +1,8 @@
+{
+  "SRCDIR": ".",
+  # 31000之后的范围留给第三方，所以我们从31000开始
+  "demo_shell_resources.grd": {
+    "includes": [31000],
+  },
+
+}

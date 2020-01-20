@@ -17,6 +17,7 @@ group("all") {
     ":demo_ipc",
     ":demo_memory",
     "demo_resources",
+    "demo_shell"
   ]
 }
 

@@ -1,0 +1,212 @@
+import("//build/config/jumbo.gni")
+import("//build/util/process_version.gni")
+import("//build/util/version.gni")
+import("//third_party/icu/config.gni")
+import("//tools/v8_context_snapshot/v8_context_snapshot.gni")
+import("//tools/grit/grit_rule.gni")
+import("//tools/grit/repack.gni")
+
+assert(is_android || is_linux)
+
+process_version("demo_webview_version_header") {
+  template_file = "//demo/demo_shell/version.h.in"
+  sources = [
+    "//chrome/VERSION",
+  ]
+  output = "$target_gen_dir/version.h"
+  extra_args = [
+    "-e",
+    "VERSION_FULL=\"%s.%s.%s.%s\" % (MAJOR,MINOR,BUILD,PATCH)",
+  ]
+}
+
+if(is_android)
+{
+    group("demo_shell") {
+        testonly = true
+        deps = [
+            "android:demo_shell_webview"
+        ]
+    }
+}
+else
+{
+    executable("demo_shell") {
+        testonly = true
+        sources = [
+            "app/demo_shell_main.cc",
+        ]
+
+        deps = [
+            ":demo_content_shell_lib",
+            ":pak",
+        ]
+    }
+}
+
+
+jumbo_static_library("demo_content_shell_lib") {
+    testonly = true
+    sources = [
+        # app
+        "app/demo_shell_content_main_delegate.cc",
+        "app/demo_shell_content_main_delegate.h",
+        
+        # browser
+        # "browser/demo_shell_browser_main.cc",
+        # "browser/demo_shell_browser_main.h",
+        "browser/demo_shell_content_browser_client.cc",
+        "browser/demo_shell_content_browser_client.h",
+        "browser/demo_shell_browser_main_parts.cc",
+        "browser/demo_shell_browser_main_parts.h",
+        "browser/shell.h",
+        "browser/shell.cc",
+        "browser/demo_shell_browser_context.cc",
+        "browser/demo_shell_browser_context.h",
+        "browser/demo_shell_download_manager_delegate.cc",
+        "browser/demo_shell_download_manager_delegate.h",
+        "browser/demo_shell_permission_manager.h",
+        "browser/demo_shell_permission_manager.cc",
+
+
+
+        # common
+        # content_client实现类
+        "common/demo_shell_content_client.cc",
+        "common/demo_shell_content_client.h",
+        "common/demo_shell_switches.h",
+        "common/demo_shell_switches.cc",
+        # "common/demo_shell_origin_trial_policy.cc",
+        # "common/demo_shell_origin_trial_policy.h",
+
+        #render
+        "renderer/demo_shell_content_renderer_client.h",
+        "renderer/demo_shell_content_renderer_client.cc",
+        #gpu
+    ]
+
+    deps = [
+        "//base",
+        
+        #breakpad
+        "//components/crash/content/app",
+        "//components/keyed_service/content",
+
+
+
+        # UI
+        "//ui/base",
+        "//ui/base/clipboard",
+        "//ui/base/ime/init",
+        "//ui/display",
+        "//ui/events:events_base",
+        "//ui/gfx",
+        "//ui/gfx/geometry",
+        "//ui/gfx/ipc",
+        "//ui/gfx/ipc/geometry",
+        "//ui/gfx/ipc/skia",
+        "//ui/gl",
+        "//ui/platform_window",
+        "//url",
+
+        "//content/test:test_support",
+        ":demo_webview_version_header",
+    ]
+
+    public_deps = [
+        
+        #如下做法会将所有的Content API 向外暴露
+        "//content/public/app:both",
+        "//content/public/browser",
+        "//content/public/child",
+        "//content/public/common",
+        "//content/public/gpu",
+        "//content/public/renderer",
+        "//content/public/utility",
+
+
+    ]
+
+    if (toolkit_views) {
+        deps += [ 
+            "//ui/views",
+            "//ui/resources",
+            "//ui/views:test_support",
+            "//ui/views/controls/webview",
+            "//ui/wm:test_support",
+        ]
+        sources += [
+            "browser/shell_views.cc",
+        ]
+    }
+
+    if (use_aura) {
+        deps += [
+        "//ui/aura",
+        "//ui/aura:test_support",
+        "//ui/events",
+        "//ui/strings",
+        "//ui/wm",
+        ]
+        sources += [
+        "browser/demo_shell_platform_data_aura.h",
+        "browser/demo_shell_platform_data_aura.cc",
+        ]
+    }
+
+}
+
+grit("demo_shell_resources_grit") {
+    visibility = [ ":*" ]
+    resource_ids = "resource_ids"
+    source = "demo_shell_resources.grd"
+    outputs = [
+        "grit/demo_shell_resources.h",
+        "demo_shell_resources.pak",
+    ]
+}
+
+repack("pak") {
+  testonly = true
+  sources = [
+    "$root_gen_dir/content/app/resources/content_resources_100_percent.pak",
+    "$root_gen_dir/content/browser/tracing/tracing_resources.pak",
+    "$root_gen_dir/content/content_resources.pak",
+    "$root_gen_dir/mojo/public/js/mojo_bindings_resources.pak",
+    "$root_gen_dir/net/net_resources.pak",
+    "$root_gen_dir/third_party/blink/public/resources/blink_resources.pak",
+    "$root_gen_dir/third_party/blink/public/resources/blink_scaled_resources_100_percent.pak",
+    "$root_gen_dir/third_party/blink/public/strings/blink_strings_en-US.pak",
+    "$root_gen_dir/ui/resources/ui_resources_100_percent.pak",
+    "$root_gen_dir/ui/resources/webui_resources.pak",
+    "$root_gen_dir/ui/strings/app_locale_settings_en-US.pak",
+    "$root_gen_dir/ui/strings/ui_strings_en-US.pak",
+
+    "$root_gen_dir/demo/demo_shell/demo_shell_resources.pak",
+
+  ]
+
+  deps = [
+    ":demo_shell_resources_grit",
+    "//content:resources",
+    "//content/app/resources",
+    "//content/browser/tracing:resources",
+    "//mojo/public/js:resources",
+    "//net:net_resources",
+    "//third_party/blink/public:resources",
+    "//third_party/blink/public:scaled_resources_100_percent",
+    "//third_party/blink/public/strings",
+    "//ui/resources",
+    "//ui/strings",
+  ]
+
+  if (toolkit_views) {
+    deps += [ "//ui/views/resources" ]
+    sources +=
+        [ "$root_gen_dir/ui/views/resources/views_resources_100_percent.pak" ]
+  }
+  output = "$root_out_dir/demo_shell.pak"
+}
+
+
+

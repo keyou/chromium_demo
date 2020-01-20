@@ -1,0 +1,278 @@
+import("//build/config/android/config.gni")
+import("//build/config/android/rules.gni")
+import("//third_party/icu/config.gni")
+import("//tools/v8_context_snapshot/v8_context_snapshot.gni")
+
+demo_shell_webview_manifest = "$target_gen_dir/AndroidManifest.xml"
+
+jinja_template("demo_shell_webview_manifest") {
+  input = "demo_shell_webview/AndroidManifest.xml"
+  output = demo_shell_webview_manifest
+}
+
+generate_jni("demo_content_shell_jni_headers") {
+  sources = [
+    "java/src/org/chromium/demo_content_shell/Shell.java",
+    "java/src/org/chromium/demo_content_shell/ShellManager.java",
+  ]
+}
+
+android_library("demo_content_shell_java") {
+  testonly = true
+  deps = [
+    "//base:base_java",
+    "//base:jni_java",
+    "//components/download/internal/common:internal_java",
+    "//components/embedder_support/android:content_view_java",
+    "//components/embedder_support/android:view_java",
+    "//components/viz/service:service_java",
+    "//content/public/android:content_java",
+    "//media/base/android:media_java",
+    "//media/capture/video/android:capture_java",
+    "//mojo/public/java:system_java",
+    "//net/android:net_java",
+    "//ui/android:ui_java",
+  ]
+  java_files = [
+    "java/src/org/chromium/demo_content_shell/Shell.java",
+    "java/src/org/chromium/demo_content_shell/ShellManager.java",
+    "java/src/org/chromium/demo_content_shell/ShellViewAndroidDelegate.java",
+  ]
+
+  # android_manifest_for_lint = content_shell_manifest
+  annotation_processor_deps = [ "//base/android/jni_generator:jni_processor" ]
+}
+
+shared_library("libdemo_shell_content_view") {
+  testonly = true
+  deps = [
+    ":demo_content_shell_jni_headers",
+    "//components/crash/content/browser",
+    "//demo/demo_shell:demo_content_shell_lib",
+    "//demo/demo_shell:pak",
+    "//media",
+    "//skia",
+  ]
+
+  # Explicit dependency required for JNI registration to be able to
+  # find the native side functions.
+  if (is_component_build) {
+    deps += [
+      "//device/gamepad",
+      "//media/midi",
+    ]
+  }
+  sources = [
+    "demo_shell_library_loader.cc",
+    "shell_android.cc",
+    "demo_shell_manager.h",
+    "demo_shell_manager.cc",
+  ]
+
+  if (is_android) {
+    deps += [
+      "//base/test:test_support",
+      "//components/embedder_support/android:view",
+      "//content/test:android_test_message_pump_support",
+      "//mojo/public/java/system:test_support",
+      "//ui/android",
+    ]
+  }
+
+  configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
+  configs += [ "//build/config/android:hide_all_but_jni" ]
+}
+
+android_library("demo_shell_webview_java") {
+  testonly = true
+  java_files = [
+    "demo_shell_webview/src/org/chromium/demo_shell_webview/DemoShellWebView.java",
+  ]
+
+  deps = [
+    ":demo_content_shell_java",
+    ":demo_content_shell_jni_headers",
+  ]
+
+}
+
+group("demo_shell_webview") {
+  testonly = true
+  deps = [
+      ":demo_webview",
+  ]
+}
+
+#需要生成依赖的so导出的函数头文件
+_jni_registration_header = "$target_gen_dir/demo_view_jni_registration.h"
+
+generate_jni_registration("demo_view_jni_registration") {
+  testonly = true
+  target = ":demo_shell_webview_java"
+  header_output = _jni_registration_header
+}
+
+#生成N.java
+android_library("demo_view_jni_registration_java") {
+  testonly = true
+  srcjar_deps = [ ":demo_view_jni_registration" ]
+}
+
+_shared_library_list_file =
+    "$target_gen_dir/demo_webview.native_libs"
+generated_file("demo_webview_shared_library_list") {
+  testonly = true
+  deps = [
+    ":libdemo_shell_content_view"
+  ]
+  outputs = [
+    _shared_library_list_file,
+  ]
+  data_keys = [ "shared_libraries" ]
+  walk_keys = [ "shared_libraries_barrier" ]
+  rebase = root_build_dir
+}
+
+
+#生成org.chromium.base.library_loader.NativeLibraries.java文件
+write_native_libraries_java("demo_webview_library_loader") {
+  testonly = true
+  use_final_fields = true
+  native_libraries_list_file = _shared_library_list_file
+  # version_number = "1.1.1.1"
+  deps = [
+    ":demo_webview_shared_library_list",
+  ]
+}
+
+# 生成org.chromium.base.BuildConfig.java文件
+generate_build_config_srcjar("demo_webview_build_config") {
+  use_final_fields = true
+  enable_multidex = true
+  # 最小支持Android sdk版本
+  min_sdk_version = "13"
+}
+
+android_library("demo_webview_dynamic_java") {
+  testonly = true
+  srcjar_deps = [ 
+    ":demo_webview_library_loader",
+    ":demo_webview_build_config", 
+  ]
+}
+
+
+
+dist_jar("all_package_jar") {
+  testonly = true
+  requires_android = true
+  direct_deps_only = false
+  use_unprocessed_jars = true
+  no_build_hooks = true
+  output = "$root_out_dir/all_package.jar"
+  deps = [
+      ":demo_shell_webview_java",
+  ]
+}
+
+android_resources("demo_content_shell_java_resources") {
+  testonly = true
+  resource_dirs = [ "java/res" ]
+  custom_package = "org.chromium.demo_content_shell"
+}
+
+android_java_prebuilt("all_package_jar_java") {
+  testonly = true
+  jar_path = "$root_out_dir/all_package.jar"
+  # enable_bytecode_rewriter = false
+  deps = [
+    ":all_package_jar",
+  ]
+}
+
+dist_aar("demo_webview") {
+    testonly = true
+
+    direct_deps_only = true
+
+    # aar文件中的jni目录
+    native_libraries = [
+      "$root_out_dir/libdemo_shell_content_view.so",
+      "$root_out_dir/libchrome_crashpad_handler.so",
+    ]
+
+    # 将被打包进aar中classes.jar的文件
+    jar_included_patterns = [
+        "org/chromium/demo_shell_webview/*",
+        "org/chromium/base/*", 
+        "org/chromium/content_public/*",
+        "org/chromium/content/*",
+        "org/chromium/ui/*",
+        "org/chromium/media/*",
+        "org/chromium/demo_content_shell/*",
+        "org/chromium/ui/base/*",
+        "org/chromium/component/*",
+        "org/chromium/components/*",
+        "org/chromium/net/*",
+        "org/chromium/components/embedder_support/view/*",
+        "*/_content/_shell/_android/*",
+        "*/_content/_public/_android/*",
+        "*/_ui/_android/*",
+        # "content/shell/android/*",
+        # "content/shell/android/content_shell_java/*",
+        "org.chromium.jni_generator/*",
+        "org/chromium/device/*",
+        "org/chromium/services/*",
+        "org/chromium/mojo/*",
+        "org/chromium/service_manager/*",
+        "J/N.*",
+    ]
+
+    # 将被打包进aar中res目录下的文件，主要是资源文件
+    resource_included_patterns = [ 
+      "*/demo/demo_shell/android/*",
+      # "*/content/public/android/*",
+      "*/ui/android/*",
+    ]
+
+    # R files are excluded because they are not used in the client lib and depend
+    # on other generated chromium R classes.
+    jar_excluded_patterns = [
+        "org/chromium/demo_shell_webview/R*.class",
+        # "*/library_loader/*.class",
+    ]
+
+    deps = [
+        # 打包N.java
+        ":demo_view_jni_registration_java",
+
+        # 打包动态生成的java
+        ":demo_webview_dynamic_java",
+
+        # 生成java的所有依赖
+        ":all_package_jar_java",
+
+        # 生成libchrome_crashpad_handler.so
+        "//components/crash/content/app:chrome_crashpad_handler_named_as_so",
+
+        #生成依赖的res
+        ":demo_content_shell_java_resources",
+        "//ui/android:ui_java_resources",
+
+        # 生成libdemo_shell_content_view.so
+        ":libdemo_shell_content_view",
+
+        # 生成AndroidManifest.xml
+        ":demo_shell_webview_manifest",
+
+    ]
+
+    #aar 文件中的AndroidManifest.xml
+    # dist_aar does not take the manifest from libraries in deps, so we have to
+    # specify again here.
+    android_manifest = demo_shell_webview_manifest
+    
+    # 生成的aar文件位于生成目录根目录下
+    output = "$root_out_dir/demo_shell_webview.aar"
+
+}
