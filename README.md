@@ -17,6 +17,7 @@ Demo 列表：
 1. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 1. `demo_memory`: 演示使用SharedMemory；
 1. `demo_resources`: 演示resources相关内容，包括grit，l10n，pak等；
+1. `demo_shell`: 演示使用content api,这是一个综合性的demo；
 
 更多文档见 [docs](./docs) 目录。
 
