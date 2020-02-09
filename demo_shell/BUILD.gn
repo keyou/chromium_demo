@@ -88,11 +88,9 @@ jumbo_static_library("demo_content_shell_lib") {
     deps = [
         "//base",
         
-        #breakpad
         "//components/crash/content/app",
         "//components/keyed_service/content",
-
-
+        "//components/web_cache/browser",
 
         # UI
         "//ui/base",
