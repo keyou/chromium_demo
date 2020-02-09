@@ -16,8 +16,6 @@
 #include "content/public/browser/resource_context.h"
 #include "net/url_request/url_request_job_factory.h"
 
-#include "demo/demo_shell/browser/demo_shell_url_request_context_getter.h"
-
 namespace content {
 
 class BackgroundSyncController;
