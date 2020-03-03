@@ -48,7 +48,7 @@ shared_library("libdemo_shell_content_view") {
   deps = [
     ":demo_content_shell_jni_headers",
     "//components/crash/content/browser",
-    "//demo/demo_shell:demo_content_shell_lib",
+    "//demo/demo_shell:demo_shell_lib",
     "//demo/demo_shell:pak",
     "//media",
     "//skia",

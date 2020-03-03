@@ -38,14 +38,14 @@ else
         ]
 
         deps = [
-            ":demo_content_shell_lib",
+            ":demo_shell_lib",
             ":pak",
         ]
     }
 }
 
 
-jumbo_static_library("demo_content_shell_lib") {
+jumbo_static_library("demo_shell_lib") {
     testonly = true
     sources = [
         # app
