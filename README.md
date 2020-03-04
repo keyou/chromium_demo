@@ -18,6 +18,7 @@ Demo 列表：
 1. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 1. `demo_memory`: 演示使用SharedMemory；
 1. `demo_resources`: 演示resources相关内容，包括grit，l10n，pak等；
+1. `demo_apk`: 演示创建Android应用；
 1. `demo_shell`: 演示使用content api,创建一个精简的浏览器，支持Linux和Android；
 
 更多文档见 [docs](./docs) 目录。

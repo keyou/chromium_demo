@@ -19,9 +19,10 @@ group("all") {
     ":demo_ipc",
     ":demo_memory",
     "demo_resources",
+    "demo_apk",
     "demo_shell",
   ]
-  
+
   if(!is_linux) {
     deps -= [
       ":demo_services",
