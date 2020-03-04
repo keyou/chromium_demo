@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.chromium.demo_shell_webview;
+package org.chromium.demo_shell_apk;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
+import org.chromium.base.CommandLine;
 import org.chromium.base.MemoryPressureListener;
 import org.chromium.base.library_loader.LibraryLoader;
 import org.chromium.base.library_loader.LibraryProcessType;
@@ -25,12 +26,15 @@ import org.chromium.ui.base.ActivityWindowAndroid;
 /**
  * Activity for managing the Demo shell.
  */
-public class DemoShellWebView extends Activity {
+public class DemoShellActivity extends Activity {
 
-    private static final String TAG = "DemoShellWebView";
+    private static final String TAG = "DemoShellActivity";
 
     private static final String ACTIVE_SHELL_URL_KEY = "activeUrl";
     public static final String COMMAND_LINE_ARGS_KEY = "commandLineArgs";
+
+    // Native switch - shell_switches::kRunWebTests
+    private static final String RUN_WEB_TESTS_SWITCH = "run-web-tests";
 
     private ShellManager mShellManager;
     private ActivityWindowAndroid mWindowAndroid;
@@ -41,18 +45,22 @@ public class DemoShellWebView extends Activity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Initializing the command line must occur before loading the library.
+        if (!CommandLine.isInitialized()) {
+            ((DemoShellApplication) getApplication()).initCommandLine();
+            String[] commandLineParams = getCommandLineParamsFromIntent(getIntent());
+            if (commandLineParams != null) {
+                CommandLine.getInstance().appendSwitchesAndArguments(commandLineParams);
+            }
+        }
+
+        DeviceUtils.addDeviceSpecificUserAgentSwitch();
+
         LibraryLoader.getInstance().ensureInitialized(LibraryProcessType.PROCESS_BROWSER);
-        
-        // System.loadLibrary("demo_shell_content_view");
 
-        // setContentView(R.layout.demo_shell_webview);
-        // mShellManager = findViewById(R.id.shell_container);
-        
-    }
-
-    public void Initialize(ShellManager shellManager,final Bundle savedInstanceState){
-        mShellManager = shellManager;
-        
+        setContentView(R.layout.demo_shell_activity);
+        mShellManager = findViewById(R.id.shell_container);
+        assert mShellManager != null;
         final boolean listenToActivityState = true;
         mWindowAndroid = new ActivityWindowAndroid(this, listenToActivityState);
         mWindowAndroid.restoreInstanceState(savedInstanceState);
@@ -62,31 +70,38 @@ public class DemoShellWebView extends Activity {
         mWindowAndroid.setAnimationPlaceholderView(
                 mShellManager.getContentViewRenderView().getSurfaceView());
 
-        BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
-                .startBrowserProcessesAsync(
-                        true, false, new BrowserStartupController.StartupCallback() {
-                            @Override
-                            public void onSuccess() {
-                                finishInitialization(savedInstanceState);
-                            }
+        mStartupUrl = getUrlFromIntent(getIntent());
+        if (!TextUtils.isEmpty(mStartupUrl)) {
+            mShellManager.setStartupUrl(Shell.sanitizeUrl(mStartupUrl));
+        }
 
-                            @Override
-                            public void onFailure() {
-                                initializationFailed();
-                            }
-                        });
+        if (CommandLine.getInstance().hasSwitch(RUN_WEB_TESTS_SWITCH)) {
+            BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
+                    .startBrowserProcessesSync(false);
+        } else {
+            BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
+                    .startBrowserProcessesAsync(
+                            true, false, new BrowserStartupController.StartupCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    finishInitialization(savedInstanceState);
+                                }
+
+                                @Override
+                                public void onFailure() {
+                                    initializationFailed();
+                                }
+                            });
+        }
     }
 
     private void finishInitialization(Bundle savedInstanceState) {
-        Log.e(TAG, "====================ContentView initialization finishInitialization.");
         String shellUrl;
         if (!TextUtils.isEmpty(mStartupUrl)) {
             shellUrl = mStartupUrl;
         } else {
             shellUrl = ShellManager.DEFAULT_SHELL_URL;
         }
-
-        Log.e(TAG,"========"+shellUrl);
 
         if (savedInstanceState != null
                 && savedInstanceState.containsKey(ACTIVE_SHELL_URL_KEY)) {
@@ -96,7 +111,10 @@ public class DemoShellWebView extends Activity {
     }
 
     private void initializationFailed() {
-        Log.e(TAG, "====================ContentView initialization failed.");
+        Log.e(TAG, "ContentView initialization failed.");
+        Toast.makeText(DemoShellActivity.this,
+                R.string.browser_process_initialization_failed,
+                Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -126,7 +144,19 @@ public class DemoShellWebView extends Activity {
 
     @Override
     protected void onNewIntent(Intent intent) {
-        Log.e(TAG, "Ignoring command line params: can only be set when creating the activity.");
+        if (getCommandLineParamsFromIntent(intent) != null) {
+            Log.i(TAG, "Ignoring command line params: can only be set when creating the activity.");
+        }
+
+        if (MemoryPressureListener.handleDebugIntent(this, intent.getAction())) return;
+
+        String url = getUrlFromIntent(intent);
+        if (!TextUtils.isEmpty(url)) {
+            Shell activeView = getActiveShell();
+            if (activeView != null) {
+                activeView.loadUrl(url);
+            }
+        }
     }
 
     @Override
@@ -161,6 +191,10 @@ public class DemoShellWebView extends Activity {
 
     private static String getUrlFromIntent(Intent intent) {
         return intent != null ? intent.getDataString() : null;
+    }
+
+    private static String[] getCommandLineParamsFromIntent(Intent intent) {
+        return intent != null ? intent.getStringArrayExtra(COMMAND_LINE_ARGS_KEY) : null;
     }
 
     /**

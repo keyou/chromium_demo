@@ -14,7 +14,7 @@
 #include "demo/demo_shell/browser/shell.h"
 #include "demo/demo_shell/browser/demo_shell_browser_context.h"
 #include "demo/demo_shell/browser/demo_shell_content_browser_client.h"
-#include "demo/demo_shell/android/demo_content_shell_jni_headers/ShellManager_jni.h"
+#include "demo/demo_shell/android/demo_shell_jni_headers/ShellManager_jni.h"
 
 #include "url/gurl.h"
 
@@ -64,7 +64,7 @@ void JNI_ShellManager_LaunchShell(JNIEnv* env,
   GURL url(base::android::ConvertJavaStringToUTF8(env, jurl));
   DemoShell::CreateNewWindow(browserContext,
                          url,
-                         NULL,
+                         nullptr,
                          gfx::Size());
   DLOG(INFO) << "============== JNI_ShellManager_LaunchShell";
   

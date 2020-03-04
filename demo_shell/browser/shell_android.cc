@@ -14,7 +14,7 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_switches.h"
 
-#include "demo/demo_shell/android/demo_content_shell_jni_headers/Shell_jni.h"
+#include "demo/demo_shell/android/demo_shell_jni_headers/Shell_jni.h"
 #include "demo/demo_shell/android/demo_shell_manager.h"
 
 using base::android::AttachCurrentThread;

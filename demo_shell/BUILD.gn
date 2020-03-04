@@ -8,24 +8,12 @@ import("//tools/grit/repack.gni")
 
 assert(is_android || is_linux)
 
-process_version("demo_webview_version_header") {
-  template_file = "//demo/demo_shell/version.h.in"
-  sources = [
-    "//chrome/VERSION",
-  ]
-  output = "$target_gen_dir/version.h"
-  extra_args = [
-    "-e",
-    "VERSION_FULL=\"%s.%s.%s.%s\" % (MAJOR,MINOR,BUILD,PATCH)",
-  ]
-}
-
 if(is_android)
 {
     group("demo_shell") {
         testonly = true
         deps = [
-            "android:demo_shell_webview"
+            "android:demo_shell_apk"
         ]
     }
 }
@@ -44,10 +32,23 @@ else
     }
 }
 
+process_version("demo_webview_version_header") {
+  template_file = "//demo/demo_shell/version.h.in"
+  sources = [
+    "//chrome/VERSION",
+  ]
+  output = "$target_gen_dir/version.h"
+  extra_args = [
+    "-e",
+    "VERSION_FULL=\"%s.%s.%s.%s\" % (MAJOR,MINOR,BUILD,PATCH)",
+  ]
+}
 
 jumbo_static_library("demo_shell_lib") {
     testonly = true
     sources = [
+        "android/demo_shell_manager.cc",
+        "android/demo_shell_manager.h",
         # app
         "app/demo_shell_content_main_delegate.cc",
         "app/demo_shell_content_main_delegate.h",
@@ -61,14 +62,13 @@ jumbo_static_library("demo_shell_lib") {
         "browser/demo_shell_browser_main_parts.h",
         "browser/shell.h",
         "browser/shell.cc",
+        "browser/shell_android.cc",
         "browser/demo_shell_browser_context.cc",
         "browser/demo_shell_browser_context.h",
         "browser/demo_shell_download_manager_delegate.cc",
         "browser/demo_shell_download_manager_delegate.h",
         "browser/demo_shell_permission_manager.h",
         "browser/demo_shell_permission_manager.cc",
-
-
 
         # common
         # content_client实现类
@@ -85,9 +85,32 @@ jumbo_static_library("demo_shell_lib") {
         #gpu
     ]
 
+    public_deps = [
+        #":android_demo_shell_descriptors",
+
+        # # #include'ed by renderer/web_test/blink_test_runner.h
+        # ":mojo_bindings",
+
+        # # The generated mojom JS bindings are used by web tests.
+        # ":mojo_bindings_js",
+
+        # This exposes all public content APIs.
+        "//content/public/app:both",
+        "//content/public/browser",
+        "//content/public/child",
+        "//content/public/common",
+        "//content/public/gpu",
+        "//content/public/renderer",
+        "//content/public/utility",
+        "//services/network:network_service",
+    ]
+
     deps = [
+        ":demo_webview_version_header",
+
         "//base",
-        
+        "//base:base_static",
+        "//cc",
         "//components/crash/content/app",
         "//components/keyed_service/content",
         "//components/web_cache/browser",
@@ -106,23 +129,6 @@ jumbo_static_library("demo_shell_lib") {
         "//ui/gl",
         "//ui/platform_window",
         "//url",
-
-        "//content/test:test_support",
-        ":demo_webview_version_header",
-    ]
-
-    public_deps = [
-        
-        #如下做法会将所有的Content API 向外暴露
-        "//content/public/app:both",
-        "//content/public/browser",
-        "//content/public/child",
-        "//content/public/common",
-        "//content/public/gpu",
-        "//content/public/renderer",
-        "//content/public/utility",
-
-
     ]
 
     if (toolkit_views) {
@@ -152,7 +158,44 @@ jumbo_static_library("demo_shell_lib") {
         ]
     }
 
+    if (is_android) {
+        deps += [
+            "//base/test:test_support",
+            # 这是运行时依赖，如果缺少这个会导致运行时崩溃
+            "//components/embedder_support/android:view",
+            "android:demo_shell_jni_headers",
+            "//content/test:android_test_message_pump_support",
+            "//mojo/public/java/system:test_support",
+            "//ui/android",
+        ]
+    }
 }
+
+# source_set("android_demo_shell_descriptors") {
+#   testonly = true
+#   sources = [
+#     "android/demo_shell_descriptors.h",
+#   ]
+#   public_deps = [
+#     "//content/public/common:content_descriptors",
+#   ]
+# }
+
+# mojom("mojo_bindings") {
+#   sources = [
+#     "common/power_monitor_test.mojom",
+#     "common/web_test.mojom",
+#     "common/web_test/fake_bluetooth_chooser.mojom",
+#     "common/web_test/web_test_bluetooth_fake_adapter_setter.mojom",
+#   ]
+#   public_deps = [
+#     "//mojo/public/mojom/base",
+#     "//skia/public/mojom",
+#     "//ui/gfx/geometry/mojom",
+#     "//url/mojom:url_mojom_gurl",
+#     "//url/mojom:url_mojom_origin",
+#   ]
+# }
 
 grit("demo_shell_resources_grit") {
     visibility = [ ":*" ]

@@ -37,7 +37,7 @@ gfx::Image& DemoShellContentClient::GetNativeImageNamed(int resource_id){
 
 base::DictionaryValue DemoShellContentClient::GetNetLogConstants() {
     base::DictionaryValue client_constants;
-    client_constants.SetString("name", "demo_content_shell");
+    client_constants.SetString("name", "demo_shell");
     client_constants.SetString(
         "command_line",
         base::CommandLine::ForCurrentProcess()->GetCommandLineString());

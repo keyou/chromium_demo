@@ -4,7 +4,7 @@
 #include <string>
 #include "content/public/common/content_client.h"
 #include "base/compiler_specific.h"
-// #include "demo_content_shell/common/demo_shell_origin_trial_policy.h"
+// #include "demo_shell/common/demo_shell_origin_trial_policy.h"
 
 
 namespace content {

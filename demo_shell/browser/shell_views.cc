@@ -170,7 +170,7 @@ void DemoShell::PlatformCreateWindow(int width, int height) {
   views::Widget::InitParams params;
   params.bounds = gfx::Rect(0, 0, width, height);
   params.delegate = new ShellWindowDelegateView(this);
-  params.wm_class_class = "demo_content_shell";
+  params.wm_class_class = "demo_shell";
   params.wm_class_name = params.wm_class_class;
   window_widget_->Init(std::move(params));
 

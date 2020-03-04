@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.chromium.demo_content_shell;
+package org.chromium.demo_shell;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -25,7 +25,7 @@ import android.util.Log;
 @JNINamespace("content")
 public class ShellManager extends FrameLayout {
 
-    public static final String DEFAULT_SHELL_URL = "http://www.demo.com";
+    public static final String DEFAULT_SHELL_URL = "http://www.baidu.com";
     private WindowAndroid mWindow;
     private Shell mActiveShell;
 
@@ -132,7 +132,7 @@ public class ShellManager extends FrameLayout {
         }
         LayoutInflater inflater =
                 (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        Shell shellView = (Shell) inflater.inflate(getIdByName("layout", "shell_view"), null);
+        Shell shellView = (Shell) inflater.inflate(R.layout.shell_view, null);
         shellView.initialize(nativeShellPtr, mWindow);
 
         // TODO(tedchoc): Allow switching back to these inactive shells.

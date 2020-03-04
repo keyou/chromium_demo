@@ -94,10 +94,10 @@ void DemoShellBrowserMainParts::InitializeMessageLoopContext(){
 
 
 void DemoShellBrowserMainParts::PreMainMessageLoopRun() {
+    DLOG(INFO) << "============ PreMainMessageLoopRun1";
     InitializeBrowserContexts();
     DemoShell::Initialize();
     InitializeMessageLoopContext();
-    DLOG(INFO) << "============ PreMainMessageLoopRun1";
     if (main_function_params_.ui_task) {
         DLOG(INFO) << "============ PreMainMessageLoopRun2";
         std::move(*main_function_params_.ui_task).Run();

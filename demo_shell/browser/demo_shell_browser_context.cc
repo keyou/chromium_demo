@@ -93,23 +93,23 @@ void DemoShellBrowserContext::InitWhileIOAllowed() {
 
 #if defined(OS_WIN)
   CHECK(base::PathService::Get(base::DIR_LOCAL_APP_DATA, &path_));
-  path_ = path_.Append(std::wstring(L"demo_content_shell"));
+  path_ = path_.Append(std::wstring(L"demo_shell"));
 #elif defined(OS_LINUX)
   std::unique_ptr<base::Environment> env(base::Environment::Create());
   base::FilePath config_dir(
       base::nix::GetXDGDirectory(env.get(),
                                  base::nix::kXdgConfigHomeEnvVar,
                                  base::nix::kDotConfigDir));
-  path_ = config_dir.Append("demo_content_shell");
+  path_ = config_dir.Append("demo_shell");
 #elif defined(OS_MACOSX)
   CHECK(base::PathService::Get(base::DIR_APP_DATA, &path_));
   path_ = path_.Append("Chromium Content Shell");
 #elif defined(OS_ANDROID)
   CHECK(base::PathService::Get(base::DIR_ANDROID_APP_DATA, &path_));
-  path_ = path_.Append(FILE_PATH_LITERAL("demo_content_shell"));
+  path_ = path_.Append(FILE_PATH_LITERAL("demo_shell"));
 #elif defined(OS_FUCHSIA)
   CHECK(base::PathService::Get(base::DIR_APP_DATA, &path_));
-  path_ = path_.Append(FILE_PATH_LITERAL("demo_content_shell"));
+  path_ = path_.Append(FILE_PATH_LITERAL("demo_shell"));
 #else
   NOTIMPLEMENTED();
 #endif
@@ -176,9 +176,10 @@ BackgroundFetchDelegate* DemoShellBrowserContext::GetBackgroundFetchDelegate() {
 }
 
 BackgroundSyncController* DemoShellBrowserContext::GetBackgroundSyncController() {
-  if (!background_sync_controller_)
-    background_sync_controller_.reset(new MockBackgroundSyncController());
-  return background_sync_controller_.get();
+  // if (!background_sync_controller_)
+  //   background_sync_controller_.reset(new MockBackgroundSyncController());
+  // return background_sync_controller_.get();
+  return nullptr;
 }
 
 BrowsingDataRemoverDelegate*

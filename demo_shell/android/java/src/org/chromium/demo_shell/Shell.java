@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.chromium.demo_content_shell;
+package org.chromium.demo_shell;
 
 import android.content.Context;
 import android.graphics.drawable.ClipDrawable;
@@ -72,7 +72,7 @@ public class Shell extends LinearLayout {
     }
 
     public static int getIdByName(String className, String resName) {
-        String packageName = "com.example.cvter.dddd";
+        String packageName = "org.chromium.demo_shell";
         int id = 0;
         try {
             Class r = Class.forName(packageName + ".R");
@@ -102,7 +102,7 @@ public class Shell extends LinearLayout {
      * Set the SurfaceView being renderered to as soon as it is available.
      */
     public void setContentViewRenderView(ContentViewRenderView contentViewRenderView) {
-        FrameLayout contentViewHolder = (FrameLayout) findViewById(getIdByName("id", "contentview_holder"));
+        FrameLayout contentViewHolder = (FrameLayout) findViewById(R.id.contentview_holder);
 
         if (contentViewRenderView == null) {
             if (mContentViewRenderView != null) {
