@@ -71,33 +71,6 @@ public class Shell extends LinearLayout {
         super(context);
     }
 
-    public static int getIdByName(String className, String resName) {
-        String packageName = "org.chromium.demo_shell";
-        int id = 0;
-        try {
-            Class r = Class.forName(packageName + ".R");
-            Class[] classes = r.getClasses();
-            Class desireClass = null;
-            for (Class cls : classes) {
-                if (cls.getName().split("\\$")[1].equals(className)) {
-                    desireClass = cls;
-                    break;
-                }
-            }
-            if (desireClass != null) {
-                Field[] fields = desireClass.getFields();
-                for (int i = 0; i < fields.length; i++) {
-                    Log.d("test", "" + fields[i]);
-                }
-                Field field = desireClass.getField(resName);
-                id = field.getInt(desireClass);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return id;
-    }
-
     /**
      * Set the SurfaceView being renderered to as soon as it is available.
      */
@@ -218,7 +191,7 @@ public class Shell extends LinearLayout {
                 .setActionModeCallback(defaultActionCallback());
         mNavigationController = mWebContents.getNavigationController();
         if (getParent() != null) mWebContents.onShow();
-        ((FrameLayout) findViewById(getIdByName("id", "contentview_holder"))).addView(cv,
+        ((FrameLayout) findViewById(R.id.contentview_holder)).addView(cv,
                 new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT));

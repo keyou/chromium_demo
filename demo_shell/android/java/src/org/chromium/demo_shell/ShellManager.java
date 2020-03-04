@@ -57,33 +57,6 @@ public class ShellManager extends FrameLayout {
         mContentViewRenderView.onNativeLibraryLoaded(window);
     }
 
-    public static int getIdByName(String className, String resName) {
-        String packageName = "com.example.cvter.dddd";
-        int id = 0;
-        try {
-            Class r = Class.forName(packageName + ".R");
-            Class[] classes = r.getClasses();
-            Class desireClass = null;
-            for (Class cls : classes) {
-                if (cls.getName().split("\\$")[1].equals(className)) {
-                    desireClass = cls;
-                    break;
-                }
-            }
-            if (desireClass != null) {
-                Field[] fields = desireClass.getFields();
-                for (int i = 0; i < fields.length; i++) {
-                    Log.d("test", "" + fields[i]);
-                }
-                Field field = desireClass.getField(resName);
-                id = field.getInt(desireClass);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return id;
-    }
-
     /**
      * @return The window used to generate all shells.
      */
