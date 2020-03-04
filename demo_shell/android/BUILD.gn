@@ -5,6 +5,7 @@ import("//tools/v8_context_snapshot/v8_context_snapshot.gni")
 
 demo_shell_manifest = "$target_gen_dir/demo_shell_manifest/AndroidManifest.xml"
 
+# 从Java类生成JNI，用于让C++和JAVA可以互相调用
 generate_jni("demo_shell_jni_headers") {
   sources = [
     "java/src/org/chromium/demo_shell/Shell.java",

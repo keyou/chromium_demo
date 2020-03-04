@@ -20,9 +20,9 @@ void TraceCount(int times) {
 
 int main(int argc, char** argv) {
   base::AtExitManager at_exit;
-  // 使用log以来它
   base::CommandLine::Init(argc, argv);
 
+  // 1. 创建配置文件对象；
   base::trace_event::TraceConfig trace_config;
   // 使用component模块的方法来获取TraceConfig
   // 获取用于输出到控制台的TraceConfig
@@ -31,15 +31,18 @@ int main(int argc, char** argv) {
   // trace_config = tracing::TraceStartupConfig::GetInstance()->GetTraceConfig();
   // 手动创建TraceConfig
   trace_config = base::trace_event::TraceConfig("test,testxxx","trace-to-console");
-  // 启动Trace
+  // 2. 启动Trace
   base::trace_event::TraceLog::GetInstance()->SetEnabled(
       trace_config, base::trace_event::TraceLog::RECORDING_MODE);
 
+  // 3. 使用Trace
   // 第一个参数是category，并不可以随意写，否则会编译报错，test是测试用的category
   // 可以在base/trace_event/builtin_categories.h中添加新的category
   TRACE_EVENT0("test", "main");
+  
   // 这里使用hack的方式避免修改builtin_categories.h文件：在category后面添加","
   TRACE_EVENT0("testxxx,", "main");
+  //==============================================================
   // 以上宏展开后等价于下面的代码
   static_assert(base::trace_event::BuiltinCategories::IsAllowedCategory("testxxx,"),
                 "Unknown tracing category is used. Please register your "
@@ -73,6 +76,7 @@ int main(int argc, char** argv) {
               base::trace_event::TraceCategory::ENABLED_FOR_ETW_EXPORT |
               base::trace_event::TraceCategory::ENABLED_FOR_FILTERING)),
           0)) {
+    // 在这里输出trace日志
     base::trace_event::TraceEventHandle h = trace_event_internal::AddTraceEvent(
         ('X'), trace_event_unique_category_group_enabled31, "main",
         trace_event_internal::kGlobalScope, trace_event_internal::kNoId,
@@ -80,6 +84,7 @@ int main(int argc, char** argv) {
     trace_event_unique_tracer31.Initialize(
         trace_event_unique_category_group_enabled31, "main", h);
   };
+  //==============================================================
 
   TraceMe();
   int i = 0;

@@ -8,6 +8,7 @@ Demo 列表：
 
 1. `demo`: 最简单的 demo，演示在自己的程序中使用 base 库；
 1. `demo_log`: 演示使用日志库；
+1. `demo_tracing`: 演示使用Trace；
 1. `demo_tasks`: 演示使用线程池 TaskScheduler;
 1. `demo_messageloop`: 演示使用消息循环 MessageLoop;
 1. `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
@@ -17,7 +18,7 @@ Demo 列表：
 1. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 1. `demo_memory`: 演示使用SharedMemory；
 1. `demo_resources`: 演示resources相关内容，包括grit，l10n，pak等；
-1. `demo_shell`: 演示使用content api,这是一个综合性的demo；
+1. `demo_shell`: 演示使用content api,创建一个精简的浏览器，支持Linux和Android；
 
 更多文档见 [docs](./docs) 目录。
 

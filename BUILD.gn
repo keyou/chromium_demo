@@ -5,6 +5,7 @@ import("//mojo/public/tools/bindings/mojom.gni")
 
 group("all") {
   testonly = true
+  # 除非特殊说明，所有demo仅在Linux上进行测试，其他平台未经测试
   deps = [
     ":demo",
     ":demo_log",
@@ -20,6 +21,12 @@ group("all") {
     "demo_resources",
     "demo_shell",
   ]
+  
+  if(!is_linux) {
+    deps -= [
+      ":demo_services",
+    ]
+  }
 }
 
 executable("demo") {
@@ -141,7 +148,8 @@ executable("demo_services") {
   deps = [
     ":mojom_test_service",
     "//base",
-    #TODO: 查明为什么这里必须显式依赖base_static，它明明已经作为base的public_deps了，难道public_deps对静态库（base_static）无效？
+    # TODO: 查明为什么这里必须显式依赖base_static，它明明已经作为base的public_deps了，
+    # 难道public_deps对静态库（base_static）无效？
     "//base:base_static",
     "//mojo/public",
     "//services/service_manager",
