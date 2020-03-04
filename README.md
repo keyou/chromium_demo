@@ -71,3 +71,21 @@ Demo 列表：
 
 4. 执行 `gclient sync` 同步代码，这会拉取 `demo` 仓库到 `src/demo` ；
 5. 执行 `ninja -C out/Default demo:all` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
+
+## TODO：
+
+- 添加 demo_jni,用来演示如何使用JNI实现C++和JAVA互相调用；
+- 添加 demo_aar,用来演示如何创建 aar 组件；
+- 给复杂的demo添加文档，例如 demo_shell；
+
+## 更新日志
+
+#### 2020.3.4:  
+
+- 添加 demo_tracing，用来演示 trace 的使用；
+- 添加 demo_apk，用来演示如何使用 gn 创建 Android 应用；
+- 添加 demo_shell，用来演示如何使用 Content API 创建一个精简浏览器；
+
+#### 更早
+
+ - 略
