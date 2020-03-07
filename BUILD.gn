@@ -19,7 +19,7 @@ group("all") {
     ":demo_ipc",
     ":demo_memory",
     "demo_resources",
-    "demo_apk",
+    ":demo_apk",
     "demo_shell",
   ]
 
@@ -208,34 +208,7 @@ mojom("mojom_test_service") {
   ]
 }
 
-# service_manifest("test_service_manifest") {
-#   name = "test_service"
-#   source = "mojom/test_service_manifest.json"
-# }
-
-# service_manifest("consumer_service_manifest") {
-#   name = "consumer_service"
-#   source = "mojom/consumer_service_manifest.json"
-# }
-
-# catalog("test_service_catalog") {
-#   embedded_services = [ 
-#     ":test_service_manifest",
-#     ":consumer_service_manifest"
-#   ]
-# }
-
-# catalog_cpp_source("test_service_catalog_source") {
-#   catalog = ":test_service_catalog"
-#   generated_function_name = "demo::services::CreateTestServiceCatalog"
-# }
-
-
-# catalog("consumer_service_catalog") {
-#   embedded_services = [ ":consumer_service_manifest" ]
-# }
-
-# catalog_cpp_source("consumer_service_catalog_source") {
-#   catalog = ":consumer_service_catalog"
-#   generated_function_name = "demo::services::CreateConsumerServiceCatalog"
-# }
+group("demo_apk") {
+  testonly = true
+  deps = ["demo_android:demo_apk"]
+}

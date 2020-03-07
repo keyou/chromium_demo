@@ -15,7 +15,6 @@
 #include "components/web_cache/renderer/web_cache_impl.h"
 #include "content/public/child/child_thread.h"
 #include "content/public/common/service_manager_connection.h"
-#include "content/public/test/test_service.mojom.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/system/message_pipe.h"
