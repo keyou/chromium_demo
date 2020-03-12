@@ -21,7 +21,12 @@ Demo 列表：
 1. `demo_apk`: 演示创建Android应用，base::android::*和JNI的使用；
 1. `demo_shell`: 演示使用content api,创建一个精简的浏览器，支持Linux和Android；
 
-更多文档见 [docs](./docs) 目录。
+文档列表：
+
+1. [Mojo](./docs/mojo.md)
+1. [浏览器启动流程简述](./docs/startup.md)
+
+公共文档在 [docs](./docs) 目录，其他文档在代码相应目录下。
 
 ## 用法一(推荐)
 
@@ -82,10 +87,12 @@ Demo 列表：
 #### 2020.3.12
 
 - demo_apk 支持JNI调用C++类的实例方法；
+- 添加文档：[浏览器启动流程简述](./docs/startup.md)
 
 #### 2020.3.7
 
 - demo_apk 支持JNI；
+- 添加文档： [demo_apk](./demo_android/README.md)
 
 #### 2020.3.4:  
 
