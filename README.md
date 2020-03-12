@@ -74,11 +74,14 @@ Demo 列表：
 
 ## TODO：
 
-- 添加 demo_jni,用来演示如何使用JNI实现C++和JAVA互相调用；
 - 添加 demo_aar,用来演示如何创建 aar 组件；
 - 给复杂的demo添加文档，例如 demo_shell；
 
 ## 更新日志
+
+#### 2020.3.12
+
+- demo_apk 支持JNI调用C++类的实例方法；
 
 #### 2020.3.7
 

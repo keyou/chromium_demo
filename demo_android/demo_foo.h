@@ -7,6 +7,12 @@
 #include "base/android/scoped_java_ref.h"
 
 namespace demo_jni {
+
+class DemoFoo {
+public:
+void HelloDemoFoo(JNIEnv* env, const base::android::JavaParamRef<jstring>& who);
+};
+
     void Hi(std::string who);
     void HiStatic(std::string who);
 }
