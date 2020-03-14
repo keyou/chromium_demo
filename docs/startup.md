@@ -53,7 +53,11 @@ TODO
 
 ## 创建UI
 
-Browser初始化完成之后，会在BrowserMainParts中创建UI。创建UI可以分为以下几步：
+Browser初始化完成之后，会在BrowserMainParts中创建UI。
+
+> 注意：并不是一定要在这里创建UI，因为创建UI是一个相对独立的过程，可以放在任何业务觉得合适的时机，比如放在用户打开某一个网页的时候再创建。
+
+创建UI可以分为以下几步：
 
 1. 创建Native窗口；
 2. 创建WebContents，并将WebContents和Native窗口关联；
