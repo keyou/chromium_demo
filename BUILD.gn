@@ -210,5 +210,9 @@ mojom("mojom_test_service") {
 
 group("demo_apk") {
   testonly = true
-  deps = ["demo_android:demo_apk"]
+  if(is_android) {
+    deps = ["demo_android:demo_apk"]
+  } else {
+    print("demo_apk only support android.")
+  }
 }

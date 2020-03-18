@@ -62,6 +62,10 @@ Browser初始化完成之后，会在BrowserMainParts中创建UI。
 1. 创建Native窗口；
 2. 创建WebContents，并将WebContents和Native窗口关联；
 
+初始化OutputSurface
+
+ContentViewRenderView 用来显示网页内容，它内部维护了一个SurfaceView/TextureView，并且将他们的Surface传递到Native层，Native层使用它们创建OutputSurface，并且在该OutputSurface上绘制网页内容。
+
 TODO
 
 ## 创建Render进程
