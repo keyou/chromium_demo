@@ -9,8 +9,8 @@
 #include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
-#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/power_monitor/power_monitor.h"
+#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
@@ -22,15 +22,16 @@
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "mojo/core/embedder/embedder.h"
+#include "ui/base/x/x11_util.h"
 #include "ui/aura/client/default_capture_client.h"
 #include "ui/aura/client/window_parenting_client.h"
 #include "ui/aura/env.h"
 #include "ui/aura/test/test_focus_client.h"
 #include "ui/aura/test/test_screen.h"
-#include "ui/aura/window_delegate.h"
-#include "ui/aura/window_tree_host_observer.h"
-#include "ui/aura/window_tree_host.h"
 #include "ui/aura/window.h"
+#include "ui/aura/window_delegate.h"
+#include "ui/aura/window_tree_host.h"
+#include "ui/aura/window_tree_host_observer.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
 #include "ui/base/material_design/material_design_controller.h"
@@ -46,9 +47,12 @@
 #include "ui/gfx/skia_util.h"
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/init/gl_factory.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/background.h"
 #include "ui/views/buildflags.h"
+#include "ui/views/controls/button/button.h"
 #include "ui/views/controls/button/label_button.h"
+#include "ui/views/controls/button/md_text_button.h"
 #include "ui/views/examples/example_base.h"
 #include "ui/views/examples/examples_window.h"
 #include "ui/views/layout/fill_layout.h"
@@ -73,26 +77,32 @@
 #endif
 
 // Maintain the UI controls and web view for content shell
-class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
+class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,public views::ButtonListener {
  public:
-  DemoViewsWidgetDelegateView() { InitShellWindow(); }
+  DemoViewsWidgetDelegateView(base::OnceClosure on_close)
+      : on_close_(std::move(on_close)) {
+    InitShellWindow();
+  }
 
  private:
   void InitShellWindow() {
     DLOG(INFO) << "InitShellWindow";
     this->SetBackground(views::CreateSolidBackground(SK_ColorGRAY));
+    // 设置布局管理器，为了简单这里不使用布局管理器
     // this->SetLayoutManager(std::make_unique<views::FillLayout>());
-    auto label_button = std::make_unique<views::LabelButton>(
-        nullptr, base::ASCIIToUTF16("LabelButton"));
-    label_button->SetFocusForPlatform();
-    label_button->set_request_focus_on_press(true);
-    label_button->SetBounds(0, 0, 100, 50);
-    label_button->SetTextColor(views::Button::ButtonState::STATE_NORMAL,
-                               SK_ColorRED);
-    label_button->SetTextColor(views::Button::ButtonState::STATE_HOVERED,
-                               SK_ColorGREEN);
-    label_button->SetBackground(views::CreateSolidBackground(SK_ColorYELLOW));
-    this->AddChildView(label_button.release());
+    
+    // 添加一个使用 Material Design 的按钮
+    button_ = views::MdTextButton::Create(
+        this, base::ASCIIToUTF16("MaterialButton"));
+    button_->SetBounds(0,0,100,50);
+    this->AddChildView(button_.release());
+  }
+
+  // Overridden from ButtonListener
+  void ButtonPressed(views::Button* sender, const ui::Event& event) override {
+    DLOG(INFO) << "ButtonPressed()";
+    // 使用无障碍接口来修改按钮文本
+    sender->GetViewAccessibility().AnnounceText(base::ASCIIToUTF16("Pressed"));
   }
 
   // Overridden from WidgetDelegateView
@@ -103,14 +113,21 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
     DLOG(INFO) << "GetWindowTitle()";
     return base::ASCIIToUTF16("Demo Widget");
   }
-  void WindowClosing() override {}
+  void WindowClosing() override {
+    if (on_close_)
+      std::move(on_close_).Run();
+  }
 
   void OnPaint(gfx::Canvas* canvas) override {
     DLOG(INFO) << "OnPaint()";
-    canvas->FillRect(gfx::Rect(0, 0, 250, 50), SK_ColorBLUE);
+    // 在views::OnPaint()中绘制背景色，它会覆盖这里的蓝色
+    canvas->FillRect(gfx::Rect(0, 0, 300, 50), SK_ColorBLUE);
     views::WidgetDelegateView::OnPaint(canvas);
     canvas->FillRect(gfx::Rect(0, 0, 150, 100), SK_ColorRED);
   }
+
+  std::unique_ptr<views::Button> button_;
+  base::OnceClosure on_close_;
 
   DISALLOW_COPY_AND_ASSIGN(DemoViewsWidgetDelegateView);
 };
@@ -121,11 +138,11 @@ int main(int argc, char** argv) {
   // 初始化CommandLine
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
-  logging::SetLogItems(true, false, true, false);
+  logging::SetLogItems(true, true, true, false);
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
-  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoWidget");
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoViews");
 
   // 初始化mojo
   mojo::core::Init();
@@ -146,6 +163,8 @@ int main(int argc, char** argv) {
   viz::FrameSinkManagerImpl frame_sink_manager(&shared_bitmap_manager);
   host_frame_sink_manager.SetLocalManager(&frame_sink_manager);
   frame_sink_manager.SetLocalClient(&host_frame_sink_manager);
+  // 第三个参数需要设为false才能看到界面
+  // 很多chromium中的demo都没有设置，导致无法看到界面
   auto context_factory = std::make_unique<ui::InProcessContextFactory>(
       &host_frame_sink_manager, &frame_sink_manager, false);
   context_factory->set_use_test_surface(false);
@@ -175,23 +194,42 @@ int main(int argc, char** argv) {
   views::InstallDesktopScreenIfNecessary();
 #endif
 
+  // 初始化输入法相关接口
   ui::InitializeInputMethodForTesting();
+
+  // 初始化 Material Design 风格，使用MD控件时才需要初始化
   ui::MaterialDesignController::Initialize();
 
   // This app isn't a test and shouldn't timeout.
   base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
+  base::RunLoop run_loop;
+
+  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
+  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
+  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
+  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
+  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
+  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
+  ui::SetDefaultX11ErrorHandlers();
+
   views::Widget* window_widget_ = new views::Widget;
   views::Widget::InitParams params;
   params.bounds = gfx::Rect(0, 0, 400, 300);
-  params.delegate = new DemoViewsWidgetDelegateView();
+  params.delegate = new DemoViewsWidgetDelegateView(run_loop.QuitClosure());
   params.wm_class_class = "demo_views";
   params.wm_class_name = params.wm_class_class;
   window_widget_->Init(std::move(params));
   window_widget_->Show();
 
   LOG(INFO) << "running...";
-  base::RunLoop().Run();
+  run_loop.Run();
+
+  ui::ShutdownInputMethodForTesting();
+
+#if defined(USE_AURA)
+  env.reset();
+#endif
 
   return 0;
 }
