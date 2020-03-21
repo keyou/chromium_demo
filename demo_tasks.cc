@@ -17,7 +17,8 @@ int main(int argc,char** argv)
 {
     // 创建消息循环
     base::MessageLoop message_loop;
-    // 在当前线程创建一个可执行task的环境，类似MessageLoop，同样需要使用RunLoop启动
+    // 也可以使用下面的方法。它们的区别仅在于对外MessageLoop对外暴露了更多的内部接口。
+    // 在当前线程创建一个可执行task的环境，同样需要使用RunLoop启动
     // base::SingleThreadTaskExecutor main_task_executer;
 
     base::RunLoop run_loop;

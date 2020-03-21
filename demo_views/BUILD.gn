@@ -1,0 +1,61 @@
+import("//build/config/ui.gni")
+import("//tools/grit/repack.gni")
+
+executable("demo_views") {
+  testonly=true
+  sources = [
+    "demo_views.cc",
+  ]
+
+  deps = [
+    ":pak",
+    "//base:i18n",
+    "//base",
+    "//build/win:default_exe_manifest",
+    "//components/viz/host",
+    "//components/viz/service",
+    "//mojo/core/embedder",
+    "//skia",
+    "//third_party/icu",
+    "//ui/aura",
+    "//ui/base",
+    "//ui/base/ime/init",
+    "//ui/compositor:test_support",
+    "//ui/compositor",
+    "//ui/display",
+    "//ui/events",
+    "//ui/gfx",
+    "//ui/gfx/geometry",
+    "//ui/gl",
+    "//ui/gl/init",
+    "//ui/views:test_support",
+    "//ui/views",
+  ]
+
+  if (use_x11) {
+    deps += [ "//ui/gfx/x" ]
+  }
+}
+
+repack("pak") {
+  testonly = true
+  sources = [
+    "$root_gen_dir/ui/resources/ui_resources_100_percent.pak",
+    "$root_gen_dir/ui/resources/webui_resources.pak",
+    "$root_gen_dir/ui/strings/app_locale_settings_en-US.pak",
+    "$root_gen_dir/ui/strings/ui_strings_en-US.pak",
+  ]
+
+  deps = [
+    "//ui/resources",
+    "//ui/strings",
+  ]
+
+  if (toolkit_views) {
+    deps += [ "//ui/views/resources" ]
+    sources +=
+        [ "$root_gen_dir/ui/views/resources/views_resources_100_percent.pak" ]
+  }
+  output = "$root_out_dir/demo_views.pak"
+}
+

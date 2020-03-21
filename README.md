@@ -6,10 +6,10 @@
 
 Demo 列表：
 
-1. `demo`: 最简单的 demo，演示在自己的程序中使用 base 库；
+1. `demo_exe`: 最简单的 demo，演示gn及创建自己的exe；
 1. `demo_log`: 演示使用日志库；
 1. `demo_tracing`: 演示使用Trace；
-1. `demo_tasks`: 演示使用线程池 TaskScheduler;
+1. `demo_tasks`: 演示使用线程池 ThreadPool;
 1. `demo_messageloop`: 演示使用消息循环 MessageLoop;
 1. `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
 1. `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
@@ -18,6 +18,7 @@ Demo 列表：
 1. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 1. `demo_memory`: 演示使用SharedMemory；
 1. `demo_resources`: 演示resources相关内容，包括grit，l10n，pak等；
+1. `demo_views`: 演示使用views创建UI；
 1. `demo_apk`: 演示创建Android应用，base::android::*和JNI的使用；
 1. `demo_shell`: 演示使用content api,创建一个精简的浏览器，支持Linux和Android；
 
@@ -44,7 +45,7 @@ Demo 列表：
     root_extra_deps = ["//demo"]
     ```
 
-4. 执行 `ninja -C out/Default demo:all` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
+4. 执行 `ninja -C out/Default demo` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
 
 ## 用法二(使用gclient)
 
@@ -75,7 +76,7 @@ Demo 列表：
     ```
 
 4. 执行 `gclient sync` 同步代码，这会拉取 `demo` 仓库到 `src/demo` ；
-5. 执行 `ninja -C out/Default demo:all` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
+5. 执行 `ninja -C out/Default demo` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
 
 ## TODO：
 
@@ -83,6 +84,10 @@ Demo 列表：
 - 给复杂的demo添加文档，例如 demo_shell；
 
 ## 更新日志
+
+#### 2020.3.21
+
+- 添加 demo_views，演示使用 `//ui/views` 开发UI； 
 
 #### 2020.3.12
 

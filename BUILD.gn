@@ -3,11 +3,11 @@ import("//mojo/public/tools/bindings/mojom.gni")
 
 # for service
 
-group("all") {
+group("demo") {
   testonly = true
   # 除非特殊说明，所有demo仅在Linux上进行测试，其他平台未经测试
   deps = [
-    ":demo",
+    ":demo_exe",
     ":demo_log",
     ":demo_tracing",
     ":demo_messageloop",
@@ -19,6 +19,7 @@ group("all") {
     ":demo_ipc",
     ":demo_memory",
     "demo_resources",
+    "demo_views",
     ":demo_apk",
     "demo_shell",
   ]
@@ -26,11 +27,12 @@ group("all") {
   if(!is_linux) {
     deps -= [
       ":demo_services",
+      "demo_views",
     ]
   }
 }
 
-executable("demo") {
+executable("demo_exe") {
   sources = [
     "demo.cc",
   ]
