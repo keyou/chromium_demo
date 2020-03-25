@@ -14,6 +14,7 @@
 #include "base/memory/ref_counted.h"
 #include "base/strings/string_piece.h"
 #include "build/build_config.h"
+#include "content/public/browser/web_contents_delegate.h"
 #include "content/public/browser/session_storage_namespace.h"
 #include "content/public/browser/web_contents_observer.h"
 #include "ipc/ipc_channel.h"
@@ -50,7 +51,7 @@ class WebContents;
 
 // This represents one window of the Content DemoShell, i.e. all the UI including
 // buttons and url bar, as well as the web content area.
-class DemoShell {
+class DemoShell : public content::WebContentsDelegate{
  public:
   ~DemoShell();
 
@@ -73,6 +74,13 @@ class DemoShell {
                        ui::PageTransition);
   
   WebContents* web_contents() const { return web_contents_.get(); }
+
+  void EnterFullscreenModeForTab(
+      WebContents* web_contents,
+      const GURL& origin,
+      const blink::mojom::FullscreenOptions& options) override;
+  void ExitFullscreenModeForTab(WebContents* web_contents) override;
+  bool IsFullscreenForTabOrPending(const WebContents* web_contents) override;
 
  private:
 
@@ -97,11 +105,15 @@ class DemoShell {
   // Resizes the web content view to the given dimensions.
   void SizeTo(const gfx::Size& content_size);
 #endif
+void ToggleFullscreenModeForTab(WebContents* web_contents,
+                                       bool enter_fullscreen);
   std::unique_ptr<WebContents> web_contents_;
 
   gfx::NativeWindow window_;
 
   gfx::Size content_size_;
+
+  bool is_fullscreen_;
 
 #if defined(OS_ANDROID)
   base::android::ScopedJavaGlobalRef<jobject> java_object_;

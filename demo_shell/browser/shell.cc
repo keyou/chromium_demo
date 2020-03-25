@@ -24,6 +24,8 @@
 #include "build/build_config.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_switches.h"
+#include "content/public/browser/render_view_host.h"
+#include "content/public/browser/render_widget_host.h"
 
 namespace content {
 
@@ -36,8 +38,9 @@ const int kDefaultTestWindowHeightDip = 600;
 DemoShell::DemoShell(std::unique_ptr<WebContents> web_contents,
              bool should_set_delegate)
     : web_contents_(std::move(web_contents)),
-      window_(nullptr) {
-
+      window_(nullptr),
+      is_fullscreen_(false) {
+  web_contents_->SetDelegate(this);
 }
 
 DemoShell::~DemoShell() {
@@ -100,6 +103,38 @@ void DemoShell::LoadURLForFrame(const GURL& url,
 
 gfx::Size DemoShell::GetShellDefaultSize() {
   return gfx::Size(kDefaultTestWindowWidthDip, kDefaultTestWindowHeightDip);
+}
+
+void DemoShell::EnterFullscreenModeForTab(
+    WebContents* web_contents,
+    const GURL& origin,
+    const blink::mojom::FullscreenOptions& options) {
+  ToggleFullscreenModeForTab(web_contents, true);
+}
+
+void DemoShell::ExitFullscreenModeForTab(WebContents* web_contents) {
+  ToggleFullscreenModeForTab(web_contents, false);
+}
+
+void DemoShell::ToggleFullscreenModeForTab(WebContents* web_contents,
+                                       bool enter_fullscreen) {
+#if defined(OS_ANDROID)
+  PlatformToggleFullscreenModeForTab(web_contents, enter_fullscreen);
+#endif
+  if (is_fullscreen_ != enter_fullscreen) {
+    is_fullscreen_ = enter_fullscreen;
+    web_contents->GetRenderViewHost()
+        ->GetWidget()
+        ->SynchronizeVisualProperties();
+  }
+}
+
+bool DemoShell::IsFullscreenForTabOrPending(const WebContents* web_contents) {
+#if defined(OS_ANDROID)
+  return PlatformIsFullscreenForTabOrPending(web_contents);
+#else
+  return is_fullscreen_;
+#endif
 }
 
 }  // namespace content
