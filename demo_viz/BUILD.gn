@@ -34,13 +34,12 @@ template("viz") {
 group("demo_viz") {
   testonly = true
   deps = [
-    ":demo_viz_exe",
+    ":demo_viz_gui",
     ":demo_viz_offscreen"
   ]
 }
 
-viz("demo_viz_exe") {
-  output_name = "demo_viz"
+viz("demo_viz_gui") {
   sources = [
       "demo_viz.cc"
   ]
