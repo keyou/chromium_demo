@@ -33,9 +33,6 @@ public class DemoShellActivity extends Activity {
     private static final String ACTIVE_SHELL_URL_KEY = "activeUrl";
     public static final String COMMAND_LINE_ARGS_KEY = "commandLineArgs";
 
-    // Native switch - shell_switches::kRunWebTests
-    private static final String RUN_WEB_TESTS_SWITCH = "run-web-tests";
-
     private ShellManager mShellManager;
     private ActivityWindowAndroid mWindowAndroid;
     private Intent mLastSentIntent;
@@ -66,33 +63,27 @@ public class DemoShellActivity extends Activity {
         mWindowAndroid.restoreInstanceState(savedInstanceState);
         mShellManager.setWindow(mWindowAndroid);
         // Set up the animation placeholder to be the SurfaceView. This disables the
-        // SurfaceView's 'hole' clipping during animations that are notified to the window.
-        mWindowAndroid.setAnimationPlaceholderView(
-                mShellManager.getContentViewRenderView().getSurfaceView());
+        // SurfaceView's 'hole' clipping during animations that are notified to the
+        // window.
+        mWindowAndroid.setAnimationPlaceholderView(mShellManager.getContentViewRenderView().getSurfaceView());
 
         mStartupUrl = getUrlFromIntent(getIntent());
         if (!TextUtils.isEmpty(mStartupUrl)) {
             mShellManager.setStartupUrl(Shell.sanitizeUrl(mStartupUrl));
         }
 
-        if (CommandLine.getInstance().hasSwitch(RUN_WEB_TESTS_SWITCH)) {
-            BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
-                    .startBrowserProcessesSync(false);
-        } else {
-            BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
-                    .startBrowserProcessesAsync(
-                            true, false, new BrowserStartupController.StartupCallback() {
-                                @Override
-                                public void onSuccess() {
-                                    finishInitialization(savedInstanceState);
-                                }
+        BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER).startBrowserProcessesAsync(true, false,
+                new BrowserStartupController.StartupCallback() {
+                    @Override
+                    public void onSuccess() {
+                        finishInitialization(savedInstanceState);
+                    }
 
-                                @Override
-                                public void onFailure() {
-                                    initializationFailed();
-                                }
-                            });
-        }
+                    @Override
+                    public void onFailure() {
+                        initializationFailed();
+                    }
+                });
     }
 
     private void finishInitialization(Bundle savedInstanceState) {
@@ -103,8 +94,7 @@ public class DemoShellActivity extends Activity {
             shellUrl = ShellManager.DEFAULT_SHELL_URL;
         }
 
-        if (savedInstanceState != null
-                && savedInstanceState.containsKey(ACTIVE_SHELL_URL_KEY)) {
+        if (savedInstanceState != null && savedInstanceState.containsKey(ACTIVE_SHELL_URL_KEY)) {
             shellUrl = savedInstanceState.getString(ACTIVE_SHELL_URL_KEY);
         }
         mShellManager.launchShell(shellUrl);
@@ -112,9 +102,8 @@ public class DemoShellActivity extends Activity {
 
     private void initializationFailed() {
         Log.e(TAG, "ContentView initialization failed.");
-        Toast.makeText(DemoShellActivity.this,
-                R.string.browser_process_initialization_failed,
-                Toast.LENGTH_SHORT).show();
+        Toast.makeText(DemoShellActivity.this, R.string.browser_process_initialization_failed, Toast.LENGTH_SHORT)
+                .show();
         finish();
     }
 
@@ -148,7 +137,8 @@ public class DemoShellActivity extends Activity {
             Log.i(TAG, "Ignoring command line params: can only be set when creating the activity.");
         }
 
-        if (MemoryPressureListener.handleDebugIntent(this, intent.getAction())) return;
+        if (MemoryPressureListener.handleDebugIntent(this, intent.getAction()))
+            return;
 
         String url = getUrlFromIntent(intent);
         if (!TextUtils.isEmpty(url)) {
@@ -164,7 +154,8 @@ public class DemoShellActivity extends Activity {
         super.onStart();
 
         WebContents webContents = getActiveWebContents();
-        if (webContents != null) webContents.onShow();
+        if (webContents != null)
+            webContents.onShow();
     }
 
     @Override
@@ -181,7 +172,8 @@ public class DemoShellActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (mShellManager != null) mShellManager.destroy();
+        if (mShellManager != null)
+            mShellManager.destroy();
         super.onDestroy();
     }
 
@@ -198,8 +190,8 @@ public class DemoShellActivity extends Activity {
     }
 
     /**
-     * @return The {@link ShellManager} configured for the activity or null if it has not been
-     *         created yet.
+     * @return The {@link ShellManager} configured for the activity or null if it
+     *         has not been created yet.
      */
     public ShellManager getShellManager() {
         return mShellManager;
@@ -213,8 +205,8 @@ public class DemoShellActivity extends Activity {
     }
 
     /**
-     * @return The {@link WebContents} owned by the currently visible {@link Shell} or null if
-     *         one is not showing.
+     * @return The {@link WebContents} owned by the currently visible {@link Shell}
+     *         or null if one is not showing.
      */
     public WebContents getActiveWebContents() {
         Shell shell = getActiveShell();

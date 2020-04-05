@@ -78,9 +78,7 @@
 namespace demo {
 
 // Client 端
-// 在 Chromium 中 AsyncLayerTreeFrameSink 实现了 CompositorFrameSinkClient
-// 接口，这里模拟 Chromium 中的命名。
-// 在 Chromium 中 LayerTreeHost 通过 LayerTreeFrameSink 将生成的 CF 提交到 viz
+// 在 Chromium 中 cc::LayerTreeFrameSink 的作用就相当于 viz 中的 client.
 class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
  public:
   LayerTreeFrameSink(const viz::FrameSinkId& frame_sink_id,
@@ -89,7 +87,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       : frame_sink_id_(frame_sink_id),
         local_surface_id_(local_surface_id),
         bounds_(bounds),
-        thread_("C_" + frame_sink_id.ToString()) {
+        thread_("CC_" + frame_sink_id.ToString()) {
     CHECK(thread_.Start());
   }
 
@@ -385,7 +383,7 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
     // TODO: Use a more robust exit method
     service_.reset();
     host_.reset();
-    platform_window_->Close(); 
+    platform_window_->Close();
   }
   void OnClosed() override {
     if (close_closure_)
@@ -435,6 +433,13 @@ int main(int argc, char** argv) {
   // This demo uses InProcessContextFactory which uses X on a separate Gpu
   // thread.
   gfx::InitializeThreadedX11();
+
+  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
+  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
+  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
+  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
+  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
+  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
   ui::SetDefaultX11ErrorHandlers();
 #endif
 
@@ -452,14 +457,6 @@ int main(int argc, char** argv) {
   base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
   base::RunLoop run_loop;
-
-  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
-  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
-  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
-  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
-  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
-  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  ui::SetDefaultX11ErrorHandlers();
 
   demo::DemoVizWindow window(run_loop.QuitClosure());
   window.Create(gfx::Rect(800, 600));

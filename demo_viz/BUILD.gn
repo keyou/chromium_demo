@@ -1,32 +1,54 @@
 
 import("//build/config/ui.gni")
 
-executable("demo_viz") {
+template("viz") {
+  executable(target_name){
+    testonly = true
+    forward_variables_from(invoker, "*")
+
+    deps = [
+      "//base",
+      "//base:i18n",
+      "//build/win:default_exe_manifest",
+      "//components/viz/demo:host",
+      "//components/viz/demo:service",
+      "//components/viz/service",
+      "//components/viz/service/main",
+      "//mojo/core/embedder",
+      "//skia",
+      "//ui/events",
+      "//ui/events/platform",
+      "//ui/platform_window",
+    ]
+
+    if (use_x11) {
+      deps += [
+        "//ui/events/platform/x11",
+        "//ui/platform_window/x11",
+      ]
+      configs += [ "//build/config/linux:x11" ]
+    }
+  }
+}
+
+group("demo_viz") {
   testonly = true
+  deps = [
+    ":demo_viz_exe",
+    ":demo_viz_offscreen"
+  ]
+}
+
+viz("demo_viz_exe") {
+  output_name = "demo_viz"
   sources = [
       "demo_viz.cc"
   ]
-
-  deps = [
-    "//base",
-    "//base:i18n",
-    "//build/win:default_exe_manifest",
-    "//components/viz/demo:host",
-    "//components/viz/demo:service",
-    "//components/viz/service",
-    "//components/viz/service/main",
-    "//mojo/core/embedder",
-    "//skia",
-    "//ui/events",
-    "//ui/events/platform",
-    "//ui/platform_window",
-  ]
-
-  if (use_x11) {
-    deps += [
-      "//ui/events/platform/x11",
-      "//ui/platform_window/x11",
-    ]
-    configs += [ "//build/config/linux:x11" ]
-  }
 }
+
+viz("demo_viz_offscreen") {
+  sources = [
+      "demo_viz_offscreen.cc"
+  ]
+}
+

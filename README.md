@@ -19,9 +19,10 @@ Demo 列表：
 11. `demo_memory`: 演示使用 SharedMemory；
 12. `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
 13. `demo_viz`: 演示 `viz` 模块的使用；
-14. `demo_views`: 演示使用 `//ui/views` 创建 UI；
-15. `demo_apk`: 演示创建 Android 应用，base::android:: *和 JNI 的使用；
-16. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+14. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
+15. `demo_views`: 演示使用 `//ui/views` 创建 UI；
+16. `demo_apk`: 演示创建 Android 应用，base::android:: *和 JNI 的使用；
+17. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
 
 文档列表：
 
@@ -85,6 +86,10 @@ Demo 列表：
 - 给复杂的 demo 添加文档，例如 demo_shell；
 
 ## 更新日志
+
+### 2020.4.6
+
+- 添加 demo_viz_offscreen, 演示使用 `viz` 进行离屏渲染；
 
 ### 2020.3.31
 
