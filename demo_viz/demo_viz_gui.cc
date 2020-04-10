@@ -254,6 +254,8 @@ class Compositor : public viz::HostFrameSinkClient {
     params->frame_sink_id = root_frame_sink_id;
     params->disable_frame_rate_limit = false;
     params->gpu_compositing = false;
+    // 只有Andorid平台能使用
+    //params->refresh_rate = 1.0f;
     params->display_client = display_client_->GetBoundRemote(nullptr);
     params->display_private = display_private_.BindNewEndpointAndPassReceiver();
     // CreateRendererSettings 里面有很多和渲染相关的设置,有些对于调试非常方便
@@ -414,6 +416,10 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
+  // 启动 Trace
+  auto trace_config = base::trace_event::TraceConfig("viz", "trace-to-console");
+  base::trace_event::TraceLog::GetInstance()->SetEnabled(
+      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop

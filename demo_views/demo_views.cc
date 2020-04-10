@@ -22,7 +22,6 @@
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "mojo/core/embedder/embedder.h"
-#include "ui/base/x/x11_util.h"
 #include "ui/aura/client/default_capture_client.h"
 #include "ui/aura/client/window_parenting_client.h"
 #include "ui/aura/env.h"
@@ -37,6 +36,7 @@
 #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
+#include "ui/base/x/x11_util.h"
 #include "ui/compositor/paint_recorder.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
@@ -60,8 +60,8 @@
 #include "ui/views/test/desktop_test_views_delegate.h"
 #include "ui/views/view.h"
 #include "ui/views/widget/desktop_aura/desktop_screen.h"
-#include "ui/views/widget/widget_delegate.h"
 #include "ui/views/widget/widget.h"
+#include "ui/views/widget/widget_delegate.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -77,7 +77,8 @@
 #endif
 
 // Maintain the UI controls and web view for content shell
-class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,public views::ButtonListener {
+class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,
+                                    public views::ButtonListener {
  public:
   DemoViewsWidgetDelegateView(base::OnceClosure on_close)
       : on_close_(std::move(on_close)) {
@@ -90,11 +91,11 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,public view
     this->SetBackground(views::CreateSolidBackground(SK_ColorGRAY));
     // 设置布局管理器，为了简单这里不使用布局管理器
     // this->SetLayoutManager(std::make_unique<views::FillLayout>());
-    
+
     // 添加一个使用 Material Design 的按钮
-    button_ = views::MdTextButton::Create(
-        this, base::ASCIIToUTF16("MaterialButton"));
-    button_->SetBounds(0,0,100,50);
+    button_ =
+        views::MdTextButton::Create(this, base::ASCIIToUTF16("MaterialButton"));
+    button_->SetBounds(0, 0, 100, 50);
     this->AddChildView(button_.release());
   }
 
@@ -139,11 +140,15 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
+  // 启动 Trace
+  auto trace_config = base::trace_event::TraceConfig("cc", "trace-to-console");
+  base::trace_event::TraceLog::GetInstance()->SetEnabled(
+      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoViews");
-
+  
   // 初始化mojo
   mojo::core::Init();
 

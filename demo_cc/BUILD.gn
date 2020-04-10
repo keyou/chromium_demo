@@ -1,24 +1,23 @@
 
 import("//build/config/ui.gni")
 
-template("viz") {
+template("cc") {
   executable(target_name){
     testonly = true
     forward_variables_from(invoker, "*")
 
     deps = [
       "//base",
-      "//base:i18n",
       "//build/win:default_exe_manifest",
+      "//cc:test_support",
+      "//cc",
       "//components/viz/demo:host",
       "//components/viz/demo:service",
+      "//components/viz/host",
       "//components/viz/service",
       "//components/viz/service/main",
       "//mojo/core/embedder",
       "//skia",
-      "//ui/events",
-      "//ui/events/platform",
-      "//ui/platform_window",
     ]
 
     if (use_x11) {
@@ -31,23 +30,23 @@ template("viz") {
   }
 }
 
-group("demo_viz") {
+group("demo_cc") {
   testonly = true
   deps = [
-    ":demo_viz_gui",
-    ":demo_viz_offscreen"
+    #":demo_cc_gui",
+    ":demo_cc_offscreen"
   ]
 }
 
-viz("demo_viz_gui") {
-  sources = [
-      "demo_viz_gui.cc"
-  ]
-}
+# cc("demo_cc_gui") {
+#   sources = [
+#       "demo_cc.cc"
+#   ]
+# }
 
-viz("demo_viz_offscreen") {
+cc("demo_cc_offscreen") {
   sources = [
-      "demo_viz_offscreen.cc"
+      "demo_cc_offscreen.cc"
   ]
 }
 

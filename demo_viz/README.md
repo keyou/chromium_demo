@@ -41,7 +41,7 @@ Viz 涉及以下三个端：
     kYuvVideoContent,
     kVideoHole.
 
-> Viz 相关的类图见： https://drive.google.com/file/d/1LW5d0GzlksSVtncDO1kpeHCVs3YD3rl0/view?usp=sharing
+> Viz 和 cc 相关的类图见： <https://drive.google.com/file/d/1LW5d0GzlksSVtncDO1kpeHCVs3YD3rl0/view?usp=sharing>
 
 ## Viz 的 Id 设计
 

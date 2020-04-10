@@ -86,6 +86,10 @@ namespace demo {
 // 实现离屏画面的保存
 class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
  public:
+  SkCanvas* BeginPaint(const gfx::Rect& damage_rect) override {
+    DLOG(INFO) << "BeginPaint: get a canvas for paint";
+    return viz::SoftwareOutputDevice::BeginPaint(damage_rect);
+  }
   virtual void OnSwapBuffers(SwapBuffersCallback swap_ack_callback) override {
     auto image = surface_->makeImageSnapshot();
     SkBitmap bitmap;
@@ -144,6 +148,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     // 用于定时请求BeginFrame
     begin_frame_source_ = std::make_unique<viz::DelayBasedBeginFrameSource>(
         std::move(time_source), viz::BeginFrameSource::kNotRestartableId);
+
     auto output_surface = std::make_unique<viz::SoftwareOutputSurface>(
         std::make_unique<OffscreenSoftwareOutputDevice>());
     auto scheduler = std::make_unique<viz::DisplayScheduler>(
@@ -155,6 +160,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
         shared_bitmap_manager_.get(), settings, root_frame_sink_id_,
         std::move(output_surface), std::move(scheduler), task_runner);
     display_->Initialize(this, frame_sink_manager_->surface_manager());
+
     frame_sink_manager_->RegisterFrameSinkId(root_frame_sink_id_, false);
     frame_sink_manager_->RegisterBeginFrameSource(begin_frame_source_.get(),
                                                   root_frame_sink_id_);
@@ -221,10 +227,6 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
                                     CreateFrame(args),
                                     base::Optional<viz::HitTestRegionList>(),
                                     /*trace_time=*/0);
-    display_->DrawAndSwap();
-    // display_->DidReceiveSwapBuffersAck(gfx::SwapTimings());
-    // display_->DidReceivePresentationFeedback(
-    //     gfx::PresentationFeedback::Failure());
   }
 
   virtual void OnBeginFramePausedChanged(bool paused) override {}
@@ -272,6 +274,10 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
+  // 启动 Trace
+  auto trace_config = base::trace_event::TraceConfig("viz", "trace-to-console");
+  base::trace_event::TraceLog::GetInstance()->SetEnabled(
+      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop

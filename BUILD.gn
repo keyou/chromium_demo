@@ -20,6 +20,7 @@ group("demo") {
     ":demo_memory",
     "demo_resources",
     "demo_viz",
+    "demo_cc",
     "demo_views",
     ":demo_apk",
     "demo_shell",
