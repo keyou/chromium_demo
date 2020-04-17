@@ -1,8 +1,9 @@
 以下是在demo_views程序中追踪cc运行逻辑的堆栈记录，可以协助理解cc的初始化及调度流程。
 注意： demo_views 运行在单进程模式。
-TODO:: 调查为什么 Raster(PREPARE_TILES) 会在Draw之后才触发，根据文档，Raster 应该在Commit之后就触发。
+TODO:: 调查为什么在Draw之后会触发一次 Raster(PREPARE_TILES) 动作（该动作没有实际作用）。
 
 
+Widget的初始化
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::Scheduler(cc::Scheduler * this, cc::SingleThreadProxy * client, const cc::SchedulerSettings & settings, int layer_tree_host_id, base::SingleThreadTaskRunner * task_runner, std::__Cr::unique_ptr<cc::CompositorTimingHistory, std::__Cr::default_delete<cc::CompositorTimingHistory> > compositor_timing_history) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:51)
 libcc.so!cc::SingleThreadProxy::Start(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:86)
@@ -18,7 +19,7 @@ libviews.so!views::DesktopWindowTreeHostX11::Init(views::DesktopWindowTreeHostX1
 libviews.so!views::DesktopNativeWidgetAura::InitNativeWidget(views::DesktopNativeWidgetAura * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_native_widget_aura.cc:485)
 libviews.so!views::Widget::Init(views::Widget * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/widget.cc:353)
 main(int argc, char ** argv) (/media/keyou/dev2/chromium64/src/demo/demo_views/demo_views.cc:222)
-
++
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::SetDeferBeginMainFrame(cc::Scheduler * this, bool defer_begin_main_frame) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:766)
 libcc.so!cc::SingleThreadProxy::SetDeferMainFrameUpdate(cc::SingleThreadProxy * this, bool defer_main_frame_update) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:284)
@@ -35,7 +36,7 @@ libviews.so!views::DesktopWindowTreeHostX11::Init(views::DesktopWindowTreeHostX1
 libviews.so!views::DesktopNativeWidgetAura::InitNativeWidget(views::DesktopNativeWidgetAura * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_native_widget_aura.cc:485)
 libviews.so!views::Widget::Init(views::Widget * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/widget.cc:353)
 main(int argc, char ** argv) (/media/keyou/dev2/chromium64/src/demo/demo_views/demo_views.cc:222)
-
++
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::SetNeedsBeginMainFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:128)
 libcc.so!cc::SingleThreadProxy::SetNeedsCommit(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:242)
@@ -54,9 +55,13 @@ libviews.so!views::DesktopWindowTreeHostX11::Init(views::DesktopWindowTreeHostX1
 libviews.so!views::DesktopNativeWidgetAura::InitNativeWidget(views::DesktopNativeWidgetAura * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_native_widget_aura.cc:485)
 libviews.so!views::Widget::Init(views::Widget * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/widget.cc:353)
 main(int argc, char ** argv) (/media/keyou/dev2/chromium64/src/demo/demo_views/demo_views.cc:222)
-
++
+LayerTreeHost::SetVisible 触发LayerTreeFrameSink的创建
 case SchedulerStateMachine::Action::BEGIN_LAYER_TREE_FRAME_SINK_CREATION:
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
+Post SingleThreadProxy::RequestNewLayerTreeFrameSink
+libcc.so!cc::SingleThreadProxy::ScheduleRequestNewLayerTreeFrameSink(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:657)
+libcc.so!cc::SingleThreadProxy::ScheduledActionBeginLayerTreeFrameSinkCreation(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:928)
+libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:852)
 libcc.so!cc::Scheduler::SetVisible(cc::Scheduler * this, bool visible) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:82)
 libcc.so!cc::SingleThreadProxy::SetVisible(cc::SingleThreadProxy * this, bool visible) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:111)
 libcc.so!cc::LayerTreeHost::SetVisible(cc::LayerTreeHost * this, bool visible) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host.cc:669)
@@ -68,22 +73,8 @@ libviews.so!views::DesktopWindowTreeHostLinux::Init(views::DesktopWindowTreeHost
 libviews.so!views::DesktopWindowTreeHostX11::Init(views::DesktopWindowTreeHostX11 * this, const views::Widget::InitParams & params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_window_tree_host_x11.cc:96)
 libviews.so!views::DesktopNativeWidgetAura::InitNativeWidget(views::DesktopNativeWidgetAura * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_native_widget_aura.cc:485)
 libviews.so!views::Widget::Init(views::Widget * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/widget.cc:353)
-main(int argc, char ** argv) (/media/keyou/dev2/chromium64/src/demo/demo_views/demo_views.cc:222)
-
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
-libcc.so!cc::Scheduler::SetVisible(cc::Scheduler * this, bool visible) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:82)
-libcc.so!cc::SingleThreadProxy::SetVisible(cc::SingleThreadProxy * this, bool visible) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:111)
-libcc.so!cc::LayerTreeHost::SetVisible(cc::LayerTreeHost * this, bool visible) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host.cc:669)
-libcompositor.so!ui::Compositor::Compositor(ui::Compositor * this, const viz::FrameSinkId & frame_sink_id, ui::InProcessContextFactory * context_factory, ui::InProcessContextFactory * context_factory_private, scoped_refptr<base::SingleThreadTaskRunner> task_runner, bool enable_pixel_canvas, bool use_external_begin_frame_control, bool force_software_compositor, const char * trace_environment_name) (/media/keyou/dev2/chromium64/src/ui/compositor/compositor.cc:232)
-libaura.so!std::__Cr::make_unique<ui::Compositor, viz::FrameSinkId const, ui::ContextFactory*&, ui::ContextFactoryPrivate*&, scoped_refptr<base::SingleThreadTaskRunner> const&, bool, bool&, bool&, char const*&>(const char *& __args, const char *& __args, const char *& __args, const char *& __args, const char *& __args, const char *& __args, const char *& __args, const char *& __args) (/media/keyou/dev2/chromium64/src/buildtools/third_party/libc++/trunk/include/memory:3043)
-libaura.so!aura::WindowTreeHost::CreateCompositor(views::DesktopWindowTreeHostX11 * this, const viz::FrameSinkId & frame_sink_id, bool force_software_compositor, bool use_external_begin_frame_control, const char * trace_environment_name) (/media/keyou/dev2/chromium64/src/ui/aura/window_tree_host.cc:430)
-libviews.so!views::DesktopWindowTreeHostPlatform::Init(views::DesktopWindowTreeHostX11 * this, const views::Widget::InitParams & params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_window_tree_host_platform.cc:152)
-libviews.so!views::DesktopWindowTreeHostLinux::Init(views::DesktopWindowTreeHostX11 * this, const views::Widget::InitParams & params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_window_tree_host_linux.cc:163)
-libviews.so!views::DesktopWindowTreeHostX11::Init(views::DesktopWindowTreeHostX11 * this, const views::Widget::InitParams & params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_window_tree_host_x11.cc:96)
-libviews.so!views::DesktopNativeWidgetAura::InitNativeWidget(views::DesktopNativeWidgetAura * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/desktop_aura/desktop_native_widget_aura.cc:485)
-libviews.so!views::Widget::Init(views::Widget * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/widget.cc:353)
-main(int argc, char ** argv) (/media/keyou/dev2/chromium64/src/demo/demo_views/demo_views.cc:222)
-
+main(int argc, char ** argv) (/media/keyou/dev2/chromium64/src/demo/demo_views/demo_views.cc:227)
++
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::SetDeferBeginMainFrame(cc::Scheduler * this, bool defer_begin_main_frame) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:766)
 libcc.so!cc::SingleThreadProxy::SetDeferMainFrameUpdate(cc::SingleThreadProxy * this, bool defer_main_frame_update) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:284)
@@ -100,6 +91,7 @@ libviews.so!views::DesktopNativeWidgetAura::InitNativeWidget(views::DesktopNativ
 libviews.so!views::Widget::Init(views::Widget * this, views::Widget::InitParams params) (/media/keyou/dev2/chromium64/src/ui/views/widget/widget.cc:353)
 main(int argc, char ** argv) (/media/keyou/dev2/chromium64/src/demo/demo_views/demo_views.cc:222)
 
+收到X11事件
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::SetNeedsRedraw(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:138)
 libcc.so!cc::SingleThreadProxy::SetNeedsRedrawOnImplThread(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:381)
@@ -121,6 +113,8 @@ libglib-2.0.so.0!g_main_context_iteration (Unknown Source:0)
 libbase.so!base::MessagePumpGlib::Run(base::MessagePumpGlib * this, base::sequence_manager::internal::ThreadControllerWithMessagePumpImpl * delegate) (/media/keyou/dev2/chromium64/src/base/message_loop/message_pump_glib.cc:437)
 libbase.so!base::sequence_manager::internal::ThreadControllerWithMessagePumpImpl::Run(base::sequence_manager::internal::ThreadControllerWithMessagePumpImpl * this, bool application_tasks_allowed, base::TimeDelta timeout) (/media/keyou/dev2/chromium64/src/base/task/sequence_manager/thread_controller_with_message_pump_impl.cc:463)
 
+Run SingleThreadProxy::RequestNewLayerTreeFrameSink
+创建LayerTreeFrameSink
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::SetNeedsPrepareTiles(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:144)
 libcc.so!cc::SingleThreadProxy::SetNeedsPrepareTilesOnImplThread(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:396)
@@ -158,6 +152,7 @@ libcompositor.so!ui::Compositor::RequestNewLayerTreeFrameSink(ui::Compositor * t
 libcc.so!cc::LayerTreeHost::RequestNewLayerTreeFrameSink(cc::LayerTreeHost * this) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host.cc:499)
 libcc.so!cc::SingleThreadProxy::RequestNewLayerTreeFrameSink(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:120)
 
+BFS触发首帧请求
 Post Scheduler::HandlePendingBeginFrame
 libcc.so!cc::Scheduler::PostPendingBeginFrameTask(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:306)
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
@@ -172,6 +167,7 @@ libviz_common.so!viz::DelayBasedBeginFrameSource::IssueBeginFrameToObserver(viz:
 libviz_common.so!viz::DelayBasedBeginFrameSource::OnTimerTick(viz::DelayBasedBeginFrameSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:349)
 libviz_common.so!viz::DelayBasedTimeSource::OnTimerTick(viz::DelayBasedTimeSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/delay_based_time_source.cc:77)
 +++
+Run Scheduler::HandlePendingBeginFrame
 Post SingleThreadProxy::BeginMainFrame
 case SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME:
 libcc.so!cc::SingleThreadProxy::ScheduledActionSendBeginMainFrame(cc::SingleThreadProxy * this, const viz::BeginFrameArgs & begin_frame_args) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:769)
@@ -219,6 +215,22 @@ libcc.so!cc::Scheduler::NotifyReadyToCommit(cc::Scheduler * this, std::__Cr::uni
 libcc.so!cc::SingleThreadProxy::DoPainting(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:877)
 libcc.so!cc::SingleThreadProxy::BeginMainFrame(cc::SingleThreadProxy * this, const viz::BeginFrameArgs & begin_frame_args) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:848)
 +
+Post Tiles任务（raster任务）到单独的Raster线程，注意这同时会在任务队列的最后放入结束任务，专门用于raster结束的通知，并且结束通知是运行在主线中
+libcc.so!cc::SingleThreadTaskGraphRunner::ScheduleTasks(cc::TestTaskGraphRunner * this, cc::NamespaceToken token, cc::TaskGraph * graph) (/media/keyou/dev2/chromium64/src/cc/raster/single_thread_task_graph_runner.cc:68)
+libcc.so!cc::TileTaskManagerImpl::ScheduleTasks(cc::TileTaskManagerImpl * this, cc::TaskGraph * graph) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_task_manager.cc:32)
+libcc.so!cc::TileManager::ScheduleTasks(cc::TileManager * this, cc::TileManager::PrioritizedWorkToSchedule work_to_schedule) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1108)
+libcc.so!cc::TileManager::PrepareTiles(cc::TileManager * this, const cc::GlobalStateThatImpactsTilePriority & state) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:548)
+libcc.so!cc::LayerTreeHostImpl::PrepareTiles(cc::LayerTreeHostImpl * this) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host_impl.cc:762)
+libcc.so!cc::LayerTreeHostImpl::NotifyPendingTreeFullyPainted(cc::LayerTreeHostImpl * this) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host_impl.cc:651)
+libcc.so!cc::LayerTreeHostImpl::UpdateSyncTreeAfterCommitOrImplSideInvalidation(cc::LayerTreeHostImpl * this) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host_impl.cc:536)
+libcc.so!cc::LayerTreeHostImpl::CommitComplete(cc::LayerTreeHostImpl * this) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host_impl.cc:454)
+libcc.so!cc::SingleThreadProxy::DoCommit(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:203)
+libcc.so!cc::SingleThreadProxy::ScheduledActionCommit(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:912)
+libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:821)
+libcc.so!cc::Scheduler::NotifyReadyToCommit(cc::Scheduler * this, std::__Cr::unique_ptr<cc::BeginMainFrameMetrics, std::__Cr::default_delete<cc::BeginMainFrameMetrics> > details) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:179)
+libcc.so!cc::SingleThreadProxy::DoPainting(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:877)
+libcc.so!cc::SingleThreadProxy::BeginMainFrame(cc::SingleThreadProxy * this, const viz::BeginFrameArgs & begin_frame_args) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:848)
++
 case SchedulerStateMachine::Action::ACTIVATE_SYNC_TREE:
 主要用于将pending_tree_ Sync 到 active_tree_ 上（在单线程中不使用pending_tree_;这个代码在LayerTreeHostImpl中；）
 libcc.so!cc::LayerTreeHostImpl::ActivateSyncTree(cc::LayerTreeHostImpl * this) (/media/keyou/dev2/chromium64/src/cc/trees/layer_tree_host_impl.cc:2979)
@@ -234,59 +246,14 @@ libcc.so!cc::SingleThreadProxy::DoPainting(cc::SingleThreadProxy * this) (/media
 libcc.so!cc::SingleThreadProxy::BeginMainFrame(cc::SingleThreadProxy * this, const viz::BeginFrameArgs & begin_frame_args) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:848)
 
 
+
 每次Scheduler的调度都会按以下顺序更新调度器的状态：
 • ScheduleBeginImplFrameDeadline: 用于设定一个Deadline，在该Deadline之前都允许触发SEND_BEGIN_MAIN_FRAME事件，在Deadline触发后就不再允许触发该事件。它会Post一个延迟的OnBeginImplFrameDeadline事件，如果该事件执行了表示已经到了Deadline（状态机进入INSIDE_DEADLINE状态），它会设置一些状态禁止触发BeginMainFrame，然后进行下一次调度，这些调度都是需要在Deadline状态才能执行的操作，可能调度到DRAW_IF_POSSIBLE，这会触发client提交CF到viz，也可能调度到其他状态比如PREPARE_TILES等，当然也可能调度到NONE状态，在进入Deadline之后的所有操作都完成之后，调度器会进入空闲状态IDLE，此时就算退出Deadline了，后续就允许触发SEND_BEGIN_MAIN_FRAME事件了。
 • PostPendingBeginFrameTask: 用于检测是否需要触发SEND_BEGIN_MAIN_FRAME事件，如果需要它会Post HandlePendingBeginFrame事件，该事件执行后会使状态机进入INSIDE_BEGIN_FRAME状态，随后调度器会在合适的时机触发SEND_BEGIN_MAIN_FRAME事件，这会调用client进行绘制，在client绘制完成之后会请求调度器执行提交COMMIT以及激活ACTIVATE_SYNC_TREE。
 • StartOrStopBeginFrames: 用于检测当前是否处于IDLE状态，如果是则将自己从 BFS 移除，否则则将自己 加入BFS。如果调度器将自己从BFS上移除，则会进入”休眠状态“，此时不会调度器不会占用CPU，如果后续外部需要更新显示的画面，可以通过cc::Scheduler::SetNeedsBeginFrame()来激活调度器（注意cc模块外可以通过cc::LayerTreeHost::SetNeedsCommit()来间接调用它，如果在cc::Layer中，则可以直接调用它的SetNeedsCommit成员函数，如果cc::Layer没有任何变化，只调用SetNeddsCommit()则不会激活调度器，必须有实际的变更或者标记区域demaged）。
 
 
-Post Scheduler::OnBeginImplFrameDeadline
-libcc.so!cc::Scheduler::ScheduleBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:702)
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
-libcc.so!cc::Scheduler::OnBeginFrameDerivedImpl(cc::Scheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:379)
-libviz_common.so!viz::BeginFrameObserverBase::OnBeginFrame(cc::Scheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:93)
-libviz_common.so!viz::(anonymous namespace)::FilterAndIssueBeginFrame(cc::Scheduler * observer, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:47)
-libviz_common.so!viz::ExternalBeginFrameSource::OnBeginFrame(viz::ExternalBeginFrameSource * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:465)
-libservice.so!viz::DirectLayerTreeFrameSink::OnBeginFrame(viz::DirectLayerTreeFrameSink * this, const viz::BeginFrameArgs & args, const viz::FrameTimingDetailsMap & timing_details) (/media/keyou/dev2/chromium64/src/components/viz/service/frame_sinks/direct_layer_tree_frame_sink.cc:321)
-libservice.so!viz::CompositorFrameSinkSupport::OnBeginFrame(viz::CompositorFrameSinkSupport * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/service/frame_sinks/compositor_frame_sink_support.cc:670)
-libviz_common.so!viz::(anonymous namespace)::FilterAndIssueBeginFrame(viz::CompositorFrameSinkSupport * observer, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:47)
-libviz_common.so!viz::DelayBasedBeginFrameSource::IssueBeginFrameToObserver(viz::DelayBasedBeginFrameSource * this, viz::CompositorFrameSinkSupport * obs, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:365)
-libviz_common.so!viz::DelayBasedBeginFrameSource::OnTimerTick(viz::DelayBasedBeginFrameSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:349)
-libviz_common.so!viz::DelayBasedTimeSource::OnTimerTick(viz::DelayBasedTimeSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/delay_based_time_source.cc:77)
-+++
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
-libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:720)
-+
-libcc.so!cc::SchedulerStateMachine::OnBeginImplFrameIdle(cc::SchedulerStateMachine * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler_state_machine.cc:1169)
-libcc.so!cc::Scheduler::FinishImplFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:571)
-libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:721)
-+
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
-libcc.so!cc::Scheduler::FinishImplFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:581)
-libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:721)
-+ Post HandlePendingBeginFrame
-libcc.so!cc::Scheduler::PostPendingBeginFrameTask(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:306)
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:869)
-libcc.so!cc::Scheduler::FinishImplFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:581)
-libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:721)
-+++
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
-libcc.so!cc::Scheduler::BeginImplFrame(cc::Scheduler * this, const viz::BeginFrameArgs & args, base::TimeTicks now) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:629)
-libcc.so!cc::Scheduler::BeginImplFrameWithDeadline(cc::Scheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:552)
-libcc.so!cc::Scheduler::HandlePendingBeginFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:420)
-
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
-libcc.so!cc::Scheduler::OnBeginFrameDerivedImpl(cc::Scheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:379)
-libviz_common.so!viz::BeginFrameObserverBase::OnBeginFrame(cc::Scheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:93)
-libviz_common.so!viz::(anonymous namespace)::FilterAndIssueBeginFrame(cc::Scheduler * observer, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:47)
-libviz_common.so!viz::ExternalBeginFrameSource::OnBeginFrame(viz::ExternalBeginFrameSource * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:465)
-libservice.so!viz::DirectLayerTreeFrameSink::OnBeginFrame(viz::DirectLayerTreeFrameSink * this, const viz::BeginFrameArgs & args, const viz::FrameTimingDetailsMap & timing_details) (/media/keyou/dev2/chromium64/src/components/viz/service/frame_sinks/direct_layer_tree_frame_sink.cc:321)
-libservice.so!viz::CompositorFrameSinkSupport::OnBeginFrame(viz::CompositorFrameSinkSupport * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/service/frame_sinks/compositor_frame_sink_support.cc:670)
-libviz_common.so!viz::(anonymous namespace)::FilterAndIssueBeginFrame(viz::CompositorFrameSinkSupport * observer, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:47)
-libviz_common.so!viz::DelayBasedBeginFrameSource::IssueBeginFrameToObserver(viz::DelayBasedBeginFrameSource * this, viz::CompositorFrameSinkSupport * obs, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:365)
-libviz_common.so!viz::DelayBasedBeginFrameSource::OnTimerTick(viz::DelayBasedBeginFrameSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:349)
-libviz_common.so!viz::DelayBasedTimeSource::OnTimerTick(viz::DelayBasedTimeSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/delay_based_time_source.cc:77)
-
+BFS触发，设定Frame的Deadline
 Post Scheduler::OnBeginImplFrameDeadline
 libcc.so!cc::Scheduler::ScheduleBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:702)
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:867)
@@ -301,7 +268,24 @@ libviz_common.so!viz::DelayBasedBeginFrameSource::IssueBeginFrameToObserver(viz:
 libviz_common.so!viz::DelayBasedBeginFrameSource::OnTimerTick(viz::DelayBasedBeginFrameSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:349)
 libviz_common.so!viz::DelayBasedTimeSource::OnTimerTick(viz::DelayBasedTimeSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/delay_based_time_source.cc:77)
 
-
+执行tile任务，运行在单独的Raster线程（在SingleThreadTaskGraphRunner中执行Raster操作）这会将DisplayItemList中保存的绘制操作执行真实的绘制,绘制到内存中,注意这里采用的是OnCopyRasterBufferProvider。
+libcc_paint.so!cc::PaintOpBuffer::Playback(const cc::PaintOpBuffer * this, SkCanvas * canvas, const cc::PlaybackParams & params, const std::__Cr::vector<unsigned long, std::__Cr::allocator<unsigned long> > * offsets) (/media/keyou/dev2/chromium64/src/cc/paint/paint_op_buffer.cc:2431)
+libcc_paint.so!cc::DisplayItemList::Raster(const cc::DisplayItemList * this, SkCanvas * canvas, cc::(anonymous namespace)::DispatchingImageProvider * image_provider) (/media/keyou/dev2/chromium64/src/cc/paint/display_item_list.cc:81)
+libcc.so!cc::RasterSource::PlaybackToCanvas(const cc::RasterSource * this, SkCanvas * raster_canvas, cc::(anonymous namespace)::DispatchingImageProvider * image_provider) (/media/keyou/dev2/chromium64/src/cc/raster/raster_source.cc:171)
+libcc.so!cc::RasterSource::PlaybackToCanvas(const cc::RasterSource * this, SkCanvas * raster_canvas, const gfx::Size & content_size, const gfx::Rect & canvas_bitmap_rect, const gfx::Rect & canvas_playback_rect, const gfx::AxisTransform2d & raster_transform, const cc::RasterSource::PlaybackSettings & settings) (/media/keyou/dev2/chromium64/src/cc/raster/raster_source.cc:161)
+libcc.so!cc::RasterBufferProvider::PlaybackToMemory(void * memory, viz::ResourceFormat format, const gfx::Size & size, size_t stride, const cc::RasterSource * raster_source, const gfx::Rect & canvas_bitmap_rect, const gfx::Rect & canvas_playback_rect, const gfx::AxisTransform2d & transform, const gfx::ColorSpace & target_color_space, bool gpu_compositing, const cc::RasterSource::PlaybackSettings & playback_settings) (/media/keyou/dev2/chromium64/src/cc/raster/raster_buffer_provider.cc:107)
+libcc.so!cc::OneCopyRasterBufferProvider::PlaybackToStagingBuffer(cc::OneCopyRasterBufferProvider * this, cc::StagingBuffer * staging_buffer, const cc::RasterSource * raster_source, const gfx::Rect & raster_full_rect, const gfx::Rect & raster_dirty_rect, const gfx::AxisTransform2d & transform, viz::ResourceFormat format, const gfx::ColorSpace & dst_color_space, const cc::RasterSource::PlaybackSettings & playback_settings, uint64_t previous_content_id, uint64_t new_content_id) (/media/keyou/dev2/chromium64/src/cc/raster/one_copy_raster_buffer_provider.cc:347)
+libcc.so!cc::OneCopyRasterBufferProvider::PlaybackAndCopyOnWorkerThread(cc::OneCopyRasterBufferProvider * this, gpu::Mailbox * mailbox, GLenum mailbox_texture_target, bool mailbox_texture_is_overlay_candidate, const gpu::SyncToken & sync_token, const cc::RasterSource * raster_source, const gfx::Rect & raster_full_rect, const gfx::Rect & raster_dirty_rect, const gfx::AxisTransform2d & transform, const gfx::Size & resource_size, viz::ResourceFormat resource_format, const gfx::ColorSpace & color_space, const cc::RasterSource::PlaybackSettings & playback_settings, uint64_t previous_content_id, uint64_t new_content_id) (/media/keyou/dev2/chromium64/src/cc/raster/one_copy_raster_buffer_provider.cc:270)
+libcc.so!cc::OneCopyRasterBufferProvider::RasterBufferImpl::Playback(cc::OneCopyRasterBufferProvider::RasterBufferImpl * this, const cc::RasterSource * raster_source, const gfx::Rect & raster_full_rect, const gfx::Rect & raster_dirty_rect, uint64_t new_content_id, const gfx::AxisTransform2d & transform, const cc::RasterSource::PlaybackSettings & playback_settings, const GURL & url) (/media/keyou/dev2/chromium64/src/cc/raster/one_copy_raster_buffer_provider.cc:118)
+libcc.so!cc::(anonymous namespace)::RasterTaskImpl::RunOnWorkerThread(cc::(anonymous namespace)::RasterTaskImpl * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:125)
+libcc.so!cc::SingleThreadTaskGraphRunner::RunTaskWithLockAcquired(cc::TestTaskGraphRunner * this) (/media/keyou/dev2/chromium64/src/cc/raster/single_thread_task_graph_runner.cc:154)
+libcc.so!cc::SingleThreadTaskGraphRunner::Run(cc::TestTaskGraphRunner * this) (/media/keyou/dev2/chromium64/src/cc/raster/single_thread_task_graph_runner.cc:117)
+libbase.so!base::DelegateSimpleThread::Run(base::DelegateSimpleThread * this) (/media/keyou/dev2/chromium64/src/base/threading/simple_thread.cc:98)
+libbase.so!base::SimpleThread::ThreadMain(base::DelegateSimpleThread * this) (/media/keyou/dev2/chromium64/src/base/threading/simple_thread.cc:75)
+libbase.so!base::(anonymous namespace)::ThreadFunc(void * params) (/media/keyou/dev2/chromium64/src/base/threading/platform_thread_posix.cc:81)
+libpthread.so.0!start_thread (Unknown Source:0)
+libc.so.6!clone (Unknown Source:0)
++++
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::SetNeedsRedraw(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:138)
 libcc.so!cc::SingleThreadProxy::SetNeedsRedrawOnImplThread(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:381)
@@ -311,7 +295,7 @@ libcc.so!cc::TileManager::OnRasterTaskCompleted(cc::TileManager * this, cc::Tile
 libcc.so!cc::(anonymous namespace)::RasterTaskImpl::OnTaskCompleted(cc::(anonymous namespace)::RasterTaskImpl * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:138)
 libcc.so!cc::TileTaskManagerImpl::CheckForCompletedTasks(cc::TileTaskManagerImpl * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_task_manager.cc:43)
 libcc.so!cc::TileManager::FlushAndIssueSignals(cc::TileManager * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1430)
-+
++++
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::SetNeedsRedraw(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:138)
 libcc.so!cc::SingleThreadProxy::SetNeedsRedrawOnImplThread(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:381)
@@ -321,7 +305,7 @@ libcc.so!cc::TileManager::OnRasterTaskCompleted(cc::TileManager * this, cc::Tile
 libcc.so!cc::(anonymous namespace)::RasterTaskImpl::OnTaskCompleted(cc::(anonymous namespace)::RasterTaskImpl * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:138)
 libcc.so!cc::TileTaskManagerImpl::CheckForCompletedTasks(cc::TileTaskManagerImpl * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_task_manager.cc:43)
 libcc.so!cc::TileManager::FlushAndIssueSignals(cc::TileManager * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1430)
-+
++++
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::NotifyReadyToActivate(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:94)
 libcc.so!cc::SingleThreadProxy::NotifyReadyToActivate(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:368)
@@ -329,7 +313,7 @@ libcc.so!cc::LayerTreeHostImpl::NotifyReadyToActivate(cc::LayerTreeHostImpl * th
 libcc.so!cc::TileManager::IssueSignals(cc::TileManager * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1446)
 libcc.so!cc::TileManager::CheckPendingGpuWorkAndIssueSignals(cc::TileManager * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1700)
 libcc.so!cc::TileManager::FlushAndIssueSignals(cc::TileManager * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1434)
-+
++++
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::NotifyReadyToDraw(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:100)
 libcc.so!cc::SingleThreadProxy::NotifyReadyToDraw(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:375)
@@ -338,17 +322,11 @@ libcc.so!cc::TileManager::IssueSignals(cc::TileManager * this) (/media/keyou/dev
 libcc.so!cc::TileManager::CheckPendingGpuWorkAndIssueSignals(cc::TileManager * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1700)
 libcc.so!cc::TileManager::FlushAndIssueSignals(cc::TileManager * this) (/media/keyou/dev2/chromium64/src/cc/tiles/tile_manager.cc:1434)
 
-在BeginImplFrameDeadline中会进行绘制操作，并在结束时Post Scheduler::HandlePendingBeginFrame
+
+Deadline时间到，触发绘制(Submit)操作
+Run Scheduler::OnBeginImplFrameDeadline
 case SchedulerStateMachine::Action::DRAW_IF_POSSIBLE:
-libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
-libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:720)
-+
-开始绘制及显示，将DisplayScheduler加入BFS的Observer，这个BFS和support所加入的BFS是同一个
-libservice.so!viz::Display::DrawAndSwap(viz::Display * this) (/media/keyou/dev2/chromium64/src/components/viz/service/display/display.cc:458)
-libservice.so!viz::DisplayScheduler::DrawAndSwap(viz::DisplayScheduler * this) (/media/keyUpdateou/dev2/chromium64/src/components/viz/service/display/display_scheduler.cc:215)
-libservice.so!viz::DisplayScheduler::AttemptDrawAndSwap(viz::DisplayScheduler * this) (/media/keyou/dev2/chromium64/src/components/viz/service/display/display_scheduler.cc:488)
-libservice.so!viz::DisplayScheduler::OnBeginFrameDeadline(viz::DisplayScheduler * this) (/media/keyou/dev2/chromium64/src/components/viz/service/display/display_scheduler.cc:504)
-PostTask
+PostTask DisplayScheduler::OnBeginFrameDeadline
 libservice.so!viz::DisplayScheduler::ScheduleBeginFrameDeadline(viz::DisplayScheduler * this) (/media/keyou/dev2/chromium64/src/components/viz/service/display/display_scheduler.cc:475)
 libservice.so!viz::DisplayScheduler::OnBeginFrameDerivedImpl(viz::DisplayScheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/service/display/display_scheduler.cc:264)
 libviz_common.so!viz::BeginFrameObserverBase::OnBeginFrame(viz::DisplayScheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:93)
@@ -376,6 +354,8 @@ libcc.so!cc::Scheduler::DrawIfPossible(cc::Scheduler * this) (/media/keyou/dev2/
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:838)
 libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:720)
 +
+TODO: 需要调查为什么每次Draw操作之后都会触发Tiles操作。猜测可能是deadline的时候不管tiles操作是否完成，Draw操作都会被触发，所以每次在draw完了之后都要再次触发tiles操作，这有点说不通。
+触发 tiles(raster) 操作，由于此时并没有画面需要tiles，因此这个动作没有明显的效果，注释掉这里的代码后也没有看到异常。
 case SchedulerStateMachine::Action::PREPARE_TILES:
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:720)
@@ -403,6 +383,7 @@ libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/ke
 libcc.so!cc::Scheduler::FinishImplFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:581)
 libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:721)
 
+BFS触发，没有画面需要更新
 libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:795)
 libcc.so!cc::Scheduler::OnBeginFrameDerivedImpl(cc::Scheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:379)
 libviz_common.so!viz::BeginFrameObserverBase::OnBeginFrame(cc::Scheduler * this, const viz::BeginFrameArgs & args) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:93)
@@ -415,7 +396,7 @@ libviz_common.so!viz::DelayBasedBeginFrameSource::IssueBeginFrameToObserver(viz:
 libviz_common.so!viz::DelayBasedBeginFrameSource::OnTimerTick(viz::DelayBasedBeginFrameSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:349)
 libviz_common.so!viz::DelayBasedTimeSource::OnTimerTick(viz::DelayBasedTimeSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/delay_based_time_source.cc:77)
 
-进行渲染
+BFS触发，viz执行渲染
 ui::(anonymous namespace)::DirectOutputSurface::BindFramebuffer(ui::(anonymous namespace)::DirectOutputSurface * this) (/media/keyou/dev2/chromium64/src/ui/compositor/test/in_process_context_factory.cc:91)
 libservice.so!viz::GLRenderer::BindFramebufferToOutputSurface(viz::GLRenderer * this) (/media/keyou/dev2/chromium64/src/components/viz/service/display/gl_renderer.cc:3132)
 libservice.so!viz::DirectRenderer::UseRenderPass(viz::GLRenderer * this, const viz::RenderPass * render_pass) (/media/keyou/dev2/chromium64/src/components/viz/service/display/direct_renderer.cc:739)
@@ -446,7 +427,23 @@ libviz_common.so!viz::DelayBasedBeginFrameSource::IssueBeginFrameToObserver(viz:
 libviz_common.so!viz::DelayBasedBeginFrameSource::OnTimerTick(viz::DelayBasedBeginFrameSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:349)
 libviz_common.so!viz::DelayBasedTimeSource::OnTimerTick(viz::DelayBasedTimeSource * this) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/delay_based_time_source.cc:77)
 
-鼠标移到鼠标上时触发画面更新，这会导致scheduler发起新的BMF请求。
+....此处省略了设置Deadline的过程
+
+Deadline时间到，此时由于没有任务可做，scheduler会将自己从BFS的监听中移除，这会导致support也将自己从BFS的监听中移除，并停止BFS。这里可以看到如果画面不需要更新cc以及viz都不会占用CPU或者GPU。
+libviz_common.so!base::internal::CancelableCallbackImpl<base::OnceCallback<void ()> >::Cancel()(base::internal::CancelableCallbackImpl<base::OnceCallback<void ()> > * this) (/media/keyou/dev2/chromium64/src/base/cancelable_callback.h:77)
+libviz_common.so!viz::DelayBasedTimeSource::SetActive(viz::DelayBasedTimeSource * this, bool active) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/delay_based_time_source.cc:48)
+libviz_common.so!viz::DelayBasedBeginFrameSource::RemoveObserver(viz::DelayBasedBeginFrameSource * this, viz::CompositorFrameSinkSupport * obs) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:328)
+libservice.so!viz::CompositorFrameSinkSupport::UpdateNeedsBeginFramesInternal(viz::CompositorFrameSinkSupport * this) (/media/keyou/dev2/chromium64/src/components/viz/service/frame_sinks/compositor_frame_sink_support.cc:706)
+libservice.so!viz::CompositorFrameSinkSupport::SetNeedsBeginFrame(viz::CompositorFrameSinkSupport * this, bool needs_begin_frame) (/media/keyou/dev2/chromium64/src/components/viz/service/frame_sinks/compositor_frame_sink_support.cc:316)
+libservice.so!viz::DirectLayerTreeFrameSink::OnNeedsBeginFrames(viz::DirectLayerTreeFrameSink * this, bool needs_begin_frames) (/media/keyou/dev2/chromium64/src/components/viz/service/frame_sinks/direct_layer_tree_frame_sink.cc:336)
+libviz_common.so!viz::ExternalBeginFrameSource::RemoveObserver(viz::ExternalBeginFrameSource * this, cc::Scheduler * obs) (/media/keyou/dev2/chromium64/src/components/viz/common/frame_sinks/begin_frame_source.cc:414)
+libcc.so!cc::Scheduler::StartOrStopBeginFrames(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:271)
+libcc.so!cc::Scheduler::ProcessScheduledActions(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:870)
+libcc.so!cc::Scheduler::FinishImplFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:581)
+libcc.so!cc::Scheduler::OnBeginImplFrameDeadline(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:721)
+
+
+鼠标移到鼠标上时触发画面更新，这会导致scheduler被激活，将自己重新加入到BFS中，发起新的BeginMainFrame请求。
 libcc.so!cc::SchedulerStateMachine::SetNeedsBeginMainFrame(cc::SchedulerStateMachine * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler_state_machine.cc:1405)
 libcc.so!cc::Scheduler::SetNeedsBeginMainFrame(cc::Scheduler * this) (/media/keyou/dev2/chromium64/src/cc/scheduler/scheduler.cc:127)
 libcc.so!cc::SingleThreadProxy::SetNeedsCommit(cc::SingleThreadProxy * this) (/media/keyou/dev2/chromium64/src/cc/trees/single_thread_proxy.cc:242)
