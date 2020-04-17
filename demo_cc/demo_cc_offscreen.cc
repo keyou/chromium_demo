@@ -135,6 +135,7 @@ class Layer : public cc::ContentLayerClient {
             [](scoped_refptr<cc::PictureLayer> layer, SkColor color, int i) {
               LOG(INFO) << "layer->SetNeedsCommit()";
               // 将整个layer标记为demaged，它内部会调用SetNeedsCommit()
+              // 也可以使用 LayerTreeHost::SetNeedsAnimate() 强制更新
               layer->SetNeedsDisplay();
             },
             content_layer_, color, i),
@@ -308,6 +309,7 @@ class OffscreenLayerTreeFrameSink
                                   1.0f);
     }
     // 将 OnBeginFrame 转发给 cc::Scheduler
+    // cc:::Scheduler 的发动机之一
     external_begin_frame_source_->OnBeginFrame(args);
   }
   virtual void OnBeginFramePausedChanged(bool paused) override {}
@@ -328,32 +330,33 @@ class OffscreenLayerTreeFrameSink
     return frame_sink_manager_->GetPreferredFrameIntervalForFrameSinkId(id);
   }
 
-  std::unique_ptr<viz::ExternalBeginFrameSource> external_begin_frame_source_;
-
-  std::unique_ptr<viz::CompositorFrameSinkSupport> support_;
-  std::unique_ptr<viz::DelayBasedBeginFrameSource> begin_frame_source_;
-  std::unique_ptr<viz::Display> display_;
   // 由于要将显示存储为图片，所以使用1FPS
   double fps_ = 1.0;
   // 画面大小为 300x200
   gfx::Size size_{300, 200};
-
   viz::FrameSinkId root_frame_sink_id_{0, 1};
   viz::ParentLocalSurfaceIdAllocator root_local_surface_id_allocator_;
   viz::LocalSurfaceIdAllocation root_local_surface_id_;
   viz::FrameTokenGenerator frame_token_generator_;
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   base::WeakPtrFactory<OffscreenLayerTreeFrameSink> weak_factory_{this};
+  std::unique_ptr<viz::ExternalBeginFrameSource> external_begin_frame_source_;
+  std::unique_ptr<viz::DelayBasedBeginFrameSource> begin_frame_source_;
+  std::unique_ptr<viz::CompositorFrameSinkSupport> support_;
+  std::unique_ptr<viz::Display> display_;
 };
 
 // 作用类似 ui::Compositor,负责初始化cc和viz
-class Compositor : public cc::LayerTreeHostClient,
-                   public cc::LayerTreeHostSingleThreadClient,
-                   public viz::HostFrameSinkClient {
+class Compositor
+    : public cc::LayerTreeHostClient,
+      // 这个接口用于不使用cc::Scheduler的模式下，该demo使用cc::Scheduelr
+      public cc::LayerTreeHostSingleThreadClient,
+      public viz::HostFrameSinkClient {
  public:
   Compositor() {
     auto task_runner = base::ThreadTaskRunnerHandle::Get();
     cc::LayerTreeSettings settings;
+    settings.initial_debug_state.show_fps_counter = true;
 
     animation_host_ = cc::AnimationHost::CreateMainInstance();
 

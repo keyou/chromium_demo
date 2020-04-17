@@ -1,21 +1,19 @@
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/message_loop/message_loop.h"
+#include "base/process/launch.h"
 #include "base/task/post_task.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/process/launch.h"
 #include "base/threading/thread.h"
-
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
-#include "mojo/public/cpp/platform/platform_channel.h"
-#include "mojo/public/cpp/system/invitation.h"
-
 #include "mojo/public/c/system/buffer.h"
 #include "mojo/public/c/system/data_pipe.h"
 #include "mojo/public/c/system/message_pipe.h"
+#include "mojo/public/cpp/platform/platform_channel.h"
 #include "mojo/public/cpp/system/buffer.h"
 #include "mojo/public/cpp/system/data_pipe.h"
+#include "mojo/public/cpp/system/invitation.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
@@ -29,24 +27,32 @@
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 
 // For associated bindings API
+#include <iostream>
+#include <vector>
+
 #include "mojo/public/cpp/bindings/associated_binding.h"
 #include "mojo/public/cpp/bindings/associated_interface_ptr.h"
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 
-#include <iostream>
-#include <vector>
-
 // 在新版本中这些类被重命名,这里模拟新版本
-template<class T> using Remote = mojo::InterfacePtr<T>;
-template<class T> using PendingRemote = mojo::InterfacePtrInfo<T>;
-template<class T> using Receiver = mojo::Binding<T>;
-template<class T> using PendingReceiver = mojo::InterfaceRequest<T>;
+template <class T>
+using Remote = mojo::InterfacePtr<T>;
+template <class T>
+using PendingRemote = mojo::InterfacePtrInfo<T>;
+template <class T>
+using Receiver = mojo::Binding<T>;
+template <class T>
+using PendingReceiver = mojo::InterfaceRequest<T>;
 
 // 以下定义用于模拟新版本的关联接口
-template<class T> using AssociatedRemote = mojo::AssociatedInterfacePtr<T>;
-template<class T> using PendingAssociatedRemote = mojo::AssociatedInterfacePtrInfo<T>;
-template<class T> using AssociatedReceiver = mojo::AssociatedBinding<T>;
-template<class T> using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
+template <class T>
+using AssociatedRemote = mojo::AssociatedInterfacePtr<T>;
+template <class T>
+using PendingAssociatedRemote = mojo::AssociatedInterfacePtrInfo<T>;
+template <class T>
+using AssociatedReceiver = mojo::AssociatedBinding<T>;
+template <class T>
+using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
 using namespace demo::mojom;
 
@@ -70,45 +76,47 @@ class TestImpl : public demo::mojom::Test {
 
 #pragma region Test2
 class Test2Impl : public demo::mojom::Test2 {
-public:
+ public:
   explicit Test2Impl(PendingReceiver<demo::mojom::Test2> receiver)
-    : receiver_(this,std::move(receiver)) {
-  }
-  void SendMessagePipeHandle(mojo::ScopedMessagePipeHandle pipe_handle) override {
+      : receiver_(this, std::move(receiver)) {}
+  void SendMessagePipeHandle(
+      mojo::ScopedMessagePipeHandle pipe_handle) override {
     // mojo::WriteMessage(pipe_handle.get(),...)
-    LOG(INFO) << "Test2 run: SendMessagePipeHandle "<< pipe_handle->value();
+    LOG(INFO) << "Test2 run: SendMessagePipeHandle " << pipe_handle->value();
   }
-private:
+
+ private:
   Receiver<demo::mojom::Test2> receiver_;
 };
 
 class ApiImpl : public demo::mojom::Api {
-public:
+ public:
   explicit ApiImpl(PendingReceiver<Api> receiver)
-    : receiver_(this,std::move(receiver)),associated_receiver_(nullptr) {}
+      : receiver_(this, std::move(receiver)), associated_receiver_(nullptr) {}
   explicit ApiImpl(PendingAssociatedReceiver<Api> receiver)
-    : receiver_(nullptr),associated_receiver_(this,std::move(receiver)){}
+      : receiver_(nullptr), associated_receiver_(this, std::move(receiver)) {}
 
   void PrintApi(const std::string& data) override {
     LOG(INFO) << "Api run: PrintApi " << data;
   }
-  
-private:
+
+ private:
   Receiver<Api> receiver_;
   AssociatedReceiver<Api> associated_receiver_;
 };
 
 class Api2Impl : public demo::mojom::Api2 {
-public:
+ public:
   explicit Api2Impl(PendingReceiver<Api2> receiver)
-    : receiver_(this,std::move(receiver)),associated_receiver_(nullptr) {}
+      : receiver_(this, std::move(receiver)), associated_receiver_(nullptr) {}
   explicit Api2Impl(PendingAssociatedReceiver<Api2> receiver)
-    : receiver_(nullptr),associated_receiver_(this,std::move(receiver)){}
-  
+      : receiver_(nullptr), associated_receiver_(this, std::move(receiver)) {}
+
   void PrintApi2(const std::string& data) override {
     LOG(INFO) << "Api2 run: PrintApi2 " << data;
   }
-private:
+
+ private:
   Receiver<Api2> receiver_;
   AssociatedReceiver<Api2> associated_receiver_;
 };
@@ -118,17 +126,16 @@ private:
 class Test3Impl : public demo::mojom::Test3 {
  public:
   explicit Test3Impl(PendingReceiver<Test3> receiver)
-    : receiver_(this,std::move(receiver)) {
-  }
+      : receiver_(this, std::move(receiver)) {}
   void GetApi(PendingReceiver<Api> api) override {
     LOG(INFO) << "Test3 run: GetApi";
     api_ = std::make_unique<ApiImpl>(std::move(api));
   }
   void SetApi2(Remote<Api2> api2) override {
-    LOG(INFO) <<"Test3 run: SetApi2";
+    LOG(INFO) << "Test3 run: SetApi2";
     remote_api2_ = std::move(api2);
     remote_api2_->PrintApi2("api2");
-    LOG(INFO) <<"Test3 call: Api2::PrintApi2";
+    LOG(INFO) << "Test3 call: Api2::PrintApi2";
   }
 
  private:
@@ -140,17 +147,16 @@ class Test3Impl : public demo::mojom::Test3 {
 class Test32Impl : public demo::mojom::Test32 {
  public:
   explicit Test32Impl(PendingReceiver<Test32> receiver)
-    : receiver_(this,std::move(receiver)) {
-  }
+      : receiver_(this, std::move(receiver)) {}
   void GetApi(PendingAssociatedReceiver<Api> api) override {
     LOG(INFO) << "Test32 run: GetApi";
     api_ = std::make_unique<ApiImpl>(std::move(api));
   }
   void SetApi2(PendingAssociatedRemote<Api2> api2) override {
-    LOG(INFO) <<"Test32 run: SetApi2";
+    LOG(INFO) << "Test32 run: SetApi2";
     remote_api2_.Bind(std::move(api2));
     remote_api2_->PrintApi2("api2");
-    LOG(INFO) <<"Test32 call: Api2::PrintApi2";
+    LOG(INFO) << "Test32 call: Api2::PrintApi2";
   }
 
  private:
@@ -162,48 +168,53 @@ class Test32Impl : public demo::mojom::Test32 {
 
 #pragma region Test4
 class Interface1Impl : public Interface1 {
-public:
-    explicit Interface1Impl(PendingReceiver<Interface1> receiver)
-    : receiver_(this,std::move(receiver)){}
-    void Hello(const std::string& who) override {
-      LOG(INFO) << "Interface1 run: Hello " << who;
-    }
-private:
+ public:
+  explicit Interface1Impl(PendingReceiver<Interface1> receiver)
+      : receiver_(this, std::move(receiver)) {}
+  void Hello(const std::string& who) override {
+    LOG(INFO) << "Interface1 run: Hello " << who;
+  }
+
+ private:
   Receiver<Interface1> receiver_;
 };
 
 class Interface2Impl : public Interface2 {
-public:
-    explicit Interface2Impl(PendingReceiver<Interface2> receiver)
-    : receiver_(this,std::move(receiver)){}
+ public:
+  explicit Interface2Impl(PendingReceiver<Interface2> receiver)
+      : receiver_(this, std::move(receiver)) {}
 
-    void Hi(const std::string& who) override {
-      LOG(INFO) << "Interface2 run: Hi " << who;
-    }
-private:
+  void Hi(const std::string& who) override {
+    LOG(INFO) << "Interface2 run: Hi " << who;
+  }
+
+ private:
   Receiver<Interface2> receiver_;
 };
 
 // 在新版本中InterfaceProvider被改名为InterfaceBroker,这里只是说明它们两个的关系,没有实际作用
 using InterfaceProvider = InterfaceBroker;
 class InterfaceBrokerImpl : public InterfaceBroker {
-public:
+ public:
   explicit InterfaceBrokerImpl(PendingReceiver<InterfaceBroker> receiver)
-    : receiver_(this,std::move(receiver)){}
-  
-  void GetInterface(const std::string& name, mojo::ScopedMessagePipeHandle pipe_handle) override {
+      : receiver_(this, std::move(receiver)) {}
+
+  void GetInterface(const std::string& name,
+                    mojo::ScopedMessagePipeHandle pipe_handle) override {
     std::move(binders_[name]).Run(std::move(pipe_handle));
   }
 
-  template<class InterfaceT,class InterfaceImplT>
+  template <class InterfaceT, class InterfaceImplT>
   void AddMap(const std::string& name) {
-    binders_.emplace(name,base::BindRepeating([](mojo::ScopedMessagePipeHandle handle){
-      new InterfaceImplT(PendingReceiver<InterfaceT>(std::move(handle)));
-    }));
+    binders_.emplace(
+        name, base::BindRepeating([](mojo::ScopedMessagePipeHandle handle) {
+          new InterfaceImplT(PendingReceiver<InterfaceT>(std::move(handle)));
+        }));
   }
 
-private:
+ private:
   // 这里也可以使用service_manager::BinderRegistry
+  // 2020.4.17:mojo中增加了mojo::BinderMap类，实现相同功能
   using BinderMap =
       std::map<std::string,
                base::RepeatingCallback<void(mojo::ScopedMessagePipeHandle)>>;
@@ -261,8 +272,9 @@ void MojoProducer() {
     auto& test = *test_ptr;
     test->Hello("World!");
     LOG(INFO) << "Test1 call: Hello";
-    test->Hi(base::BindOnce(
-        [](const std::string& who) { LOG(INFO) << "Test1 response: Hi " << who; }));
+    test->Hi(base::BindOnce([](const std::string& who) {
+      LOG(INFO) << "Test1 response: Hi " << who;
+    }));
     LOG(INFO) << "Test1 call: Hi";
     // 新版本中的 Remote::BindNewPipeAndPassReceiver()
     // 只是一个语法糖，只在相同进程中才比较方便；
@@ -273,18 +285,18 @@ void MojoProducer() {
   {
     Remote<Test2> test2;
     // 演示使用Bind而不是Remote的构造函数,因为新版的示例大多都是这种方式,两种方式效果一样
-    test2.Bind(PendingRemote<Test2>(std::move(pipe21),0));
+    test2.Bind(PendingRemote<Test2>(std::move(pipe21), 0));
     test2->SendMessagePipeHandle(std::move(pipe22));
     LOG(INFO) << "Test2 call: SendMessagePipeHandle";
   }
   // 使用mojo接口发送其他mojo接口
   {
     // 使用 pipe31 来调用Test3接口
-    Remote<Test3> test3(PendingRemote<Test3>(std::move(pipe31),0));
+    Remote<Test3> test3(PendingRemote<Test3>(std::move(pipe31), 0));
 
     // 创建新的MessagePipe用于Api接口的调用
     mojo::MessagePipe api_pipe;
-    Remote<Api> api(PendingRemote<Api>(std::move(api_pipe.handle0),0));
+    Remote<Api> api(PendingRemote<Api>(std::move(api_pipe.handle0), 0));
     test3->GetApi(PendingReceiver<Api>(std::move(api_pipe.handle1)));
     // 使用MakeRequest结果和上面一样，可以更简单,在更新的版本中Remote中添加了BindNew*方法，用来取代MakeRequest
     // Remote<Api> api;
@@ -295,24 +307,28 @@ void MojoProducer() {
 
     // 创建新的MessagePipe用于Api2接口的调用
     mojo::MessagePipe api2_pipe;
-    Remote<Api2> api2(PendingRemote<Api2>(std::move(api2_pipe.handle0),0));
+    Remote<Api2> api2(PendingRemote<Api2>(std::move(api2_pipe.handle0), 0));
     new Api2Impl(PendingReceiver<Api2>(std::move(api2_pipe.handle1)));
     test3->SetApi2(std::move(api2));
     LOG(INFO) << "Test3 call: SetApi2";
   }
 
-  // 关联接口(Associated Interfaces),关联接口只需要使用一个pipe即可,用来避免多个pipe导致的多接口间调用顺序无法保证的问题
+  // 关联接口(Associated
+  // Interfaces),关联接口只需要使用一个pipe即可,用来避免多个pipe导致的多接口间调用顺序无法保证的问题
   {
     // 使用 pipe32 来调用Test32接口
     // 为了避免pipe32被销毁后Api2Impl无法响应对方的调用,这里使用new
-    auto test32_ptr = new Remote<Test32>(PendingRemote<Test32>(std::move(pipe32),0));
+    auto test32_ptr =
+        new Remote<Test32>(PendingRemote<Test32>(std::move(pipe32), 0));
     auto& test32 = *test32_ptr;
 
     // 创建新的Endpoint用于Api接口的调用
     mojo::ScopedInterfaceEndpointHandle handle0;
     mojo::ScopedInterfaceEndpointHandle handle1;
-    mojo::ScopedInterfaceEndpointHandle::CreatePairPendingAssociation(&handle0,&handle1);
-    AssociatedRemote<Api> api(PendingAssociatedRemote<Api>(std::move(handle0),0));
+    mojo::ScopedInterfaceEndpointHandle::CreatePairPendingAssociation(&handle0,
+                                                                      &handle1);
+    AssociatedRemote<Api> api(
+        PendingAssociatedRemote<Api>(std::move(handle0), 0));
     test32->GetApi(PendingAssociatedReceiver<Api>(std::move(handle1)));
     LOG(INFO) << "Test32 call: GetApi";
     api->PrintApi("api");
@@ -321,24 +337,28 @@ void MojoProducer() {
     // 创建新的Endpoint用于Api2接口的调用
     mojo::ScopedInterfaceEndpointHandle handle00;
     mojo::ScopedInterfaceEndpointHandle handle11;
-    mojo::ScopedInterfaceEndpointHandle::CreatePairPendingAssociation(&handle00,&handle11);
+    mojo::ScopedInterfaceEndpointHandle::CreatePairPendingAssociation(
+        &handle00, &handle11);
     new Api2Impl(PendingAssociatedReceiver<Api2>(std::move(handle11)));
-    test32->SetApi2(PendingAssociatedRemote<Api2>(std::move(handle00),0));
+    test32->SetApi2(PendingAssociatedRemote<Api2>(std::move(handle00), 0));
     LOG(INFO) << "Test32 call: SetApi2";
   }
   // 封装出通用的 InterfaceBroker 以便支撑任何新的接口
   {
-    Remote<InterfaceBroker> broker(PendingRemote<InterfaceBroker>(std::move(pipe4),0));
-    
+    Remote<InterfaceBroker> broker(
+        PendingRemote<InterfaceBroker>(std::move(pipe4), 0));
+
     mojo::MessagePipe interface1_pipe;
-    Remote<Interface1> interface1(PendingRemote<Interface1>(std::move(interface1_pipe.handle0),0));
-    broker->GetInterface("Interface1",std::move(interface1_pipe.handle1));
+    Remote<Interface1> interface1(
+        PendingRemote<Interface1>(std::move(interface1_pipe.handle0), 0));
+    broker->GetInterface("Interface1", std::move(interface1_pipe.handle1));
     interface1->Hello("Interface1");
     LOG(INFO) << "Interface1 call: Hello";
 
     mojo::MessagePipe interface2_pipe;
-    Remote<Interface2> interface2(PendingRemote<Interface2>(std::move(interface2_pipe.handle0),0));
-    broker->GetInterface("Interface2",std::move(interface2_pipe.handle1));
+    Remote<Interface2> interface2(
+        PendingRemote<Interface2>(std::move(interface2_pipe.handle0), 0));
+    broker->GetInterface("Interface2", std::move(interface2_pipe.handle1));
     interface2->Hi("Interface2");
     LOG(INFO) << "Interface2 call: Hi";
   }
@@ -378,16 +398,13 @@ void MojoConsumer() {
     // 演示将Receiver放到实现类中
     new Test2Impl(PendingReceiver<Test2>(std::move(pipe21)));
   }
+  { new Test3Impl(PendingReceiver<Test3>(std::move(pipe31))); }
+  { new Test32Impl(PendingReceiver<Test32>(std::move(pipe32))); }
   {
-    new Test3Impl(PendingReceiver<Test3>(std::move(pipe31)));
-  }
-  {
-    new Test32Impl(PendingReceiver<Test32>(std::move(pipe32)));
-  }
-  {
-    auto test4 = new InterfaceBrokerImpl(PendingReceiver<InterfaceBroker>(std::move(pipe4)));
-    test4->AddMap<Interface1,Interface1Impl>("Interface1");
-    test4->AddMap<Interface2,Interface2Impl>("Interface2");
+    auto test4 = new InterfaceBrokerImpl(
+        PendingReceiver<InterfaceBroker>(std::move(pipe4)));
+    test4->AddMap<Interface1, Interface1Impl>("Interface1");
+    test4->AddMap<Interface2, Interface2Impl>("Interface2");
   }
 }
 

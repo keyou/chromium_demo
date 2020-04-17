@@ -41,8 +41,6 @@ Viz 涉及以下三个端：
     kYuvVideoContent,
     kVideoHole.
 
-> Viz 和 cc 相关的类图见： <https://drive.google.com/file/d/1LW5d0GzlksSVtncDO1kpeHCVs3YD3rl0/view?usp=sharing>
-
 ## Viz 的 Id 设计
 
 每一个 client 都至少对应一个 `FrameSinkId` 和 `LocalSurfaceId`，在 client 的整个生命周期中所有 FrameSink 的 `client_id`（见下文）都是固定的，而 `LocalSurfaceId` 会根据 client 显示画面的 size 或 scale factor 的改变而改变。他们两个共同组成了 `SurfaceId`，用于在 service 端全局标识一个 `Surface` 对象。也就是说对于每一个 `Surface`，都可以获得它是由谁在什么 size 或 scale facotr 下产生的。
@@ -79,3 +77,5 @@ SurfaceId 全局唯一记录一个显示画面，它可以被嵌入其他的 CF 
 ## Viz 的显示原理
 
 TODO: 研究 Viz 底层对接 OpenGL 的逻辑以及 向上对接 cc 的逻辑。
+
+> Viz 和 cc 相关的类图见： <https://drive.google.com/file/d/1LW5d0GzlksSVtncDO1kpeHCVs3YD3rl0/view?usp=sharing>
