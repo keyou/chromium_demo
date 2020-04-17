@@ -76,6 +76,12 @@ SurfaceId 全局唯一记录一个显示画面，它可以被嵌入其他的 CF 
 
 ## Viz 的显示原理
 
-TODO: 研究 Viz 底层对接 OpenGL 的逻辑以及 向上对接 cc 的逻辑。
-
 > Viz 和 cc 相关的类图见： <https://drive.google.com/file/d/1LW5d0GzlksSVtncDO1kpeHCVs3YD3rl0/view?usp=sharing>
+
+## 附录
+
+### 背景及相关模块
+
+Mus = Mojo Ui Service
+
+<https://cdn.rawgit.com/chromium/mus-preso/578ff4ca/archi/index.html#1>
