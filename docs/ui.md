@@ -22,3 +22,5 @@ chromium 中对渲染的包装包括:
 - egl/opengl(es)
 
 TODO: 完善文档
+
+> views 和 WebContents 相关类图见： <https://drive.google.com/file/d/1iir_i9uiKAR6L4oyCiGFT-0DvPtVB8Xw/view?usp=sharing>

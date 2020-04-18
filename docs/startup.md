@@ -10,6 +10,8 @@
 4. 创建UI；
 5. 创建Render进程；
 
+> content初始化相关类图见： <https://drive.google.com/file/d/1pzPrpgA26QrBxfHBlqtMbQ7ecJ6vXVsv/view?usp=sharing>
+
 ## 初始化Content模块（和Browser进程）
 
 content 通过被 services 模块启动。
