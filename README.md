@@ -84,8 +84,13 @@ Demo 列表：
 
 ## TODO
 
-- 添加 demo_aar, 用来演示如何创建 aar 组件；
-- 给复杂的 demo 添加文档，例如 demo_shell；
+- 完善进程初始化部分的文档 ([docs/startup.md](docs/startup.md))；
+- 完善 UI 部分的文档 ([docs/ui.md](docs/ui.md))；
+- 完善 content 模块的文档 ([docs/content.md](docs/content.md))；
+- 完善 demo_shell 的文档 ([demo_shell/README.md](demo_shell/README.md))；
+- 添加 demo, 演示如何创建 aar 组件；
+- 添加 demo, 演示如何向 Blink 注入新的JS对象；
+- 添加 demo, 演示如何实现网页的离屏渲染；
 
 ## 更新日志
 
@@ -95,7 +100,7 @@ Demo 列表：
 
 ### 2020.4.17
 
-- 添加 demo_cc 的 TRACE.txt, 用于协助理解cc的运行时行为；
+- 添加 demo_cc 的 TRACE.txt, 用于协助理解 cc 的运行时行为；
 
 ### 2020.4.10
 
@@ -133,7 +138,7 @@ Demo 列表：
 
 ### 更早
 
-添加以下demo及相关文档:
+添加以下 demo 及相关文档：
 
 - demo_exe: 最简单的 demo，演示 gn 及创建自己的 exe；
 - demo_log: 演示使用日志库；
