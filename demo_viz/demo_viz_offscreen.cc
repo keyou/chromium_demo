@@ -108,7 +108,7 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
   }
 };
 
-// 离屏画面的生成
+// 离屏画面的生成，类似Renderer进程做的事情
 class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
                           public viz::DisplayClient {
  public:

@@ -18,12 +18,13 @@ Demo 列表：
 10. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 11. `demo_memory`: 演示使用 SharedMemory；
 12. `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-13. `demo_viz_gui`: 演示 `viz` 模块的使用；
+13. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
 14. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
-15. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
-16. `demo_views`: 演示使用 `//ui/views` 创建 UI；
-17. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
-18. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+15. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
+16. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
+17. `demo_views`: 演示使用 `//ui/views` 创建 UI；
+18. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
+19. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
 
 文档列表：
 
@@ -87,6 +88,10 @@ Demo 列表：
 - 给复杂的 demo 添加文档，例如 demo_shell；
 
 ## 更新日志
+
+### 2020.4.29
+
+- 添加 demo_cc_gui， 演示使用 `cc` 显示 GUI 界面；
 
 ### 2020.4.17
 

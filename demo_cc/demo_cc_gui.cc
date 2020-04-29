@@ -37,6 +37,7 @@
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
+#include "components/viz/service/display_embedder/software_output_device_x11.h"
 #include "components/viz/service/display_embedder/software_output_surface.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
@@ -185,6 +186,7 @@ class OffscreenLayerTreeFrameSink
       public viz::ExternalBeginFrameSourceClient {
  public:
   OffscreenLayerTreeFrameSink(
+    gfx::AcceleratedWidget widget,
       viz::FrameSinkId& frame_sink_id,
       viz::LocalSurfaceIdAllocation local_surface_id,
       viz::FrameSinkManagerImpl* frame_sink_manager,
@@ -193,6 +195,7 @@ class OffscreenLayerTreeFrameSink
                                nullptr,
                                std::move(task_runner),
                                nullptr),
+        widget_(widget),
         root_frame_sink_id_(frame_sink_id),
         root_local_surface_id_(local_surface_id),
         frame_sink_manager_(frame_sink_manager) {
@@ -223,7 +226,7 @@ class OffscreenLayerTreeFrameSink
     begin_frame_source_ = std::make_unique<viz::DelayBasedBeginFrameSource>(
         std::move(time_source), viz::BeginFrameSource::kNotRestartableId);
     auto output_surface = std::make_unique<viz::SoftwareOutputSurface>(
-        std::make_unique<OffscreenSoftwareOutputDevice>());
+        std::make_unique<viz::SoftwareOutputDeviceX11>(widget_,nullptr));
     auto scheduler = std::make_unique<viz::DisplayScheduler>(
         begin_frame_source_.get(), task_runner.get(),
         output_surface->capabilities().max_frames_pending);
@@ -336,6 +339,7 @@ class OffscreenLayerTreeFrameSink
   double fps_ = 1.0;
   // 画面大小为 300x200
   gfx::Size size_{300, 200};
+  gfx::AcceleratedWidget widget_;
   viz::FrameSinkId root_frame_sink_id_{0, 1};
   viz::ParentLocalSurfaceIdAllocator root_local_surface_id_allocator_;
   viz::LocalSurfaceIdAllocation root_local_surface_id_;
@@ -355,7 +359,7 @@ class Compositor
       public cc::LayerTreeHostSingleThreadClient,
       public viz::HostFrameSinkClient {
  public:
-  Compositor() {
+  Compositor(gfx::AcceleratedWidget widget):widget_(widget) {
     auto task_runner = base::ThreadTaskRunnerHandle::Get();
     cc::LayerTreeSettings settings;
     settings.initial_debug_state.show_fps_counter = true;
@@ -388,6 +392,7 @@ class Compositor
   // 画面大小为 300x200
   gfx::Size size_{300, 200};
   float scale_ = 1.0;
+  gfx::AcceleratedWidget widget_;
   scoped_refptr<cc::Layer> root_layer_;
   demo::Layer layer_;
   std::unique_ptr<viz::ServerSharedBitmapManager> shared_bitmap_manager_;
@@ -433,7 +438,7 @@ class Compositor
     root_local_surface_id_ =
         root_local_surface_id_allocator_.GetCurrentLocalSurfaceIdAllocation();
 
-    auto layer_tree_frame_sink = std::make_unique<OffscreenLayerTreeFrameSink>(
+    auto layer_tree_frame_sink = std::make_unique<OffscreenLayerTreeFrameSink>(widget_,
         root_frame_sink_id_, root_local_surface_id_, frame_sink_manager_.get(),
         task_runner);
 
@@ -470,6 +475,82 @@ class Compositor
   }
   void OnFrameTokenChanged(uint32_t frame_token) override {}
 };
+
+// 窗口类
+class DemoCcWindow : public ui::PlatformWindowDelegate {
+ public:
+  DemoCcWindow(base::OnceClosure close_closure)
+      : close_closure_(std::move(close_closure)) {}
+  ~DemoCcWindow() override = default;
+
+  void Create(const gfx::Rect& bounds) {
+    platform_window_ = CreatePlatformWindow(bounds);
+    platform_window_->Show();
+    if (widget_ != gfx::kNullAcceleratedWidget)
+      InitializeDemo();
+  }
+
+ private:
+  std::unique_ptr<ui::PlatformWindow> CreatePlatformWindow(
+      const gfx::Rect& bounds) {
+    ui::PlatformWindowInitProperties props(bounds);
+#if defined(USE_OZONE)
+    return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
+        this, std::move(props));
+#elif defined(OS_WIN)
+    return std::make_unique<ui::WinWindow>(this, props.bounds);
+#elif defined(USE_X11)
+    auto x11_window = std::make_unique<ui::X11Window>(this);
+    x11_window->Initialize(std::move(props));
+    return x11_window;
+#else
+    NOTIMPLEMENTED();
+    return nullptr;
+#endif
+  }
+
+  void InitializeDemo() {
+    DCHECK_NE(widget_, gfx::kNullAcceleratedWidget);
+    compositor_ = std::make_unique<Compositor>(widget_);
+  }
+
+  // ui::PlatformWindowDelegate:
+  void OnBoundsChanged(const gfx::Rect& new_bounds) override {
+    // compositor_->Resize(new_bounds.size());
+  }
+
+  void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
+    widget_ = widget;
+    if (platform_window_)
+      InitializeDemo();
+  }
+
+  void OnDamageRect(const gfx::Rect& damaged_region) override {}
+  void DispatchEvent(ui::Event* event) override {}
+  void OnCloseRequest() override {
+    // TODO: Use a more robust exit method
+    compositor_.reset();
+    platform_window_->Close();
+  }
+  void OnClosed() override {
+    if (close_closure_)
+      std::move(close_closure_).Run();
+  }
+  void OnWindowStateChanged(ui::PlatformWindowState new_state) override {}
+  void OnLostCapture() override {}
+  void OnAcceleratedWidgetDestroyed() override {}
+  void OnActivationChanged(bool active) override {}
+  void OnMouseEnter() override {}
+
+  std::unique_ptr<Compositor> compositor_;
+
+  std::unique_ptr<ui::PlatformWindow> platform_window_;
+  gfx::AcceleratedWidget widget_;
+  base::OnceClosure close_closure_;
+
+  DISALLOW_COPY_AND_ASSIGN(DemoCcWindow);
+};
+
 }  // namespace demo
 
 int main(int argc, char** argv) {
@@ -499,8 +580,26 @@ int main(int argc, char** argv) {
       mojo_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
+
+  // 在Linux上，x11和aura都是默认开启的
+#if defined(USE_X11)
+  // This demo uses InProcessContextFactory which uses X on a separate Gpu
+  // thread.
+  gfx::InitializeThreadedX11();
+
+  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
+  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
+  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
+  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
+  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
+  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
+  ui::SetDefaultX11ErrorHandlers();
+#endif
+
+  auto event_source_ = ui::PlatformEventSource::CreateDefault();
+
   // 加载相应平台的GL库及GL绑定
-  // gl::init::InitializeGLOneOff();
+  gl::init::InitializeGLOneOff();
 
   // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
   base::i18n::InitializeICU();
@@ -512,17 +611,8 @@ int main(int argc, char** argv) {
 
   base::RunLoop run_loop;
 
-  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
-  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
-  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
-  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
-  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
-  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  ui::SetDefaultX11ErrorHandlers();
-
-  // 每秒生成一张图片保存到文件中
-  // 可以使用这种原理将浏览器嵌入其他程序，当然这个demo演示的并不是最优方案，只是一种可行方案
-  demo::Compositor compositor;
+  demo::DemoCcWindow window(run_loop.QuitClosure());
+  window.Create(gfx::Rect(800, 600));
 
   LOG(INFO) << "running...";
   run_loop.Run();

@@ -18,6 +18,9 @@ template("cc") {
       "//components/viz/service/main",
       "//mojo/core/embedder",
       "//skia",
+      "//ui/events",
+      "//ui/events/platform",
+      "//ui/platform_window",
     ]
 
     if (use_x11) {
@@ -33,16 +36,16 @@ template("cc") {
 group("demo_cc") {
   testonly = true
   deps = [
-    #":demo_cc_gui",
+    ":demo_cc_gui",
     ":demo_cc_offscreen"
   ]
 }
 
-# cc("demo_cc_gui") {
-#   sources = [
-#       "demo_cc.cc"
-#   ]
-# }
+cc("demo_cc_gui") {
+  sources = [
+      "demo_cc_gui.cc"
+  ]
+}
 
 cc("demo_cc_offscreen") {
   sources = [
