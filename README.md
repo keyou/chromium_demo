@@ -91,6 +91,8 @@ Demo 列表：
 - 添加 demo, 演示如何创建 aar 组件；
 - 添加 demo, 演示如何向 Blink 注入新的JS对象；
 - 添加 demo, 演示如何实现网页的离屏渲染；
+- 添加 demo, 演示如何使用aura创建UI界面；
+- 添加 demo, 演示如何使用 PlatformWindow 创建窗口;
 
 ## 更新日志
 

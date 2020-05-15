@@ -118,9 +118,6 @@ void DemoShell::ExitFullscreenModeForTab(WebContents* web_contents) {
 
 void DemoShell::ToggleFullscreenModeForTab(WebContents* web_contents,
                                        bool enter_fullscreen) {
-#if defined(OS_ANDROID)
-  PlatformToggleFullscreenModeForTab(web_contents, enter_fullscreen);
-#endif
   if (is_fullscreen_ != enter_fullscreen) {
     is_fullscreen_ = enter_fullscreen;
     web_contents->GetRenderViewHost()
@@ -130,11 +127,7 @@ void DemoShell::ToggleFullscreenModeForTab(WebContents* web_contents,
 }
 
 bool DemoShell::IsFullscreenForTabOrPending(const WebContents* web_contents) {
-#if defined(OS_ANDROID)
-  return PlatformIsFullscreenForTabOrPending(web_contents);
-#else
   return is_fullscreen_;
-#endif
 }
 
 }  // namespace content

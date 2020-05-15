@@ -139,8 +139,6 @@ void DemoShell::PlatformInitialize(const gfx::Size& default_window_size) {
 void DemoShell::PlatformExit() {
   delete views_delegate_;
   views_delegate_ = nullptr;
-  delete platform_;
-  platform_ = nullptr;
 #if defined(USE_AURA)
   delete wm_state_;
   wm_state_ = nullptr;
@@ -165,7 +163,6 @@ void DemoShell::PlatformSetContents() {
 
 void DemoShell::PlatformCreateWindow(int width, int height) {
   content_size_ = gfx::Size(width, height);
-  platform_ = new DemoShellPlatformDataAura(content_size_);
   window_widget_ = new views::Widget;
   views::Widget::InitParams params;
   params.bounds = gfx::Rect(0, 0, width, height);

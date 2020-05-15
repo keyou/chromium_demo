@@ -124,7 +124,6 @@ void ToggleFullscreenModeForTab(WebContents* web_contents,
 
   views::Widget* window_widget_;
 #endif // defined(TOOLKIT_VIEWS)
-  static DemoShellPlatformDataAura* platform_;
 #endif  // defined(USE_AURA)
 };
 

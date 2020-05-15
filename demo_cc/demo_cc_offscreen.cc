@@ -280,6 +280,7 @@ class OffscreenLayerTreeFrameSink
 
   // ExternalBeginFrameSourceClient implementation:
   void OnNeedsBeginFrames(bool needs_begin_frames) override {
+    // 这里被cc中的scheduler调用，通知viz发起新的BeginFrame请求
     support_->SetNeedsBeginFrame(needs_begin_frames);
   }
 
@@ -310,8 +311,11 @@ class OffscreenLayerTreeFrameSink
       display_->SetLocalSurfaceId(root_local_surface_id_.local_surface_id(),
                                   1.0f);
     }
-    // 将 OnBeginFrame 转发给 cc::Scheduler
-    // cc:::Scheduler 的发动机之一
+    // 将来自viz的 OnBeginFrame 转发到cc中的调度器 cc::Scheduler
+    // 从这里可以看出渲染的驱动是自底向上的，由底层的viz发起新的Frame请求
+    // 当cc需要更新画面时，cc会间接调用到 OnNeedsBeginFrames 方法通知viz发起新Frame的请求
+    // 注意webview中渲染的驱动不是自底向上的
+    // 这句代码是 cc:::Scheduler 的发动机之一
     external_begin_frame_source_->OnBeginFrame(args);
   }
   virtual void OnBeginFramePausedChanged(bool paused) override {}

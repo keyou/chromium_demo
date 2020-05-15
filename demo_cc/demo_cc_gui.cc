@@ -153,31 +153,6 @@ class Layer : public cc::ContentLayerClient {
   scoped_refptr<cc::PictureLayer> content_layer_;
 };
 
-// 实现离屏画面的保存
-class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
- public:
-  SkCanvas* BeginPaint(const gfx::Rect& damage_rect) override {
-    LOG(INFO) << "BeginPaint: get a canvas for paint";
-    return viz::SoftwareOutputDevice::BeginPaint(damage_rect);
-  }
-  virtual void OnSwapBuffers(SwapBuffersCallback swap_ack_callback) override {
-    auto image = surface_->makeImageSnapshot();
-    SkBitmap bitmap;
-    DCHECK(image->asLegacyBitmap(&bitmap));
-    // 保存渲染结果到图片文件
-    constexpr char filename[] = "demo_cc.png";
-    base::FilePath path;
-    DCHECK(base::PathService::Get(base::BasePathKey::DIR_EXE, &path));
-    path = path.AppendASCII(filename);
-
-    SkFILEWStream stream(path.value().c_str());
-    DCHECK(
-        SkEncodeImage(&stream, bitmap.pixmap(), SkEncodedImageFormat::kPNG, 0));
-    LOG(INFO) << "OnSwapBuffers: save the frame to: " << path;
-    viz::SoftwareOutputDevice::OnSwapBuffers(std::move(swap_ack_callback));
-  }
-};
-
 // 负责连接cc和viz
 class OffscreenLayerTreeFrameSink
     : public cc::LayerTreeFrameSink,
@@ -283,6 +258,7 @@ class OffscreenLayerTreeFrameSink
 
   // ExternalBeginFrameSourceClient implementation:
   void OnNeedsBeginFrames(bool needs_begin_frames) override {
+    // 这里被cc中的scheduler调用，通知viz发起新的BeginFrame请求
     support_->SetNeedsBeginFrame(needs_begin_frames);
   }
 
@@ -313,8 +289,11 @@ class OffscreenLayerTreeFrameSink
       display_->SetLocalSurfaceId(root_local_surface_id_.local_surface_id(),
                                   1.0f);
     }
-    // 将 OnBeginFrame 转发给 cc::Scheduler
-    // cc:::Scheduler 的发动机之一
+    // 将来自viz的 OnBeginFrame 转发到cc中的调度器 cc::Scheduler
+    // 从这里可以看出渲染的驱动是自底向上的，由底层的viz发起新的Frame请求
+    // 当cc需要更新画面时，cc会间接调用到 OnNeedsBeginFrames 方法通知viz发起新Frame的请求
+    // 注意webview中渲染的驱动不是自底向上的
+    // 这句代码是 cc:::Scheduler 的发动机之一
     external_begin_frame_source_->OnBeginFrame(args);
   }
   virtual void OnBeginFramePausedChanged(bool paused) override {}
@@ -335,7 +314,7 @@ class OffscreenLayerTreeFrameSink
     return frame_sink_manager_->GetPreferredFrameIntervalForFrameSinkId(id);
   }
 
-  // 由于要将显示存储为图片，所以使用1FPS
+  // 方便调试使用1FPS
   double fps_ = 1.0;
   // 画面大小为 300x200
   gfx::Size size_{300, 200};
@@ -352,7 +331,7 @@ class OffscreenLayerTreeFrameSink
   std::unique_ptr<viz::Display> display_;
 };
 
-// 作用类似 ui::Compositor,负责初始化cc和viz
+// 作用类似 ui::Compositor,负责初始化cc和viz，它将上层ui层和底层的cc和viz对接起来
 class Compositor
     : public cc::LayerTreeHostClient,
       // 这个接口用于不使用cc::Scheduler的模式下，该demo使用cc::Scheduelr
