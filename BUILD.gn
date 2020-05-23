@@ -9,7 +9,7 @@ group("demo") {
   deps = [
     ":demo_exe",
     ":demo_log",
-    ":demo_tracing",
+    "demo_tracing",
     ":demo_messageloop",
     ":demo_tasks",
     ":demo_mojo_single_process",
@@ -52,17 +52,6 @@ executable("demo_log") {
 
   deps = [
     "//base",
-  ]
-}
-
-executable("demo_tracing") {
-  sources = [
-    "demo_tracing.cc",
-  ]
-
-  deps = [
-    "//base",
-    "//components/tracing:startup_tracing",
   ]
 }
 
