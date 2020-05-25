@@ -31,6 +31,7 @@ group("demo") {
       ":demo_services",
       "demo_views",
       "demo_viz",
+      "demo_cc",
     ]
   }
 }
