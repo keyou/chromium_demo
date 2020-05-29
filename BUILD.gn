@@ -22,7 +22,7 @@ group("demo") {
     "demo_viz",
     "demo_cc",
     "demo_views",
-    ":demo_apk",
+    "demo_android",
     "demo_shell",
   ]
 
@@ -203,11 +203,3 @@ mojom("mojom_test_service") {
   ]
 }
 
-group("demo_apk") {
-  testonly = true
-  if(is_android) {
-    deps = ["demo_android:demo_apk"]
-  } else {
-    print("demo_apk only support android.")
-  }
-}

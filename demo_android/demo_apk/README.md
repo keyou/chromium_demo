@@ -4,7 +4,7 @@
 
 chromium提供了一套gn配置用来打包各种Android组件，包括 apk,aar,jar 等。主要的脚本位于`//build/config/android/`目录下。可以重点查看以下两个文件：
 
-```
+```gn
 //build/config/android/config.gni
 //build/config/android/rules.gni
 ```
@@ -16,6 +16,7 @@ demo_apk 由以下几部分组成：
 1. `AndroidManifest.xml`：Android应用的描述文件，包括权限定义，icon等；
 2. `res`: Android应用的资源文件，包括UI布局，图片，字符串等；
 3. `src`: 源代码文件；
+4. `cpp`: 保存 JNI 相关代码；
 
 ## JNI
 

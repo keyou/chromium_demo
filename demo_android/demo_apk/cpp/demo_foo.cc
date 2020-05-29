@@ -1,4 +1,4 @@
-#include "demo/demo_android/demo_foo.h"
+#include "demo/demo_android/demo_apk/cpp/demo_foo.h"
 
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
@@ -6,7 +6,7 @@
 #include "base/bind.h"
 #include "base/lazy_instance.h"
 
-#include "demo/demo_android/demo_apk_jni_headers/DemoFoo_jni.h"
+#include "demo/demo_android/demo_apk/demo_apk_jni_headers/DemoFoo_jni.h"
 
 namespace demo_jni {
 

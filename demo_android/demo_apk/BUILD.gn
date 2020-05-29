@@ -1,0 +1,90 @@
+import("//build/config/android/config.gni")
+import("//build/config/android/rules.gni")
+import("//third_party/icu/config.gni")
+
+# 可以使用 jinja 模板来生成 Manifest
+# 这里不使用jinja模板，直接像普通的Android一样提前写好
+# demo_apk_manifest = "$target_gen_dir/demo_apk_manifest_jinja/AndroidManifest.xml"
+# jinja_template("demo_apk_manifest") {
+#   testonly = true
+#   input = "AndroidManifest.xml.jinja2"
+#   output = demo_apk_manifest
+#   variables = [ "manifest_package=org.chromium.demo_apk" ]
+# }
+
+android_resources("demo_apk_resources") {
+  testonly = true
+  resource_dirs = [ "res" ]
+  custom_package = "org.chromium.demo_apk"
+}
+
+# 从Java类生成JNI接口，用于让C++和JAVA可以互相调用
+# 详见文档：//base/android/jni_generator/README.md
+generate_jni("demo_apk_jni_headers") {
+  sources = [
+    "src/org/chromium/demo_jni/DemoFoo.java",
+  ]
+}
+
+android_library("demo_apk_java") {
+  testonly = true
+
+  #srcjar_deps = [ ":demo_javatests_aidl" ]
+
+  deps = [
+    #":demo_apk_manifest",
+    ":demo_apk_resources",
+    ":demo_apk_jni_headers",
+    "//base:base_java",
+    "//base:jni_java",
+    "//ui/android:ui_java",
+  ]
+
+  java_files = [
+    "src/org/chromium/demo_apk/DemoApkActivity.java",
+    "src/org/chromium/demo_apk/DemoApkApplication.java",
+    "src/org/chromium/demo_jni/DemoFoo.java",
+  ]
+
+  #android_manifest_for_lint = demo_apk_manifest
+  annotation_processor_deps = [ "//base/android/jni_generator:jni_processor" ]
+}
+
+# native 动态库，实现JNI接口
+shared_library("libdemo_apk") {
+  testonly = true
+  sources = [
+    "cpp/demo_apk_library_loader.cc",
+    "cpp/demo_foo.cc",
+    "cpp/demo_foo.h",
+  ]
+  deps = [
+    ":demo_apk_jni_headers",
+    "//base",
+  ]
+
+  configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
+  configs += [ "//build/config/android:hide_all_but_jni" ]
+}
+
+# 定义生成apk的target，详见：//build/config/android/rules.gni
+android_apk("demo_apk") {
+  testonly = true
+  apk_name = "DemoApk"
+  android_manifest = "AndroidManifest.xml"
+  #android_manifest_dep = ":demo_apk_manifest"
+  shared_libraries = [ ":libdemo_apk" ]
+  #loadable_modules = [ "$root_out_dir/libchrome_crashpad_handler.so" ]
+  command_line_flags_file = "demo-apk-command-line"
+
+  # 默认的 min 和 target 分别为 19,23,这里修改是为了去除在21:9的屏幕上的黑边
+  min_sdk_version = 23
+  target_sdk_version = 26
+
+  deps = [
+    ":demo_apk_java",
+    "//base:base_java",
+    "//base:base_java_test_support",
+    "//ui/android:ui_java",
+  ]
+}
