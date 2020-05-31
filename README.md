@@ -26,7 +26,8 @@ Demo 列表：
 20. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
 21. `demo_views`: 演示使用 `//ui/views` 创建 UI；
 22. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
-23. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+23. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
+24. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
 
 文档列表：
 
@@ -41,7 +42,7 @@ Demo 列表：
 2. 执行以下命令将该仓库 clone 到 `src/demo` 目录下；
 
     ```sh
-    git clone git@gitlab.gz.cvte.cn:CrOS/seewo/demo.git demo
+    git clone <当前仓库的地址> demo
     ```
 
 3. 找到你的编译输出目录中的 `out/Default/args.gn` 文件，添加以下参数：
@@ -49,6 +50,10 @@ Demo 列表：
     ```python
     # add extra deps to gn root
     root_extra_deps = ["//demo"]
+    
+    # 如果要编译 android 平台的 demo 需要额外添加以下参数
+    target_os="android"
+    target_cpu="arm64" # 可以根据需要选择其它架构 x86,x64,arm,mipsel
     ```
 
 4. 执行 `ninja -C out/Default demo` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
@@ -61,12 +66,12 @@ Demo 列表：
     ```python
     solutions = [
         { "name"        : "src",
-            "url"         : "git@gitlab.gz.cvte.cn:CrOS/src.git",
+            "url"         : "https://chromium.googlesource.com/chromium/src.git",
             "deps_file"   : "DEPS",
             "managed"     : False,
             "custom_deps" : {
                 # let gclient pull demo project to 'src/demo' dir
-                "src/demo": "git@gitlab.gz.cvte.cn:CrOS/seewo/demo.git",
+                "src/demo": "<当前仓库的地址>",
             },
             "custom_vars": {},
         }
@@ -79,6 +84,10 @@ Demo 列表：
     ```python
     # add extra deps to gn root
     root_extra_deps = ["//demo"]
+    
+    # 如果要编译 android 平台的 demo 需要额外添加以下参数
+    target_os="android"
+    target_cpu="arm64" # 可以根据需要选择其它架构 x86,x64,arm,mipsel
     ```
 
 4. 执行 `gclient sync` 同步代码，这会拉取 `demo` 仓库到 `src/demo` ；
@@ -97,6 +106,10 @@ Demo 列表：
 - 添加 demo, 演示如何使用 PlatformWindow 创建窗口；
 
 ## 更新日志
+
+### 2020.5.31
+
+- 添加 demo_android_skia, 演示在 Android 中使用 Skia 进行软/硬件渲染；
 
 ### 2020.5.21
 
