@@ -14,9 +14,18 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
     <TextView
+      android:id="@+id/info"
+      android:layout_width="match_parent"
+      android:layout_height="50dp"
+      android:text="@string/info"
+      android:textColor="#FF0000"
+      android:background="#FFFFFF"
+      android:ellipsize="none"
+      android:scrollHorizontally="false"/>
+    <TextView
       android:id="@+id/text"
       android:layout_width="match_parent"
-      android:layout_height="100dp"
+      android:layout_height="50dp"
       android:text="@string/hello"
       android:textColor="#FF0000"
       android:background="#CCCCCC"
