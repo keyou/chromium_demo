@@ -2,7 +2,10 @@
 group("demo_android") {
   testonly = true
   if(is_android) {
-    deps = ["demo_apk"]
+    deps = [
+      "demo_apk",
+      "demo_android_skia",
+      ]
   } else {
     print("demo_apk only support android.")
   }

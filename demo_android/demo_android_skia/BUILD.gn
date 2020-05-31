@@ -1,0 +1,91 @@
+import("//build/config/android/config.gni")
+import("//build/config/android/rules.gni")
+#import("//third_party/icu/config.gni")
+
+android_resources("demo_android_skia_resources") {
+  testonly = true
+  resource_dirs = [ "res" ]
+  custom_package = "org.demo.demo_android_skia"
+}
+
+# 从Java类生成JNI接口，用于让C++和JAVA可以互相调用
+# 详见文档：//base/android/jni_generator/README.md
+generate_jni("demo_android_skia_jni_headers") {
+  sources = [
+    "src/org/demo/demo_jni/SkiaCanvas.java",
+  ]
+}
+
+android_library("demo_android_skia_java") {
+  testonly = true
+
+  #srcjar_deps = [ ":demo_javatests_aidl" ]
+
+  deps = [
+    #":demo_android_skia_manifest",
+    ":demo_android_skia_resources",
+    ":demo_android_skia_jni_headers",
+    "//base:base_java",
+    "//base:jni_java",
+    #"//ui/android:ui_java",
+  ]
+
+  java_files = [
+    "src/org/demo/demo_android_skia/DemoAndroidSkiaActivity.java",
+    "src/org/demo/demo_android_skia/DemoAndroidSkiaApplication.java",
+    "src/org/demo/demo_jni/SkiaCanvas.java",
+  ]
+
+  #android_manifest_for_lint = demo_android_skia_manifest
+  annotation_processor_deps = [ "//base/android/jni_generator:jni_processor" ]
+}
+
+# native 动态库，实现JNI接口
+shared_library("libdemo_android_skia") {
+  testonly = true
+  sources = [
+    "cpp/demo_android_skia_library_loader.cc",
+    "cpp/skia_canvas.cc",
+    "cpp/skia_canvas.h",
+    "cpp/skia_canvas_software.cc",
+    "cpp/skia_canvas_software.h",
+    "cpp/skia_canvas_gl.cc",
+    "cpp/skia_canvas_gl.h",
+  ]
+  deps = [
+    ":demo_android_skia_jni_headers",
+    "//base",
+    # 直接依赖它会导致和chromium中的变量定义冲突
+    #"//third_party/skia",
+    "//skia",
+  ]
+
+  defines = ["GR_TEST_UTILS=1"]
+
+  libs = ["EGL","GLESv2"]
+
+  configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
+  configs += [ "//build/config/android:hide_all_but_jni" ]
+}
+
+# 定义生成apk的target，详见：//build/config/android/rules.gni
+android_apk("demo_android_skia") {
+  testonly = true
+  apk_name = "DemoAndroidSkia"
+  android_manifest = "AndroidManifest.xml"
+  #android_manifest_dep = ":demo_android_skia_manifest"
+  shared_libraries = [ ":libdemo_android_skia" ]
+  #loadable_modules = [ "$root_out_dir/libchrome_crashpad_handler.so" ]
+  command_line_flags_file = "demo-apk-command-line"
+
+  # 默认的 min 和 target 分别为 19,23,这里修改是为了去除在21:9的屏幕上的黑边
+  min_sdk_version = 23
+  target_sdk_version = 26
+
+  deps = [
+    ":demo_android_skia_java",
+    "//base:base_java",
+    "//base:base_java_test_support",
+    #"//ui/android:ui_java",
+  ]
+}

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Copyright (c) 2012 The Chromium Authors. All rights reserved.
+
+     Use of this source code is governed by a BSD-style license that can be
+     found in the LICENSE file.
+ -->
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools" >
+  <android.widget.LinearLayout
+    android:id="@+id/apk_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <TextView
+      android:id="@+id/text"
+      android:layout_width="match_parent"
+      android:layout_height="100dp"
+      android:text="@string/hello"
+      android:textColor="#FF0000"
+      android:background="#CCCCCC"
+      android:clickable="true"
+      android:ellipsize="none"
+      android:scrollHorizontally="false"
+      android:onClick="onClick"/>
+    <SurfaceView
+      android:id="@+id/surfaceViewSoftware"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_centerVertical="true"
+      android:layout_centerHorizontal="true"
+      android:layout_weight="1" />
+    <SurfaceView
+      android:id="@+id/surfaceViewGL"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_centerVertical="true"
+      android:layout_centerHorizontal="true"
+      android:layout_weight="1" />
+  </android.widget.LinearLayout>
+
+</merge>
