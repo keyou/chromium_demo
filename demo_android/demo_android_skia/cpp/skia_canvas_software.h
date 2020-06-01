@@ -19,7 +19,7 @@ class SkiaCanvasSoftware : public SkiaCanvas {
                      const base::android::JavaParamRef<jobject>& surface);
  
  private:
-  SkSurface* BeginPaint() override;
+  SkCanvas* BeginPaint() override;
   void SwapBuffer() override;
 
   ARect dirtyRect_;

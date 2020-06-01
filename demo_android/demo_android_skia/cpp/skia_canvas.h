@@ -23,7 +23,7 @@ class SkiaCanvas {
   SkiaCanvas(JNIEnv* env,
     const base::android::JavaParamRef<jobject>& caller,
     const base::android::JavaParamRef<jobject>& surface);
-  virtual SkSurface* BeginPaint() = 0;
+  virtual SkCanvas* BeginPaint() = 0;
   virtual void OnPaint(SkCanvas* canvas) {}
   virtual void SwapBuffer() = 0;
   void ShowInfo(std::string info);

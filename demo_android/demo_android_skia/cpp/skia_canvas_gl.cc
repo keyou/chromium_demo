@@ -1,6 +1,8 @@
 
 #include "demo/demo_android/demo_android_skia/cpp/skia_canvas_gl.h"
 
+#include <EGL/egl.h>
+
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
@@ -8,15 +10,14 @@
 #include "base/lazy_instance.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
 #include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkSurface.h"
-
+#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-
-#include <EGL/egl.h>
 #ifndef GL_GLEXT_PROTOTYPES
 #define GL_GLEXT_PROTOTYPES
 #endif
@@ -42,123 +43,127 @@ class GLShaderErrorHandler : public GrContextOptions::ShaderErrorHandler {
 // 具体见 skia 仓库中的 include/gpu/gl/GrGLInterface.h 文件
 // 这里的代码从 skia 仓库中的 GrGLMakeNativeInterface_egl.cpp 复制而来
 static GrGLFuncPtr egl_get_gl_proc(void* ctx, const char name[]) {
-    SkASSERT(nullptr == ctx);
-    // https://www.khronos.org/registry/EGL/extensions/KHR/EGL_KHR_get_all_proc_addresses.txt
-    // eglGetProcAddress() is not guaranteed to support the querying of non-extension EGL functions.
-    #define M(X) if (0 == strcmp(#X, name)) { return (GrGLFuncPtr) X; }
-    M(eglGetCurrentDisplay)
-    M(eglQueryString)
-    M(glActiveTexture)
-    M(glAttachShader)
-    M(glBindAttribLocation)
-    M(glBindBuffer)
-    M(glBindFramebuffer)
-    M(glBindRenderbuffer)
-    M(glBindTexture)
-    M(glBlendColor)
-    M(glBlendEquation)
-    M(glBlendFunc)
-    M(glBufferData)
-    M(glBufferSubData)
-    M(glCheckFramebufferStatus)
-    M(glClear)
-    M(glClearColor)
-    M(glClearStencil)
-    M(glColorMask)
-    M(glCompileShader)
-    M(glCompressedTexImage2D)
-    M(glCompressedTexSubImage2D)
-    M(glCopyTexSubImage2D)
-    M(glCreateProgram)
-    M(glCreateShader)
-    M(glCullFace)
-    M(glDeleteBuffers)
-    M(glDeleteFramebuffers)
-    M(glDeleteProgram)
-    M(glDeleteRenderbuffers)
-    M(glDeleteShader)
-    M(glDeleteTextures)
-    M(glDepthMask)
-    M(glDisable)
-    M(glDisableVertexAttribArray)
-    M(glDrawArrays)
-    M(glDrawElements)
-    M(glEnable)
-    M(glEnableVertexAttribArray)
-    M(glFinish)
-    M(glFlush)
-    M(glFramebufferRenderbuffer)
-    M(glFramebufferTexture2D)
-    M(glFrontFace)
-    M(glGenBuffers)
-    M(glGenFramebuffers)
-    M(glGenRenderbuffers)
-    M(glGenTextures)
-    M(glGenerateMipmap)
-    M(glGetBufferParameteriv)
-    M(glGetError)
-    M(glGetFramebufferAttachmentParameteriv)
-    M(glGetIntegerv)
-    M(glGetProgramInfoLog)
-    M(glGetProgramiv)
-    M(glGetRenderbufferParameteriv)
-    M(glGetShaderInfoLog)
-    M(glGetShaderPrecisionFormat)
-    M(glGetShaderiv)
-    M(glGetString)
-    M(glGetUniformLocation)
-    M(glIsTexture)
-    M(glLineWidth)
-    M(glLinkProgram)
-    M(glPixelStorei)
-    M(glReadPixels)
-    M(glRenderbufferStorage)
-    M(glScissor)
-    M(glShaderSource)
-    M(glStencilFunc)
-    M(glStencilFuncSeparate)
-    M(glStencilMask)
-    M(glStencilMaskSeparate)
-    M(glStencilOp)
-    M(glStencilOpSeparate)
-    M(glTexImage2D)
-    M(glTexParameterf)
-    M(glTexParameterfv)
-    M(glTexParameteri)
-    M(glTexParameteriv)
-    M(glTexSubImage2D)
-    M(glUniform1f)
-    M(glUniform1fv)
-    M(glUniform1i)
-    M(glUniform1iv)
-    M(glUniform2f)
-    M(glUniform2fv)
-    M(glUniform2i)
-    M(glUniform2iv)
-    M(glUniform3f)
-    M(glUniform3fv)
-    M(glUniform3i)
-    M(glUniform3iv)
-    M(glUniform4f)
-    M(glUniform4fv)
-    M(glUniform4i)
-    M(glUniform4iv)
-    M(glUniformMatrix2fv)
-    M(glUniformMatrix3fv)
-    M(glUniformMatrix4fv)
-    M(glUseProgram)
-    M(glVertexAttrib1f)
-    M(glVertexAttrib2fv)
-    M(glVertexAttrib3fv)
-    M(glVertexAttrib4fv)
-    M(glVertexAttribPointer)
-    M(glViewport)
-    #undef M
-    return eglGetProcAddress(name);
+  SkASSERT(nullptr == ctx);
+// https://www.khronos.org/registry/EGL/extensions/KHR/EGL_KHR_get_all_proc_addresses.txt
+// eglGetProcAddress() is not guaranteed to support the querying of
+// non-extension EGL functions.
+#define M(X)                   \
+  if (0 == strcmp(#X, name)) { \
+    return (GrGLFuncPtr)X;     \
+  }
+  M(eglGetCurrentDisplay)
+  M(eglQueryString)
+  M(glActiveTexture)
+  M(glAttachShader)
+  M(glBindAttribLocation)
+  M(glBindBuffer)
+  M(glBindFramebuffer)
+  M(glBindRenderbuffer)
+  M(glBindTexture)
+  M(glBlendColor)
+  M(glBlendEquation)
+  M(glBlendFunc)
+  M(glBufferData)
+  M(glBufferSubData)
+  M(glCheckFramebufferStatus)
+  M(glClear)
+  M(glClearColor)
+  M(glClearStencil)
+  M(glColorMask)
+  M(glCompileShader)
+  M(glCompressedTexImage2D)
+  M(glCompressedTexSubImage2D)
+  M(glCopyTexSubImage2D)
+  M(glCreateProgram)
+  M(glCreateShader)
+  M(glCullFace)
+  M(glDeleteBuffers)
+  M(glDeleteFramebuffers)
+  M(glDeleteProgram)
+  M(glDeleteRenderbuffers)
+  M(glDeleteShader)
+  M(glDeleteTextures)
+  M(glDepthMask)
+  M(glDisable)
+  M(glDisableVertexAttribArray)
+  M(glDrawArrays)
+  M(glDrawElements)
+  M(glEnable)
+  M(glEnableVertexAttribArray)
+  M(glFinish)
+  M(glFlush)
+  M(glFramebufferRenderbuffer)
+  M(glFramebufferTexture2D)
+  M(glFrontFace)
+  M(glGenBuffers)
+  M(glGenFramebuffers)
+  M(glGenRenderbuffers)
+  M(glGenTextures)
+  M(glGenerateMipmap)
+  M(glGetBufferParameteriv)
+  M(glGetError)
+  M(glGetFramebufferAttachmentParameteriv)
+  M(glGetIntegerv)
+  M(glGetProgramInfoLog)
+  M(glGetProgramiv)
+  M(glGetRenderbufferParameteriv)
+  M(glGetShaderInfoLog)
+  M(glGetShaderPrecisionFormat)
+  M(glGetShaderiv)
+  M(glGetString)
+  M(glGetUniformLocation)
+  M(glIsTexture)
+  M(glLineWidth)
+  M(glLinkProgram)
+  M(glPixelStorei)
+  M(glReadPixels)
+  M(glRenderbufferStorage)
+  M(glScissor)
+  M(glShaderSource)
+  M(glStencilFunc)
+  M(glStencilFuncSeparate)
+  M(glStencilMask)
+  M(glStencilMaskSeparate)
+  M(glStencilOp)
+  M(glStencilOpSeparate)
+  M(glTexImage2D)
+  M(glTexParameterf)
+  M(glTexParameterfv)
+  M(glTexParameteri)
+  M(glTexParameteriv)
+  M(glTexSubImage2D)
+  M(glUniform1f)
+  M(glUniform1fv)
+  M(glUniform1i)
+  M(glUniform1iv)
+  M(glUniform2f)
+  M(glUniform2fv)
+  M(glUniform2i)
+  M(glUniform2iv)
+  M(glUniform3f)
+  M(glUniform3fv)
+  M(glUniform3i)
+  M(glUniform3iv)
+  M(glUniform4f)
+  M(glUniform4fv)
+  M(glUniform4i)
+  M(glUniform4iv)
+  M(glUniformMatrix2fv)
+  M(glUniformMatrix3fv)
+  M(glUniformMatrix4fv)
+  M(glUseProgram)
+  M(glVertexAttrib1f)
+  M(glVertexAttrib2fv)
+  M(glVertexAttrib3fv)
+  M(glVertexAttrib4fv)
+  M(glVertexAttribPointer)
+  M(glViewport)
+#undef M
+  return eglGetProcAddress(name);
 }
 
 sk_sp<const GrGLInterface> GrGLMakeNativeInterface() {
-    return GrGLMakeAssembledInterface(nullptr, egl_get_gl_proc);
+  return GrGLMakeAssembledInterface(nullptr, egl_get_gl_proc);
 }
 
 GrContextOptions CreateGrContextOptions() {
@@ -238,15 +243,15 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
   //    SkDebugf("Vendor: %s", eglQueryString(display_, EGL_VENDOR));
   //    SkDebugf("Extensions: %s", eglQueryString(display_, EGL_EXTENSIONS));
 
-  surface_ = eglCreateWindowSurface(
-      display_, surfaceConfig, nativeWindow_, nullptr);
+  surface_ =
+      eglCreateWindowSurface(display_, surfaceConfig, nativeWindow_, nullptr);
   DCHECK(EGL_NO_SURFACE != surface_);
 
   DCHECK(eglMakeCurrent(display_, surface_, surface_, context_));
   glClearStencil(0);
-  //glClearColor(0, 0, 0, 0);
-  //glStencilMask(0xffffffff);
-  glClearColor(0x00, 0xFF, 0x00, 0xFF); //0xFF00DE96
+  // glClearColor(0, 0, 0, 0);
+  // glStencilMask(0xffffffff);
+  glClearColor(0x00, 0xFF, 0x00, 0xFF);  // 0xFF00DE96
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   eglGetConfigAttrib(display_, surfaceConfig, EGL_STENCIL_SIZE, &stencilBits_);
@@ -255,7 +260,7 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
 
   eglSwapInterval(display_, 1);
   eglSwapBuffers(display_, surface_);
-  
+
   grGLInterface_ = GrGLMakeNativeInterface();
   DCHECK(grGLInterface_);
 
@@ -263,11 +268,12 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
   DCHECK(grContext_);
 
   std::stringstream ss;
-  ss << "[SkiaCanvasGL] Init GL surface surccess. sample_count=" << sampleCount_;
+  ss << "[SkiaCanvasGL] Init GL surface surccess. sample_count="
+     << sampleCount_;
   ShowInfo(ss.str());
 }
 
-SkSurface* SkiaCanvasGL::BeginPaint() {
+SkCanvas* SkiaCanvasGL::BeginPaint() {
   DCHECK(display_);
   DCHECK(surface_);
   GrGLint buffer = 0;
@@ -287,12 +293,25 @@ SkSurface* SkiaCanvasGL::BeginPaint() {
   skSurface_ = SkSurface::MakeFromBackendRenderTarget(
       grContext_.get(), backendRT, kBottomLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, nullptr, &props);
-  return skSurface_.get();
+  if(use_ddl_) {
+    SkSurfaceCharacterization characterization;
+    bool result = skSurface_->characterize(&characterization);
+    DCHECK(result) << "Failed to characterize raster SkSurface.";
+    // 使用 ddl 来记录绘制操作，并不执行真正的绘制
+    recorder_ = std::make_unique<SkDeferredDisplayListRecorder>(characterization);
+    return recorder_->getCanvas();
+  }
+  return skSurface_->getCanvas();
 }
 
 void SkiaCanvasGL::SwapBuffer() {
   DCHECK(display_);
   DCHECK(surface_);
+  if(use_ddl_) {
+    skSurface_->draw(recorder_->detach().get());
+  }
+  
+  skSurface_->flush();
   eglSwapBuffers(display_, surface_);
 }
 

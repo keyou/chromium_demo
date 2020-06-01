@@ -45,8 +45,7 @@ void SkiaCanvas::OnTouch(JNIEnv* env, int action, jfloat x, jfloat y) {
              << ", " << y;
   DLOG(INFO) << ss.str();
   ShowInfo(ss.str());
-  auto surface = BeginPaint();
-  auto canvas = surface->getCanvas();
+  auto canvas = BeginPaint();
   canvas->clear(background_);
   if(action == 0) { // down
     skPath_.rewind();
@@ -59,7 +58,6 @@ void SkiaCanvas::OnTouch(JNIEnv* env, int action, jfloat x, jfloat y) {
   }
   OnPaint(canvas);
   // skCanvas_->drawCircle(x, y, 10, circlePaint_);
-  surface->flush();
   SwapBuffer();
 }
 

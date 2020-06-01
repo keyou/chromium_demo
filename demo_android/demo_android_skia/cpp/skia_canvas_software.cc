@@ -24,27 +24,24 @@ SkiaCanvasSoftware::SkiaCanvasSoftware(
   // 时，一个像素占2个字节，所以x2
   // memset(buffer.bits, 0xAA, buffer.stride * buffer.height * 2);
   
-  auto surface = BeginPaint();
-  auto canvas = surface->getCanvas();
+  auto canvas = BeginPaint();
   canvas->clear(background_);
   //canvas->drawCircle(20, 20, 20, circlePaint_);
-  surface->flush();
   SwapBuffer();
 }
 
-SkSurface* SkiaCanvasSoftware::BeginPaint() {
+SkCanvas* SkiaCanvasSoftware::BeginPaint() {
   ANativeWindow_Buffer buffer;
-  if (ANativeWindow_lock(nativeWindow_, &buffer, &dirtyRect_) == 0) {
-    SkImageInfo info = SkImageInfo::Make(width_, height_, kRGB_565_SkColorType,
-                                         kPremul_SkAlphaType, nullptr);
-    skSurface_ = SkSurface::MakeRasterDirect(
-        info, buffer.bits, buffer.stride * 2, nullptr);
-    return skSurface_.get();
-  }
-  return nullptr;
+  DCHECK(ANativeWindow_lock(nativeWindow_, &buffer, &dirtyRect_)==0);
+  SkImageInfo info = SkImageInfo::Make(width_, height_, kRGB_565_SkColorType,
+                                       kPremul_SkAlphaType, nullptr);
+  skSurface_ = SkSurface::MakeRasterDirect(info, buffer.bits, buffer.stride * 2,
+                                           nullptr);
+  return skSurface_->getCanvas();
 }
 
 void SkiaCanvasSoftware::SwapBuffer() {
+  skSurface_->flush();
   ANativeWindow_unlockAndPost(nativeWindow_);
 }
 

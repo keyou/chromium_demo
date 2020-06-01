@@ -16,6 +16,7 @@
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
 
 namespace demo_jni {
 
@@ -26,7 +27,7 @@ class SkiaCanvasGL : public SkiaCanvas {
                const base::android::JavaParamRef<jobject>& surface);
 
  private:
-  SkSurface* BeginPaint() override;
+  SkCanvas* BeginPaint() override;
   void SwapBuffer() override;
 
   EGLDisplay display_;
@@ -36,6 +37,8 @@ class SkiaCanvasGL : public SkiaCanvas {
   EGLint sampleCount_;
   sk_sp<const GrGLInterface> grGLInterface_;
   sk_sp<GrContext> grContext_;
+  bool use_ddl_ = true;
+  std::unique_ptr<SkDeferredDisplayListRecorder> recorder_;
 };
 
 } // namespace demo_jni
