@@ -24,9 +24,11 @@ class SkiaCanvasGL : public SkiaCanvas {
   SkiaCanvasGL(JNIEnv* env,
                const base::android::JavaParamRef<jobject>& caller,
                const base::android::JavaParamRef<jobject>& surface);
-  void OnTouch(JNIEnv* env, int action, jfloat x, jfloat y) override;
 
  private:
+  SkSurface* BeginPaint() override;
+  void SwapBuffer() override;
+
   EGLDisplay display_;
   EGLContext context_;
   EGLSurface surface_;

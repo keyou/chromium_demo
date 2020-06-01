@@ -39,6 +39,30 @@ SkiaCanvas::SkiaCanvas(JNIEnv* env,
   pathPaint_.setStrokeWidth(strokeWidth_);
 }
 
+void SkiaCanvas::OnTouch(JNIEnv* env, int action, jfloat x, jfloat y) {
+  std::stringstream ss;
+  ss << "[" << tag_ << "] OnTouch: action,x,y=" << action << ", " << x
+             << ", " << y;
+  DLOG(INFO) << ss.str();
+  ShowInfo(ss.str());
+  auto surface = BeginPaint();
+  auto canvas = surface->getCanvas();
+  canvas->clear(background_);
+  if(action == 0) { // down
+    skPath_.rewind();
+    skPath_.moveTo(x, y);
+  }
+  else if(action == 2 || action == 1) {  // move or up
+    //skCanvas_->drawLine(lastX_, lastY_, x, y, pathPaint_);
+    skPath_.lineTo(x, y);
+    canvas->drawPath(skPath_, pathPaint_);
+  }
+  OnPaint(canvas);
+  // skCanvas_->drawCircle(x, y, 10, circlePaint_);
+  surface->flush();
+  SwapBuffer();
+}
+
 void SkiaCanvas::ShowInfo(std::string info) {
   DLOG(INFO) << "[demo_android_skia] Info: " << info;
   JNIEnv* env = base::android::AttachCurrentThread();

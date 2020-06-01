@@ -1,5 +1,5 @@
 
 <resources>
-    <string name="info">上面一个带大红点的色块使用skia的软件渲染的方式。\n最下面的色块使用OpenGLES硬件渲染。</string>
+    <string name="info">上面的色块使用Skia的软件渲染。\n下面的色块使用Skia的OpenGLES硬件渲染。</string>
     <string name="hello">Hello,DemoAndroidSkia!</string>
 </resources>

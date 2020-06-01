@@ -191,6 +191,8 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
                            const base::android::JavaParamRef<jobject>& caller,
                            const base::android::JavaParamRef<jobject>& surface)
     : SkiaCanvas(env, caller, surface) {
+  background_ = 0xFF00FF00;
+  tag_ = "SkiaCanvasGL";
 
   display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   EGLint majorVersion;
@@ -265,16 +267,9 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
   ShowInfo(ss.str());
 }
 
-void SkiaCanvasGL::OnTouch(JNIEnv* env, int action, jfloat x, jfloat y) {
+SkSurface* SkiaCanvasGL::BeginPaint() {
   DCHECK(display_);
-  DCHECK(context_);
   DCHECK(surface_);
-  std::stringstream ss;
-  ss << "[SkiaCanvasGL] OnTouch: action,x,y=" << action << ", " << x
-             << ", " << y;
-  DLOG(INFO) << ss.str();
-  ShowInfo(ss.str());
-
   GrGLint buffer = 0;
   grGLInterface_->fFunctions.fGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
 
@@ -292,20 +287,12 @@ void SkiaCanvasGL::OnTouch(JNIEnv* env, int action, jfloat x, jfloat y) {
   skSurface_ = SkSurface::MakeFromBackendRenderTarget(
       grContext_.get(), backendRT, kBottomLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, nullptr, &props);
-  skCanvas_ = skSurface_->getCanvas();
-  skCanvas_->clear(0xFF00FF00);
-  if(action == 0) { // down
-    skPath_.rewind();
-    skPath_.moveTo(x, y);
-  }
-  else if(action == 2 || action == 1) {  // move or up
-    //skCanvas_->drawLine(lastX_, lastY_, x, y, pathPaint_);
-    skPath_.lineTo(x, y);
-    skCanvas_->drawPath(skPath_, pathPaint_);
-  }
-  //skCanvas_->drawCircle(x, y, 10, circlePaint_);
-  skSurface_->flush();
-  
+  return skSurface_.get();
+}
+
+void SkiaCanvasGL::SwapBuffer() {
+  DCHECK(display_);
+  DCHECK(surface_);
   eglSwapBuffers(display_, surface_);
 }
 

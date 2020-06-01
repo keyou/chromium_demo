@@ -17,9 +17,11 @@ class SkiaCanvasSoftware : public SkiaCanvas {
   SkiaCanvasSoftware(JNIEnv* env,
                      const base::android::JavaParamRef<jobject>& caller,
                      const base::android::JavaParamRef<jobject>& surface);
-  void OnTouch(JNIEnv* env, int action, jfloat x, jfloat y) override;
-
+ 
  private:
+  SkSurface* BeginPaint() override;
+  void SwapBuffer() override;
+
   ARect dirtyRect_;
 };
 
