@@ -16,6 +16,7 @@
 
     <application android:name="org.demo.demo_android_skia.DemoAndroidSkiaApplication"
             android:icon="@mipmap/app_icon"
+            android:debuggable="true"
             android:label="DemoSkia">
         <activity android:name="org.demo.demo_android_skia.DemoAndroidSkiaActivity"
                   android:launchMode="singleTask"

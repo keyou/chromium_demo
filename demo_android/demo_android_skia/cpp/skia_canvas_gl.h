@@ -5,6 +5,10 @@
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
 #include <GLES/gl.h>
+#ifndef GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#endif
+#include <GLES2/gl2.h>
 
 #include "base/android/jni_android.h"
 #include "base/android/scoped_java_ref.h"
@@ -27,7 +31,9 @@ class SkiaCanvasGL : public SkiaCanvas {
                const base::android::JavaParamRef<jobject>& surface);
 
  private:
+  void InitializeOnRenderThread() override;
   SkCanvas* BeginPaint() override;
+  void OnPaint(SkCanvas* canvas) override;
   void SwapBuffer() override;
 
   EGLDisplay display_;
@@ -37,7 +43,7 @@ class SkiaCanvasGL : public SkiaCanvas {
   EGLint sampleCount_;
   sk_sp<const GrGLInterface> grGLInterface_;
   sk_sp<GrContext> grContext_;
-  bool use_ddl_ = true;
+  bool use_ddl_ = false;
   std::unique_ptr<SkDeferredDisplayListRecorder> recorder_;
 };
 

@@ -16,6 +16,9 @@ SkiaCanvasSoftware::SkiaCanvasSoftware(
     : SkiaCanvas(env, caller, jsurface) {
   background_ = 0xFF00DE96;
   tag_ = "SkiaCanvasSoftware";
+}
+
+void SkiaCanvasSoftware::InitializeOnRenderThread() {
 
   ANativeWindow_setBuffersGeometry(nativeWindow_, width_, height_,
                                    WINDOW_FORMAT_RGB_565);
@@ -28,6 +31,7 @@ SkiaCanvasSoftware::SkiaCanvasSoftware(
   canvas->clear(background_);
   //canvas->drawCircle(20, 20, 20, circlePaint_);
   SwapBuffer();
+  SkiaCanvas::InitializeOnRenderThread();
 }
 
 SkCanvas* SkiaCanvasSoftware::BeginPaint() {
@@ -40,8 +44,11 @@ SkCanvas* SkiaCanvasSoftware::BeginPaint() {
   return skSurface_->getCanvas();
 }
 
-void SkiaCanvasSoftware::SwapBuffer() {
+void SkiaCanvasSoftware::OnPaint(SkCanvas* canvas) {
   skSurface_->flush();
+}
+
+void SkiaCanvasSoftware::SwapBuffer() {
   ANativeWindow_unlockAndPost(nativeWindow_);
 }
 

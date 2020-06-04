@@ -1,8 +1,6 @@
 
 #include "demo/demo_android/demo_android_skia/cpp/skia_canvas_gl.h"
 
-#include <EGL/egl.h>
-
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
@@ -18,10 +16,6 @@
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-#ifndef GL_GLEXT_PROTOTYPES
-#define GL_GLEXT_PROTOTYPES
-#endif
-#include <GLES2/gl2.h>
 
 namespace demo_jni {
 
@@ -198,7 +192,9 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
     : SkiaCanvas(env, caller, surface) {
   background_ = 0xFF00FF00;
   tag_ = "SkiaCanvasGL";
+}
 
+void SkiaCanvasGL::InitializeOnRenderThread() {
   display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   EGLint majorVersion;
   EGLint minorVersion;
@@ -258,7 +254,8 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
   eglGetConfigAttrib(display_, surfaceConfig, EGL_SAMPLES, &sampleCount_);
   sampleCount_ = SkTMax(sampleCount_, 1);
 
-  eglSwapInterval(display_, 1);
+  // 开启 VSYNC，这会导致 SkSurface::flush 被GL调用阻塞，从而使每帧的耗时接近16.6ms,帧率最多60fps
+  eglSwapInterval(display_, 0);
   eglSwapBuffers(display_, surface_);
 
   grGLInterface_ = GrGLMakeNativeInterface();
@@ -266,11 +263,7 @@ SkiaCanvasGL::SkiaCanvasGL(JNIEnv* env,
 
   grContext_ = GrContext::MakeGL(grGLInterface_, CreateGrContextOptions());
   DCHECK(grContext_);
-
-  std::stringstream ss;
-  ss << "[SkiaCanvasGL] Init GL surface surccess. sample_count="
-     << sampleCount_;
-  ShowInfo(ss.str());
+  SkiaCanvas::InitializeOnRenderThread();
 }
 
 SkCanvas* SkiaCanvasGL::BeginPaint() {
@@ -283,35 +276,43 @@ SkCanvas* SkiaCanvasGL::BeginPaint() {
 #define GL_RGBA8 0x8058
 #endif
 
-  GrGLFramebufferInfo fbInfo;
-  fbInfo.fFBOID = buffer;
-  fbInfo.fFormat = GL_RGBA8;
+  GrGLFramebufferInfo fb_info;
+  fb_info.fFBOID = buffer;
+  fb_info.fFormat = GL_RGBA8;
 
   GrBackendRenderTarget backendRT(width_, height_, sampleCount_, stencilBits_,
-                                  fbInfo);
+                                  fb_info);
   SkSurfaceProps props(SkSurfaceProps::kLegacyFontHost_InitType);
   skSurface_ = SkSurface::MakeFromBackendRenderTarget(
       grContext_.get(), backendRT, kBottomLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, nullptr, &props);
-  if(use_ddl_) {
+  if (use_ddl_) {
     SkSurfaceCharacterization characterization;
     bool result = skSurface_->characterize(&characterization);
     DCHECK(result) << "Failed to characterize raster SkSurface.";
     // 使用 ddl 来记录绘制操作，并不执行真正的绘制
-    recorder_ = std::make_unique<SkDeferredDisplayListRecorder>(characterization);
+    recorder_ =
+        std::make_unique<SkDeferredDisplayListRecorder>(characterization);
+
     return recorder_->getCanvas();
   }
   return skSurface_->getCanvas();
 }
 
+void SkiaCanvasGL::OnPaint(SkCanvas* canvas) {
+  if (use_ddl_) {
+    // 必须在list销毁前flush
+    auto list = recorder_->detach();
+    DCHECK(skSurface_->draw(list.get()));
+    skSurface_->flush();
+  }
+  else skSurface_->flush();
+}
+
 void SkiaCanvasGL::SwapBuffer() {
   DCHECK(display_);
   DCHECK(surface_);
-  if(use_ddl_) {
-    skSurface_->draw(recorder_->detach().get());
-  }
-  
-  skSurface_->flush();
+
   eglSwapBuffers(display_, surface_);
 }
 

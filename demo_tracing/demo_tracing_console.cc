@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
   base::RunLoop run_loop;
   // 停止接收新的 Trace
   base::trace_event::TraceLog::GetInstance()->SetDisabled();
-  // 获取 Trace 的结果
+  // 获取 Trace 的结果，必须要先停止接收 Trace 才能执行 Flush
   base::trace_event::TraceLog::GetInstance()->Flush(base::BindRepeating(
       [](base::OnceClosure quit_closure,
          const scoped_refptr<base::RefCountedString>& events_str,
@@ -119,7 +119,8 @@ int main(int argc, char** argv) {
         // Trace 文件格式的详细信息见: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/edit#
         const char* header = "{\"traceEvents\":[\n";
         LOG(INFO) << "result=\n" << header << events_str->data() << "\n]}";
-        std::move(quit_closure).Run();
+        if(!has_more_events)
+          std::move(quit_closure).Run();
       },
       run_loop.QuitClosure()));
   run_loop.Run();

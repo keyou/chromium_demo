@@ -17,7 +17,9 @@ class SkiaCanvasSoftware : public SkiaCanvas {
   SkiaCanvasSoftware(JNIEnv* env,
                      const base::android::JavaParamRef<jobject>& caller,
                      const base::android::JavaParamRef<jobject>& surface);
- 
+  void InitializeOnRenderThread() override;
+  void OnPaint(SkCanvas* canvas) override;
+
  private:
   SkCanvas* BeginPaint() override;
   void SwapBuffer() override;

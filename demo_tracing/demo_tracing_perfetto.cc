@@ -49,6 +49,7 @@ class TracingController : public mojo::DataPipeDrainer::Client,
                     base::OnceClosure start_callback) {
     /********************************************************/
     // 初始化 tracing::TracingService 服务以及注册 Producer
+    // 这里进行稍微改造即可支持多进程的 Trace
     start_callback_ = std::move(start_callback);
     perfetto::TraceConfig perfetto_config = tracing::GetDefaultPerfettoConfig(
         trace_config, /*privacy_filtering_enabled=*/false);
@@ -184,7 +185,7 @@ int main(int argc, char** argv) {
 
     // 创建配置对象
     auto trace_config = base::trace_event::TraceConfig("startup,test");
-    // 用于同步启动 TracingService，只有它完全启动后 Trace 才能被记录
+    // 用于同步启动 TracingService
     base::RunLoop start_tracing_run_loop;
     // 启动 TracingService
     result = demo::TracingController::GetInstance()->StartTracing(

@@ -107,6 +107,10 @@ Demo 列表：
 
 ## 更新日志
 
+### 2020.6.4
+
+- 更新 demo_android_skia， 添加多线程渲染以及帧率同步；
+
 ### 2020.5.31
 
 - 添加 demo_android_skia, 演示在 Android 中使用 Skia 进行软/硬件渲染；
