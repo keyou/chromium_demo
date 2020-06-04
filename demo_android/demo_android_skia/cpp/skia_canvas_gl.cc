@@ -254,7 +254,8 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
   eglGetConfigAttrib(display_, surfaceConfig, EGL_SAMPLES, &sampleCount_);
   sampleCount_ = SkTMax(sampleCount_, 1);
 
-  // 开启 VSYNC，这会导致 SkSurface::flush 被GL调用阻塞，从而使每帧的耗时接近16.6ms,帧率最多60fps
+  // 关闭 VSYNC ，否则会由于帧率的抖动导致平均帧率降低。
+  // VSYNC 会阻塞 SkSurface::flush，从而使每帧的耗时接近16.6ms,帧率最多60fps
   eglSwapInterval(display_, 0);
   eglSwapBuffers(display_, surface_);
 
