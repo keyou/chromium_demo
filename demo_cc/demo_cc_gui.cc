@@ -1,6 +1,8 @@
 #include "base/at_exit.h"
+#include "base/base_paths.h"
 #include "base/callback.h"
 #include "base/command_line.h"
+#include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
@@ -18,6 +20,7 @@
 #include "base/test/test_discardable_memory_allocator.h"
 #include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
+#include "base/trace_event/trace_buffer.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
 #include "cc/animation/animation_host.h"
@@ -96,26 +99,26 @@ namespace demo {
 class Layer : public cc::ContentLayerClient {
  public:
   Layer() {
-    content_layer_ = cc::PictureLayer::Create(this);
+    content_cc_layer_ = cc::PictureLayer::Create(this);
 
-    content_layer_->SetTransformOrigin(gfx::Point3F());
-    content_layer_->SetContentsOpaque(true);
-    content_layer_->SetSafeOpaqueBackgroundColor(SK_ColorWHITE);
-    content_layer_->SetIsDrawable(true);
-    content_layer_->SetHitTestable(true);
-    content_layer_->SetElementId(cc::ElementId(content_layer_->id()));
-    content_layer_->SetBounds(bounds_.size());
+    content_cc_layer_->SetTransformOrigin(gfx::Point3F());
+    content_cc_layer_->SetContentsOpaque(true);
+    content_cc_layer_->SetSafeOpaqueBackgroundColor(SK_ColorWHITE);
+    content_cc_layer_->SetIsDrawable(true);
+    content_cc_layer_->SetHitTestable(true);
+    content_cc_layer_->SetElementId(cc::ElementId(content_cc_layer_->id()));
+    content_cc_layer_->SetBounds(bounds_.size());
   }
 
-  // 设置root layer
-  void SetCompositor(scoped_refptr<cc::Layer> root_layer) {
-    root_layer->AddChild(content_layer_);
+  // 设置root cc layer
+  void SetCompositor(scoped_refptr<cc::Layer> root_cc_layer) {
+    root_cc_layer->AddChild(content_cc_layer_);
   }
 
   void SetBounds(const gfx::Rect& bounds) {
     bounds_ = bounds;
-    content_layer_->SetPosition(gfx::PointF(bounds_.origin()));
-    content_layer_->SetBounds(bounds_.size());
+    content_cc_layer_->SetPosition(gfx::PointF(bounds_.origin()));
+    content_cc_layer_->SetBounds(bounds_.size());
   }
 
   // ContentLayerClient implementation.
@@ -132,17 +135,18 @@ class Layer : public cc::ContentLayerClient {
     display_list->push<cc::DrawColorOp>(color, SkBlendMode::kSrc);
     display_list->EndPaintOfUnpaired(bounds_);
     display_list->Finalize();
-    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
-        FROM_HERE,
-        base::BindOnce(
-            [](scoped_refptr<cc::PictureLayer> layer, SkColor color, int i) {
-              LOG(INFO) << "layer->SetNeedsCommit()";
-              // 将整个layer标记为demaged，它内部会调用SetNeedsCommit()
-              // 也可以使用 LayerTreeHost::SetNeedsAnimate() 强制更新
-              layer->SetNeedsDisplay();
-            },
-            content_layer_, color, i),
-        base::TimeDelta::FromSeconds(1));
+    if (i < 8)
+      base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
+          FROM_HERE,
+          base::BindOnce(
+              [](scoped_refptr<cc::PictureLayer> layer, SkColor color, int i) {
+                LOG(INFO) << "layer->SetNeedsCommit()";
+                // 将整个layer标记为demaged，它内部会调用SetNeedsCommit()
+                // 也可以使用 LayerTreeHost::SetNeedsAnimate() 强制更新
+                layer->SetNeedsDisplay();
+              },
+              content_cc_layer_, color, i),
+          base::TimeDelta::FromSeconds(1));
     return display_list;
   }
   bool FillsBoundsCompletely() const override { return true; }
@@ -150,18 +154,17 @@ class Layer : public cc::ContentLayerClient {
 
  private:
   gfx::Rect bounds_;
-  scoped_refptr<cc::PictureLayer> content_layer_;
+  scoped_refptr<cc::PictureLayer> content_cc_layer_;
 };
 
-// 负责连接cc和viz
-class OffscreenLayerTreeFrameSink
-    : public cc::LayerTreeFrameSink,
-      public viz::mojom::CompositorFrameSinkClient,
-      public viz::DisplayClient,
-      public viz::ExternalBeginFrameSourceClient {
+// 连接cc和viz，cc使用它向viz提交CompositorFrame
+class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
+                               public viz::mojom::CompositorFrameSinkClient,
+                               public viz::DisplayClient,
+                               public viz::ExternalBeginFrameSourceClient {
  public:
-  OffscreenLayerTreeFrameSink(
-    gfx::AcceleratedWidget widget,
+  DemoLayerTreeFrameSink(
+      gfx::AcceleratedWidget widget,
       viz::FrameSinkId& frame_sink_id,
       viz::LocalSurfaceIdAllocation local_surface_id,
       viz::FrameSinkManagerImpl* frame_sink_manager,
@@ -177,7 +180,7 @@ class OffscreenLayerTreeFrameSink
     Initialize();
   }
 
-  ~OffscreenLayerTreeFrameSink() override {}
+  ~DemoLayerTreeFrameSink() override {}
 
  private:
   void Initialize() {
@@ -201,7 +204,7 @@ class OffscreenLayerTreeFrameSink
     begin_frame_source_ = std::make_unique<viz::DelayBasedBeginFrameSource>(
         std::move(time_source), viz::BeginFrameSource::kNotRestartableId);
     auto output_surface = std::make_unique<viz::SoftwareOutputSurface>(
-        std::make_unique<viz::SoftwareOutputDeviceX11>(widget_,nullptr));
+        std::make_unique<viz::SoftwareOutputDeviceX11>(widget_, nullptr));
     auto scheduler = std::make_unique<viz::DisplayScheduler>(
         begin_frame_source_.get(), task_runner.get(),
         output_surface->capabilities().max_frames_pending);
@@ -270,7 +273,7 @@ class OffscreenLayerTreeFrameSink
     compositor_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(
-            &OffscreenLayerTreeFrameSink::DidReceiveCompositorFrameAckInternal,
+            &DemoLayerTreeFrameSink::DidReceiveCompositorFrameAckInternal,
             weak_factory_.GetWeakPtr(), resources));
   }
   void DidReceiveCompositorFrameAckInternal(
@@ -281,9 +284,16 @@ class OffscreenLayerTreeFrameSink
   }
   virtual void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
-      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
+      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& timing_details)
       override {
+    TRACE_EVENT0("cc", "DemoLayerTreeFrameSink::OnBeginFrame");
     LOG(INFO) << "OnBeginFrame: submit a new frame";
+    
+    // 这里用于结束PipelineReporter的 SubmitCompositorFrameToPresentationCompositorFrame
+    // PipelineReporter用于统计cc各阶段的耗时，可以在chrome://tracing中查看
+    for (const auto& pair : timing_details)
+      client_->DidPresentCompositorFrame(pair.first, pair.second);
+    
     if (support_->last_activated_local_surface_id() !=
         root_local_surface_id_.local_surface_id()) {
       display_->SetLocalSurfaceId(root_local_surface_id_.local_surface_id(),
@@ -291,8 +301,8 @@ class OffscreenLayerTreeFrameSink
     }
     // 将来自viz的 OnBeginFrame 转发到cc中的调度器 cc::Scheduler
     // 从这里可以看出渲染的驱动是自底向上的，由底层的viz发起新的Frame请求
-    // 当cc需要更新画面时，cc会间接调用到 OnNeedsBeginFrames 方法通知viz发起新Frame的请求
-    // 注意webview中渲染的驱动不是自底向上的
+    // 当cc需要更新画面时，cc会间接调用到 OnNeedsBeginFrames
+    // 方法通知viz发起新Frame的请求 注意webview中渲染的驱动不是自底向上的
     // 这句代码是 cc:::Scheduler 的发动机之一
     external_begin_frame_source_->OnBeginFrame(args);
   }
@@ -324,21 +334,22 @@ class OffscreenLayerTreeFrameSink
   viz::LocalSurfaceIdAllocation root_local_surface_id_;
   viz::FrameTokenGenerator frame_token_generator_;
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
-  base::WeakPtrFactory<OffscreenLayerTreeFrameSink> weak_factory_{this};
+  base::WeakPtrFactory<DemoLayerTreeFrameSink> weak_factory_{this};
   std::unique_ptr<viz::ExternalBeginFrameSource> external_begin_frame_source_;
   std::unique_ptr<viz::DelayBasedBeginFrameSource> begin_frame_source_;
   std::unique_ptr<viz::CompositorFrameSinkSupport> support_;
   std::unique_ptr<viz::Display> display_;
 };
 
-// 作用类似 ui::Compositor,负责初始化cc和viz，它将上层ui层和底层的cc和viz对接起来
+// 作用类似
+// ui::Compositor,负责初始化cc和viz，它将上层ui层和底层的cc和viz对接起来
 class Compositor
     : public cc::LayerTreeHostClient,
       // 这个接口用于不使用cc::Scheduler的模式下，该demo使用cc::Scheduelr
       public cc::LayerTreeHostSingleThreadClient,
       public viz::HostFrameSinkClient {
  public:
-  Compositor(gfx::AcceleratedWidget widget):widget_(widget) {
+  Compositor(gfx::AcceleratedWidget widget) : widget_(widget) {
     auto task_runner = base::ThreadTaskRunnerHandle::Get();
     cc::LayerTreeSettings settings;
     settings.initial_debug_state.show_fps_counter = true;
@@ -353,13 +364,13 @@ class Compositor
     params.mutator_host = animation_host_.get();
     host_ = cc::LayerTreeHost::CreateSingleThreaded(this, std::move(params));
 
-    root_layer_ = cc::Layer::Create();
-    host_->SetRootLayer(root_layer_);
+    root_cc_layer_ = cc::Layer::Create();
+    host_->SetRootLayer(root_cc_layer_);
     host_->SetVisible(true);
 
-    root_layer_->SetBounds(size_);
-    layer_.SetBounds(gfx::Rect(size_));
-    layer_.SetCompositor(root_layer_);
+    root_cc_layer_->SetBounds(size_);
+    root_ui_layer_.SetBounds(gfx::Rect(size_));
+    root_ui_layer_.SetCompositor(root_cc_layer_);
 
     host_->SetNeedsRedrawRect(gfx::Rect(size_));
     host_->SetNeedsCommit();
@@ -372,8 +383,8 @@ class Compositor
   gfx::Size size_{300, 200};
   float scale_ = 1.0;
   gfx::AcceleratedWidget widget_;
-  scoped_refptr<cc::Layer> root_layer_;
-  demo::Layer layer_;
+  scoped_refptr<cc::Layer> root_cc_layer_;
+  demo::Layer root_ui_layer_;
   std::unique_ptr<viz::ServerSharedBitmapManager> shared_bitmap_manager_;
   viz::FrameSinkId root_frame_sink_id_{0, 1};
   viz::ParentLocalSurfaceIdAllocator root_local_surface_id_allocator_;
@@ -395,7 +406,7 @@ class Compositor
   void BeginMainFrameNotExpectedSoon() override {}
   void BeginMainFrameNotExpectedUntil(base::TimeTicks time) override {}
   void UpdateLayerTreeHost() override {
-    root_layer_->SetNeedsDisplayRect(gfx::Rect(size_));
+    root_cc_layer_->SetNeedsDisplayRect(gfx::Rect(size_));
   }
   void ApplyViewportChanges(const cc::ApplyViewportChangesArgs& args) override {
   }
@@ -417,9 +428,9 @@ class Compositor
     root_local_surface_id_ =
         root_local_surface_id_allocator_.GetCurrentLocalSurfaceIdAllocation();
 
-    auto layer_tree_frame_sink = std::make_unique<OffscreenLayerTreeFrameSink>(widget_,
-        root_frame_sink_id_, root_local_surface_id_, frame_sink_manager_.get(),
-        task_runner);
+    auto layer_tree_frame_sink = std::make_unique<DemoLayerTreeFrameSink>(
+        widget_, root_frame_sink_id_, root_local_surface_id_,
+        frame_sink_manager_.get(), task_runner);
 
     host_->SetViewportRectAndScale(gfx::Rect(size_), scale_,
                                    root_local_surface_id_);
@@ -436,7 +447,11 @@ class Compositor
   void DidCompletePageScaleAnimation() override {}
   void DidPresentCompositorFrame(
       uint32_t frame_token,
-      const gfx::PresentationFeedback& feedback) override {}
+      const gfx::PresentationFeedback& feedback) override {
+    TRACE_EVENT_MARK_WITH_TIMESTAMP1("cc,benchmark", "FramePresented",
+                                     feedback.timestamp, "environment",
+                                     "browser");
+  }
   void RecordStartOfFrameMetrics() override {}
   void RecordEndOfFrameMetrics(base::TimeTicks frame_begin_time) override {}
   std::unique_ptr<cc::BeginMainFrameMetrics> GetBeginMainFrameMetrics()
@@ -530,6 +545,36 @@ class DemoCcWindow : public ui::PlatformWindowDelegate {
   DISALLOW_COPY_AND_ASSIGN(DemoCcWindow);
 };
 
+void FlushTrace() {
+  DLOG(INFO) << "Flush trace start.";
+  base::FilePath output_path;
+  DCHECK(base::PathService::Get(base::DIR_EXE, &output_path));
+  output_path = output_path.AppendASCII("trace_demo_cc_gui.json");
+  static base::File trace_file(
+      output_path, base::File::FLAG_CREATE_ALWAYS | base::File::FLAG_WRITE);
+  DCHECK(trace_file.IsValid());
+  trace_file.SetLength(0);
+  static base::trace_event::TraceResultBuffer trace_buffer;
+  trace_buffer.SetOutputCallback(
+      base::BindRepeating([](const std::string& chunk) {
+        trace_file.WriteAtCurrentPos(chunk.c_str(), chunk.size());
+      }));
+  trace_buffer.Start();
+  // 停止接收新的 Trace
+  base::trace_event::TraceLog::GetInstance()->SetDisabled();
+  // 获取 Trace 的结果，必须要先停止接收 Trace 才能执行 Flush
+  base::trace_event::TraceLog::GetInstance()->Flush(base::BindRepeating(
+      [](const scoped_refptr<base::RefCountedString>& events_str,
+         bool has_more_events) {
+        trace_buffer.AddFragment(events_str->data());
+        if (!has_more_events) {
+          trace_buffer.Finish();
+          trace_file.Flush();
+          DLOG(INFO) << "Flush trace finished.";
+        }
+      }));
+}
+
 }  // namespace demo
 
 int main(int argc, char** argv) {
@@ -537,6 +582,8 @@ int main(int argc, char** argv) {
   base::AtExitManager at_exit;
   // 初始化CommandLine
   base::CommandLine::Init(argc, argv);
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      "enable-skia-benchmarking");
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
   // 创建主消息循环，等价于 MessagLoop
@@ -545,7 +592,8 @@ int main(int argc, char** argv) {
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoViews");
 
   // 手动创建TraceConfig
-  auto trace_config = base::trace_event::TraceConfig("cc", "trace-to-console");
+  auto trace_config =
+      base::trace_event::TraceConfig("*,disabled-by-default-*", "");
   // 2. 启动Trace
   base::trace_event::TraceLog::GetInstance()->SetEnabled(
       trace_config, base::trace_event::TraceLog::RECORDING_MODE);
@@ -558,7 +606,6 @@ int main(int argc, char** argv) {
   auto ipc_support = std::make_unique<mojo::core::ScopedIPCSupport>(
       mojo_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
-
 
   // 在Linux上，x11和aura都是默认开启的
 #if defined(USE_X11)
@@ -592,6 +639,10 @@ int main(int argc, char** argv) {
 
   demo::DemoCcWindow window(run_loop.QuitClosure());
   window.Create(gfx::Rect(800, 600));
+
+  main_task_executor.task_runner()->PostDelayedTask(
+      FROM_HERE, base::BindOnce(&demo::FlushTrace),
+      base::TimeDelta::FromSeconds(12));
 
   LOG(INFO) << "running...";
   run_loop.Run();
