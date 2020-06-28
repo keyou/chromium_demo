@@ -1,10 +1,10 @@
 # cc (Chrome Compositor)
 
-> Viz 和 cc 相关的类图见： <https://drive.google.com/file/d/1LW5d0GzlksSVtncDO1kpeHCVs3YD3rl0/view?usp=sharing>  
+> Viz 和 cc 相关的类图见： <https://app.diagrams.net/?lightbox=1&highlight=0000ff&edit=_blank&layers=1&nav=1&title=viz%2Bcc.drawio#Uhttps%3A%2F%2Fdrive.google.com%2Fuc%3Fid%3D1LW5d0GzlksSVtncDO1kpeHCVs3YD3rl0%26export%3Ddownload>  
 
 TODO: 完善文档
 
-cc 的核心调度入口在 `Scheduler::ProcessScheduledActions()`，主要代码如下：
+cc 的核心调度入口在 `cc::Scheduler::ProcessScheduledActions()`，主要代码如下：
 
 ```C++
 // 2020年1月(v80.0.3987.158),有删减
