@@ -13,7 +13,8 @@
         "algorithm": "cpp",
         "random": "cpp",
         "optional": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "regex": "cpp"
     },
     "commentTranslate.targetLanguage": "zh-CN",
     "pasteImage.filePathConfirmInputBoxMode": "onlyName",

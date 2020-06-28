@@ -1,8 +1,6 @@
 # for mojo
 import("//mojo/public/tools/bindings/mojom.gni")
 
-# for service
-
 group("demo") {
   testonly = true
   # 除非特殊说明，所有demo仅在Linux上进行测试，其他平台未经测试
@@ -21,6 +19,7 @@ group("demo") {
     "demo_resources",
     "demo_viz",
     "demo_cc",
+    "demo_skia",
     "demo_views",
     "demo_android",
     "demo_shell",
@@ -32,6 +31,7 @@ group("demo") {
       "demo_views",
       "demo_viz",
       "demo_cc",
+      "demo_skia",
     ]
   }
 }
