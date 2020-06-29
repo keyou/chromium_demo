@@ -3,6 +3,7 @@
 
 #include "base/bind.h"
 #include "base/lazy_instance.h"
+#include "base/trace_event/trace_event.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
@@ -192,6 +193,7 @@ SkiaCanvasGL::SkiaCanvasGL(gfx::AcceleratedWidget widget,int width,int height)
 }
 
 void SkiaCanvasGL::InitializeOnRenderThread() {
+  TRACE_EVENT0("shell", "SkiaCanvasGL::InitializeOnRenderThread");
   display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   EGLint majorVersion;
   EGLint minorVersion;
@@ -244,7 +246,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
   glClearStencil(0);
   // glClearColor(0, 0, 0, 0);
   // glStencilMask(0xffffffff);
-  glClearColor(0xFF, 0xFF, 0x00, 0xFF);  // 0xFF00DE96
+  glClearColor(0x00, 0xFF, 0x00, 0xFF);  // 0xFF00DE96
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   eglGetConfigAttrib(display_, surfaceConfig, EGL_STENCIL_SIZE, &stencilBits_);

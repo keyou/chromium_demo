@@ -81,15 +81,16 @@ namespace demo {
 // DemoWindow creates the native window for the demo app. The native window
 // provides a gfx::AcceleratedWidget, which is needed for the display
 // compositor.
-class DemoVizWindow : public ui::PlatformWindowDelegate {
+class DemoWindowHost : public ui::PlatformWindowDelegate {
  public:
-  DemoVizWindow(base::OnceClosure close_closure)
+  DemoWindowHost(base::OnceClosure close_closure)
       : close_closure_(std::move(close_closure)) {}
-  ~DemoVizWindow() override = default;
+  ~DemoWindowHost() override = default;
 
   void Create(const gfx::Rect& bounds) {
     platform_window_ = CreatePlatformWindow(bounds);
     platform_window_->Show();
+    
     if (widget_ != gfx::kNullAcceleratedWidget)
       InitializeDemo();
   }
@@ -115,12 +116,17 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
 
   void InitializeDemo() {
     DCHECK_NE(widget_, gfx::kNullAcceleratedWidget);
-    // skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasGL>(
-    //     widget_, platform_window_->GetBounds().width(),
-    //     platform_window_->GetBounds().height());
-    skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasSoftware>(
-        widget_, platform_window_->GetBounds().width(),
-        platform_window_->GetBounds().height());
+    if(base::CommandLine::ForCurrentProcess()->HasSwitch("software")) {
+      LOG(INFO) << "Create SkiaCanvas: Software";
+      skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasSoftware>(
+          widget_, platform_window_->GetBounds().width(),
+          platform_window_->GetBounds().height());
+    } else {
+      LOG(INFO) << "Create SkiaCanvas: GLES2";
+      skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasGL>(
+          widget_, platform_window_->GetBounds().width(),
+          platform_window_->GetBounds().height());
+    }
   }
 
   // ui::PlatformWindowDelegate:
@@ -148,8 +154,9 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
         return;
       auto located_event = event->AsLocatedEvent();
       auto location = located_event->location();
-      DLOG(INFO) << "action,x,y= " << action << "," << location.x() << ","
-                 << location.y();
+      if(action != 2)
+        DLOG(INFO) << "action,x,y= " << action << "," << location.x() << ","
+                   << location.y();
       skia_canvas_->OnTouch(action, location.x(), location.y());
     }
   }
@@ -173,7 +180,7 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
   base::OnceClosure close_closure_;
   std::unique_ptr<demo_jni::SkiaCanvas> skia_canvas_;
 
-  DISALLOW_COPY_AND_ASSIGN(DemoVizWindow);
+  DISALLOW_COPY_AND_ASSIGN(DemoWindowHost);
 };
 
 }  // namespace demo
@@ -186,7 +193,7 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
   // 启动 Trace
-  auto trace_config = base::trace_event::TraceConfig("startup,shell", "trace-to-console");
+  auto trace_config = base::trace_event::TraceConfig("startup"/*, "trace-to-console"*/);
   base::trace_event::TraceLog::GetInstance()->SetEnabled(
       trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
@@ -211,8 +218,8 @@ int main(int argc, char** argv) {
 
   auto event_source_ = ui::PlatformEventSource::CreateDefault();
 
-  // 加载相应平台的GL库及GL绑定
-  gl::init::InitializeGLOneOff();
+  // 使用
+  //gl::init::InitializeGLOneOff();
 
   // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
   base::i18n::InitializeICU();
@@ -224,7 +231,7 @@ int main(int argc, char** argv) {
 
   base::RunLoop run_loop;
 
-  demo::DemoVizWindow window(run_loop.QuitClosure());
+  demo::DemoWindowHost window(run_loop.QuitClosure());
   window.Create(gfx::Rect(800, 600));
 
   LOG(INFO) << "running...";

@@ -9,25 +9,26 @@ Demo 列表：
 1. `demo_exe`: 最简单的 demo，演示 gn 及创建自己的 exe；
 2. `demo_log`: 演示使用日志库；
 3. `demo_tracing_console`: 演示使用 Trace 输出到控制台；
-6. `demo_tasks`: 演示使用线程池 ThreadPool;
-7. `demo_messageloop`: 演示使用消息循环 MessageLoop;
-8. `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
-9. `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
-10. `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
-11. `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
-12. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
-13. `demo_memory`: 演示使用 SharedMemory；
-14. `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
-15. `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
-16. `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-17. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
-18. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
-19. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
-20. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
-21. `demo_views`: 演示使用 `//ui/views` 创建 UI；
-22. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
-23. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
-24. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+4. `demo_tasks`: 演示使用线程池 ThreadPool;
+5. `demo_messageloop`: 演示使用消息循环 MessageLoop;
+6. `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
+7. `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
+8. `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
+9. `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
+10. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
+11. `demo_memory`: 演示使用 SharedMemory；
+12. `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
+13. `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
+14. `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
+15. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
+16. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
+17. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
+18. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
+19. `demo_views`: 演示使用 `//ui/views` 创建 UI；
+20. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
+21. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
+22. `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
+23. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
 
 文档列表：
 
@@ -103,9 +104,13 @@ Demo 列表：
 - 添加 demo, 演示如何向 Blink 注入新的 JS 对象；
 - 添加 demo, 演示如何实现网页的离屏渲染；
 - 添加 demo, 演示如何使用 aura 创建 UI 界面；
-- 添加 demo, 演示如何使用 PlatformWindow 创建窗口；
+- 添加 demo, 演示如何使用 PlatformWindow 创建 UI 界面；
 
 ## 更新日志
+
+### 2020.6.28
+
+- 添加 demo_skia, 演示在 Linux 中使用 Skia 进行软/硬件渲染；
 
 ### 2020.6.4
 

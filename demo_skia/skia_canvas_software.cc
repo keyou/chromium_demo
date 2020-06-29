@@ -3,6 +3,7 @@
 
 #include "base/bind.h"
 #include "base/lazy_instance.h"
+#include "base/trace_event/trace_event.h"
 
 namespace demo_jni {
 
@@ -13,6 +14,7 @@ SkiaCanvasSoftware::SkiaCanvasSoftware(gfx::AcceleratedWidget widget,int width,i
 }
 
 void SkiaCanvasSoftware::InitializeOnRenderThread() {
+  TRACE_EVENT0("shell", "SkiaCanvasSoftware::InitializeOnRenderThread");
   x11_presenter_ = std::make_unique<ui::X11SoftwareBitmapPresenter>(
       nativeWindow_, render_task_runner_.get(), nullptr);
 

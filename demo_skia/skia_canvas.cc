@@ -18,7 +18,7 @@ namespace demo_jni {
 
 // 注意该程序会向以下文件写数据，请只在测试机上使用该程序
 const base::FilePath::CharType kTraceFileName[] =
-    FILE_PATH_LITERAL("./trace_skia.json");
+    FILE_PATH_LITERAL("./trace_demo_skia.json");
 std::unique_ptr<base::File> g_trace_file;
 int g_write_offset = 0;
 
@@ -34,7 +34,7 @@ void DemoMain() {
 }
 
 void StartTrace() {
-  return;
+  // return;
   // 配置及启动 Trace
   base::trace_event::TraceConfig trace_config =
       base::trace_event::TraceConfig("shell");
@@ -44,7 +44,7 @@ void StartTrace() {
 
 bool is_flushing_ = false;
 void FlushTrace() {
-  return;
+  // return;
   if (is_flushing_)
     return;
   is_flushing_ = true;
@@ -54,7 +54,7 @@ void FlushTrace() {
   base::trace_event::TraceLog::GetInstance()->Flush(base::BindRepeating(
       [](const scoped_refptr<base::RefCountedString>& events_str,
          bool has_more_events) {
-        LOG(INFO) << std::endl << events_str->data();
+        // LOG(INFO) << std::endl << events_str->data();
         g_write_offset += g_trace_file->Write(
             g_write_offset, events_str->data().c_str(), events_str->size());
         g_write_offset += g_trace_file->Write(g_write_offset, ",\n", 2);
@@ -63,7 +63,7 @@ void FlushTrace() {
           g_write_offset += g_trace_file->Write(g_write_offset, "\n", 1);
           is_flushing_ = false;
           g_trace_file->Flush();
-          DLOG(INFO) << "Flush trace stop.";
+          DLOG(INFO) << "Flush trace finish.";
         }
       }));
 }
@@ -106,10 +106,10 @@ void SkiaCanvas::InitializeOnRenderThread() {}
 // Android 系统会控制触摸事件的频率在 60 pps
 void SkiaCanvas::OnTouch(int action, float x, float y) {
   TRACE_EVENT0("shell", "SkiaCanvas::OnTouch");
-  std::stringstream ss;
-  ss << "[" << tag_ << "] OnTouch: action,x,y=" << action << ", " << x << ", "
-     << y;
-  DLOG(INFO) << ss.str();
+  // std::stringstream ss;
+  // ss << "[" << tag_ << "] OnTouch: action,x,y=" << action << ", " << x << ", "
+  //    << y;
+  // DLOG(INFO) << ss.str();
   render_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&SkiaCanvas::OnTouchOnRenderThread,
                                 base::Unretained(this), action, x, y));
@@ -154,6 +154,8 @@ void SkiaCanvas::SetNeedsRedraw(bool need_redraw) {
 }
 
 void SkiaCanvas::OnRenderOnRenderThread() {
+  // 用于在 chrome:://tracing 中显示 Vsync
+  TRACE_EVENT0("shell", "VSYNC");
   TRACE_EVENT0("shell", "SkiaCanvas::OnRenderOnRenderThread");
   if (!need_redraw_) {
     is_drawing_ = false;
@@ -177,9 +179,12 @@ void SkiaCanvas::OnRenderOnRenderThread() {
   {
     TRACE_EVENT0("shell", "paint");
     auto paint_start_time = base::TimeTicks::Now();
+    TRACE_EVENT0("shell", "BeginPaint");
     auto canvas = BeginPaint();
+    TRACE_EVENT0("shell", "draw");
     canvas->clear(background_);
     canvas->drawPath(skPath_, pathPaint_);
+    TRACE_EVENT0("shell", "OnPaint");
     OnPaint(canvas);
     total_paint_time_ += base::TimeTicks::Now() - paint_start_time;
   }
