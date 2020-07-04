@@ -21,7 +21,6 @@ void SkiaCanvasSoftware::InitializeOnRenderThread() {
   // 当 format = AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM = 4
   // 时，一个像素占2个字节，所以x2
   // memset(buffer.bits, 0xAA, buffer.stride * buffer.height * 2);
-  x11_presenter_->Resize(gfx::Size(width_, height_));
   auto canvas = BeginPaint();
   canvas->clear(background_);
   //canvas->drawCircle(20, 20, 20, circlePaint_);
@@ -30,7 +29,13 @@ void SkiaCanvasSoftware::InitializeOnRenderThread() {
   SkiaCanvas::InitializeOnRenderThread();
 }
 
+void SkiaCanvasSoftware::Resize(int width, int height) {
+  width_ = width;
+  height_ = height;
+}
+
 SkCanvas* SkiaCanvasSoftware::BeginPaint() {
+  x11_presenter_->Resize(gfx::Size(width_, height_));
   return x11_presenter_->GetSkCanvas();
 }
 

@@ -41,8 +41,8 @@
 #include "ui/base/x/x11_util.h"
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
-#include "ui/events/platform/platform_event_source.h"
 #include "ui/events/event_constants.h"
+#include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/canvas.h"
 #include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
@@ -90,7 +90,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   void Create(const gfx::Rect& bounds) {
     platform_window_ = CreatePlatformWindow(bounds);
     platform_window_->Show();
-    
+
     if (widget_ != gfx::kNullAcceleratedWidget)
       InitializeDemo();
   }
@@ -99,6 +99,9 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   std::unique_ptr<ui::PlatformWindow> CreatePlatformWindow(
       const gfx::Rect& bounds) {
     ui::PlatformWindowInitProperties props(bounds);
+    props.type = ui::PlatformWindowType::kWindow;
+    props.activatable = true;
+    props.remove_standard_frame = false;
 #if defined(USE_OZONE)
     return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
         this, std::move(props));
@@ -116,7 +119,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 
   void InitializeDemo() {
     DCHECK_NE(widget_, gfx::kNullAcceleratedWidget);
-    if(base::CommandLine::ForCurrentProcess()->HasSwitch("software")) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch("software")) {
       LOG(INFO) << "Create SkiaCanvas: Software";
       skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasSoftware>(
           widget_, platform_window_->GetBounds().width(),
@@ -131,7 +134,9 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 
   // ui::PlatformWindowDelegate:
   void OnBoundsChanged(const gfx::Rect& new_bounds) override {
-    
+    if (skia_canvas_) {
+      skia_canvas_->Resize(new_bounds.width(), new_bounds.height());
+    }
   }
 
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
@@ -142,19 +147,23 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 
   void OnDamageRect(const gfx::Rect& damaged_region) override {}
   void DispatchEvent(ui::Event* event) override {
-    if(event->IsMouseEvent()&&event->AsMouseEvent()->IsLeftMouseButton() || event->IsTouchEvent()) {
+    if ((event->IsMouseEvent() && event->AsMouseEvent()->IsLeftMouseButton()) ||
+        event->IsTouchEvent()) {
       int action = -1;
-      if(event->type() == ui::ET_MOUSE_PRESSED || event->type() == ui::ET_TOUCH_PRESSED)
+      if (event->type() == ui::ET_MOUSE_PRESSED ||
+          event->type() == ui::ET_TOUCH_PRESSED)
         action = 0;
-      else if(event->type() == ui::ET_MOUSE_RELEASED || event->type() == ui::ET_TOUCH_RELEASED)
+      else if (event->type() == ui::ET_MOUSE_RELEASED ||
+               event->type() == ui::ET_TOUCH_RELEASED)
         action = 1;
-      else if(event->type() == ui::ET_MOUSE_DRAGGED || event->type() == ui::ET_TOUCH_MOVED)
+      else if (event->type() == ui::ET_MOUSE_DRAGGED ||
+               event->type() == ui::ET_TOUCH_MOVED)
         action = 2;
       else
         return;
       auto located_event = event->AsLocatedEvent();
       auto location = located_event->location();
-      if(action != 2)
+      if (action != 2)
         DLOG(INFO) << "action,x,y= " << action << "," << location.x() << ","
                    << location.y();
       skia_canvas_->OnTouch(action, location.x(), location.y());
@@ -162,7 +171,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   }
   void OnCloseRequest() override {
     // TODO: Use a more robust exit method
-    
+
     platform_window_->Close();
   }
   void OnClosed() override {
@@ -193,7 +202,8 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
   // 启动 Trace
-  auto trace_config = base::trace_event::TraceConfig("startup"/*, "trace-to-console"*/);
+  auto trace_config =
+      base::trace_event::TraceConfig("startup" /*, "trace-to-console"*/);
   base::trace_event::TraceLog::GetInstance()->SetEnabled(
       trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
@@ -219,7 +229,7 @@ int main(int argc, char** argv) {
   auto event_source_ = ui::PlatformEventSource::CreateDefault();
 
   // 使用
-  //gl::init::InitializeGLOneOff();
+  // gl::init::InitializeGLOneOff();
 
   // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
   base::i18n::InitializeICU();

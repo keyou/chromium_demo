@@ -11,6 +11,7 @@ class SkiaCanvasSoftware : public SkiaCanvas {
  public:
   SkiaCanvasSoftware(gfx::AcceleratedWidget widget,int width,int height);
   void InitializeOnRenderThread() override;
+  void Resize(int width, int height) override;
   void OnPaint(SkCanvas* canvas) override;
 
  private:

@@ -184,6 +184,12 @@ void SkiaCanvas::OnRenderOnRenderThread() {
     TRACE_EVENT0("shell", "draw");
     canvas->clear(background_);
     canvas->drawPath(skPath_, pathPaint_);
+    auto point_count = skPath_.countPoints();
+    SkPoint p;
+    for(int i = 0;i < point_count;i++) {
+      p = skPath_.getPoint(i);
+      canvas->drawCircle(p,3,circlePaint_);
+    }
     TRACE_EVENT0("shell", "OnPaint");
     OnPaint(canvas);
     total_paint_time_ += base::TimeTicks::Now() - paint_start_time;

@@ -24,6 +24,9 @@ namespace demo_jni {
 class SkiaCanvasGL : public SkiaCanvas {
  public:
   SkiaCanvasGL(gfx::AcceleratedWidget widget,int width,int height);
+  void Resize(int width, int height) override;
+
+  ~SkiaCanvasGL() override; 
 
  private:
   void InitializeOnRenderThread() override;

@@ -62,6 +62,8 @@
 #include "ui/views/widget/desktop_aura/desktop_screen.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/widget/widget_delegate.h"
+#include "ui/views/background.h"
+#include "ui/events/event.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -133,6 +135,47 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,
   DISALLOW_COPY_AND_ASSIGN(DemoViewsWidgetDelegateView);
 };
 
+class SolidBackground : public views::Background {
+ public:
+  explicit SolidBackground(SkColor color) {
+    SetNativeControlColor(color);
+  }
+
+  void Paint(gfx::Canvas* canvas, views::View* view) const override {
+    // Fill the background. Note that we don't constrain to the bounds as
+    // canvas is already clipped for us.
+    canvas->DrawColor(get_color());
+  }
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(SolidBackground);
+};
+
+class InkView : public views::View {
+ public:
+  InkView() { 
+    path_.moveTo(0, 0);
+    paint_flags_.setColor(SK_ColorWHITE);
+    paint_flags_.setStyle(cc::PaintFlags::Style::kStroke_Style);
+    paint_flags_.setStrokeWidth(5);
+  }
+  void OnMouseMoved(const ui::MouseEvent& event) override {
+    DLOG(INFO) << "OnMouseMoved()";
+    path_.lineTo(event.x(),event.y());
+    SchedulePaint();
+  }
+  void OnPaint(gfx::Canvas* canvas) override {
+    DLOG(INFO) << "OnPaint()";
+    // 在views::OnPaint()中绘制背景色，它会覆盖这里的蓝色
+    // canvas->DrawColor(SK_ColorGREEN);
+    views::View::OnPaint(canvas);
+    canvas->DrawPath(path_, paint_flags_);
+  }
+
+  SkPath path_;
+  cc::PaintFlags paint_flags_;
+};
+
 int main(int argc, char** argv) {
   // 类似C++的 atexit() 方法，用于管理程序的销毁逻辑，base::Singleton类依赖它
   base::AtExitManager at_exit;
@@ -141,9 +184,9 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
   // 启动 Trace
-  auto trace_config = base::trace_event::TraceConfig("cc", "trace-to-console");
-  base::trace_event::TraceLog::GetInstance()->SetEnabled(
-      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
+  // auto trace_config = base::trace_event::TraceConfig("cc"/*, "trace-to-console"*/);
+  // base::trace_event::TraceLog::GetInstance()->SetEnabled(
+  //     trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
@@ -161,6 +204,7 @@ int main(int argc, char** argv) {
 
   // 加载相应平台的GL库及GL绑定
   gl::init::InitializeGLOneOff();
+  LOG(INFO) << "GetGLImplementation: " << gl::GetGLImplementation();
 
   // The ContextFactory must exist before any Compositors are created.
   viz::HostFrameSinkManager host_frame_sink_manager;
@@ -226,6 +270,18 @@ int main(int argc, char** argv) {
   params.wm_class_name = params.wm_class_class;
   window_widget_->Init(std::move(params));
   window_widget_->Show();
+
+  views::Widget::InitParams child_params(views::Widget::InitParams::TYPE_CONTROL);
+  child_params.parent = window_widget_->GetNativeView();
+  child_params.ownership = views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
+  child_params.opacity = views::Widget::InitParams::WindowOpacity::kTranslucent;
+  auto view = std::make_unique<InkView>();
+  view->SetBackground(std::make_unique<SolidBackground>(SK_ColorTRANSPARENT));
+  views::Widget* child = new views::Widget;
+  child->Init(std::move(child_params));
+  child->SetBounds(gfx::Rect(50, 20, 120, 120));
+  child->SetContentsView(view.get());
+  child->Show();
 
   LOG(INFO) << "running...";
   run_loop.Run();

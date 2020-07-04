@@ -19,6 +19,8 @@ namespace demo_jni {
 class SkiaCanvas {
  public:
   void OnTouch(int action, float x, float y);
+  virtual ~SkiaCanvas() {} 
+  virtual void Resize(int width, int height) {}
 
  protected:
   SkiaCanvas(gfx::AcceleratedWidget widget,int width,int height);
