@@ -136,6 +136,9 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   void OnBoundsChanged(const gfx::Rect& new_bounds) override {
     if (skia_canvas_) {
       skia_canvas_->Resize(new_bounds.width(), new_bounds.height());
+      #if defined(USE_X11)
+      ((ui::X11Window*)platform_window_.get())->NotifySwapAfterResize();
+      #endif
     }
   }
 
