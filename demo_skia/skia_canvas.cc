@@ -20,7 +20,6 @@ namespace demo_jni {
 const base::FilePath::CharType kTraceFileName[] =
     FILE_PATH_LITERAL("./trace_demo_skia.json");
 std::unique_ptr<base::File> g_trace_file;
-int g_write_offset = 0;
 
 void StartTrace();
 void DemoMain() {
@@ -29,7 +28,7 @@ void DemoMain() {
                                           base::File::FLAG_WRITE |
                                           base::File::FLAG_OPEN_TRUNCATED);
   DCHECK(g_trace_file->IsValid());
-  g_write_offset += g_trace_file->Write(g_write_offset, "[", 1);
+  g_trace_file->WriteAtCurrentPos("[", 1);
   StartTrace();
 }
 
@@ -55,12 +54,11 @@ void FlushTrace() {
       [](const scoped_refptr<base::RefCountedString>& events_str,
          bool has_more_events) {
         // LOG(INFO) << std::endl << events_str->data();
-        g_write_offset += g_trace_file->Write(
-            g_write_offset, events_str->data().c_str(), events_str->size());
-        g_write_offset += g_trace_file->Write(g_write_offset, ",\n", 2);
+        g_trace_file->WriteAtCurrentPos(events_str->data().c_str(), events_str->size());
+        g_trace_file->WriteAtCurrentPos(",\n", 2);
         if (!has_more_events) {
           StartTrace();
-          g_write_offset += g_trace_file->Write(g_write_offset, "\n", 1);
+          g_trace_file->WriteAtCurrentPos("\n", 1);
           is_flushing_ = false;
           g_trace_file->Flush();
           DLOG(INFO) << "Flush trace finish.";
