@@ -62,12 +62,6 @@
 #include "ui/platform_window/platform_window_init_properties.h"
 #include "ui/platform_window/x11/x11_window.h"
 
-#include "components/viz/common/quads/picture_draw_quad.h"
-#include "components/viz/common/quads/tile_draw_quad.h"
-#include "components/viz/common/resources/resource_format.h"
-#include "components/viz/client/client_resource_provider.h"
-#include "components/viz/common/resources/bitmap_allocation.h"
-
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
 #include "ui/wm/core/wm_state.h"
@@ -128,7 +122,6 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
  private:
   void InitializeOnThread() {
     shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
-    client_resource_provider_ = std::make_unique<viz::ClientResourceProvider>(false);
     frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
         shared_bitmap_manager_.get());
     auto task_runner = base::ThreadTaskRunnerHandle::Get();
@@ -193,81 +186,28 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     render_pass->SetNew(kRenderPassId, output_rect, damage_rect,
                         gfx::Transform());
 
-    // // Add a solid-color draw-quad for the big rectangle covering the entire
-    // // content-area of the client.
-    // viz::SharedQuadState* quad_state =
-    //     render_pass->CreateAndAppendSharedQuadState();
-    // quad_state->SetAll(
-    //     gfx::Transform(),
-    //     /*quad_layer_rect=*/output_rect,
-    //     /*visible_quad_layer_rect=*/output_rect,
-    //     /*rounded_corner_bounds=*/gfx::RRectF(),
-    //     /*clip_rect=*/gfx::Rect(),
-    //     /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-    //     /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
-
-    // viz::SolidColorDrawQuad* color_quad =
-    //     render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
-    // color_quad->SetNew(quad_state, output_rect, output_rect,
-    //                    colors[(*frame_token_generator_) % base::size(colors)],
-    //                    false);
-
-    {
-      //gfx::Rect output_rect {0,0,32,32};
-      // gfx::Rect output_rect = bounds_;
-      // output_rect.Inset(10, 10, 10, 10);
-      SkBitmap bitmap;
-      bitmap.allocN32Pixels(32, 32);
-      SkCanvas canvas(bitmap);
-      canvas.clear(SK_ColorGRAY+*frame_token_generator_);
-
-      gfx::Size tile_size(32, 32);
-      viz::ResourceId resource =
-          AllocateAndFillSoftwareResource(tile_size, bitmap);
-
-      auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-      quad_state->SetAll(
+    // Add a solid-color draw-quad for the big rectangle covering the entire
+    // content-area of the client.
+    viz::SharedQuadState* quad_state =
+        render_pass->CreateAndAppendSharedQuadState();
+    quad_state->SetAll(
         gfx::Transform(),
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
         /*rounded_corner_bounds=*/gfx::RRectF(),
-        /*clip_rect=*/output_rect,
+        /*clip_rect=*/gfx::Rect(),
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
-      auto* tile_quad =
-          render_pass->CreateAndAppendDrawQuad<viz::TileDrawQuad>();
-      tile_quad->SetNew(quad_state, output_rect, output_rect, false, resource,
-                        gfx::RectF(output_rect), output_rect.size(), true, true,
-                        true);
-      std::vector<viz::ResourceId> resources = {resource};
-      client_resource_provider_->PrepareSendToParent(
-          resources, &frame.resource_list, (viz::RasterContextProvider*)nullptr);
-      // frame.resource_list.push_back()
-    }
+
+    viz::SolidColorDrawQuad* color_quad =
+        render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
+    color_quad->SetNew(quad_state, output_rect, output_rect,
+                       colors[(*frame_token_generator_) % base::size(colors)],
+                       false);
 
     frame.render_pass_list.push_back(std::move(render_pass));
 
     return frame;
-  }
-
-
-  viz::ResourceId AllocateAndFillSoftwareResource(
-    const gfx::Size& size,
-    const SkBitmap& source) {
-    viz::SharedBitmapId shared_bitmap_id = viz::SharedBitmap::GenerateId();
-    base::MappedReadOnlyRegion shm =
-      viz::bitmap_allocation::AllocateSharedBitmap(size, viz::RGBA_8888);
-    shared_bitmap_manager_->ChildAllocatedSharedBitmap(shm.region.Map(),
-                                                           shared_bitmap_id);
-    base::WritableSharedMemoryMapping mapping = std::move(shm.mapping);
-
-    SkImageInfo info = SkImageInfo::MakeN32Premul(size.width(), size.height());
-    source.readPixels(info, mapping.memory(), info.minRowBytes(), 0, 0);
-
-    return client_resource_provider_->ImportResource(
-        viz::TransferableResource::MakeSoftware(shared_bitmap_id, size,
-                                                viz::RGBA_8888),
-        viz::SingleReleaseCallback::Create(base::DoNothing()));
   }
 
   virtual void DidReceiveCompositorFrameAck(
@@ -310,7 +250,6 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
 
   base::Thread thread_;
   std::unique_ptr<viz::ServerSharedBitmapManager> shared_bitmap_manager_;
-  std::unique_ptr<viz::ClientResourceProvider> client_resource_provider_;
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   std::unique_ptr<viz::CompositorFrameSinkSupport> support_;
   std::unique_ptr<viz::DelayBasedBeginFrameSource> begin_frame_source_;
@@ -336,7 +275,8 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
   // 启动 Trace
-  auto trace_config = base::trace_event::TraceConfig("viz"/*, "trace-to-console"*/);
+  auto trace_config =
+      base::trace_event::TraceConfig("viz" /*, "trace-to-console"*/);
   base::trace_event::TraceLog::GetInstance()->SetEnabled(
       trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
