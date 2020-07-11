@@ -39,6 +39,7 @@ class SkiaCanvasGL : public SkiaCanvas {
   EGLSurface surface_;
   EGLint stencilBits_;
   EGLint sampleCount_;
+  GLenum color_format_;
   sk_sp<const GrGLInterface> grGLInterface_;
   sk_sp<GrContext> grContext_;
   bool use_ddl_ = false;

@@ -15,6 +15,10 @@
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
+#ifndef GL_RGBA8
+#define GL_RGBA8 0x8058
+#endif
+
 namespace demo_jni {
 
 namespace {
@@ -229,7 +233,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
     EGLint _depth_size;
     EGLint _green_size;
     EGLint _red_size;
-    EGLint _level;
+    EGLint _stencil_size;
     EGLint _max_pbuffer_width;
     EGLint _max_pbuffer_height;
     EGLint _max_pbuffer_pixels;
@@ -264,7 +268,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
     eglGetConfigAttrib(display_, config, EGL_GREEN_SIZE,
                        &(newFormat._green_size));
     eglGetConfigAttrib(display_, config, EGL_RED_SIZE, &(newFormat._red_size));
-    eglGetConfigAttrib(display_, config, EGL_LEVEL, &(newFormat._level));
+    eglGetConfigAttrib(display_, config, EGL_STENCIL_SIZE, &(newFormat._stencil_size));
     eglGetConfigAttrib(display_, config, EGL_MAX_PBUFFER_WIDTH,
                        &(newFormat._max_pbuffer_width));
     eglGetConfigAttrib(display_, config, EGL_MAX_PBUFFER_HEIGHT,
@@ -310,7 +314,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
     DLOG(INFO) << "newFormat._depth_size: " << newFormat._depth_size;
     DLOG(INFO) << "newFormat._green_size: " << newFormat._green_size;
     DLOG(INFO) << "newFormat._red_size: " << newFormat._red_size;
-    DLOG(INFO) << "newFormat._level: " << newFormat._level;
+    DLOG(INFO) << "newFormat._stencil_size: " << newFormat._stencil_size;
     DLOG(INFO) << "newFormat._max_pbuffer_width: "
                << newFormat._max_pbuffer_width;
     DLOG(INFO) << "newFormat._max_pbuffer_height: "
@@ -337,29 +341,45 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
 
   EGLint numConfigs = 0;
   EGLint eglSampleCnt = 0;
-  const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
-                                  EGL_PBUFFER_BIT,
-                                  EGL_RENDERABLE_TYPE,
-                                  EGL_OPENGL_ES2_BIT,
-                                  EGL_RED_SIZE,
-                                  8,
-                                  EGL_GREEN_SIZE,
-                                  8,
-                                  EGL_BLUE_SIZE,
-                                  8,
-                                  EGL_ALPHA_SIZE,
-                                  8,
-                                  EGL_STENCIL_SIZE,
-                                  8,
-                                  EGL_SAMPLE_BUFFERS,
-                                  eglSampleCnt ? 1 : 0,
-                                  EGL_SAMPLES,
-                                  eglSampleCnt,
-                                  EGL_NONE};
   EGLConfig surfaceConfig;
-  DCHECK(
-      eglChooseConfig(display_, configAttribs, &surfaceConfig, 1, &numConfigs));
+  int red_size, green_size, blue_size, alpha_size;
+  red_size = green_size = blue_size = alpha_size = 8;
+  color_format_ = GL_RGBA8;
+  for (int i = 0; i < 2; i++) {
+    const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
+                                    EGL_PBUFFER_BIT,
+                                    EGL_RENDERABLE_TYPE,
+                                    EGL_OPENGL_ES2_BIT,
+                                    EGL_RED_SIZE,
+                                    red_size,
+                                    EGL_GREEN_SIZE,
+                                    green_size,
+                                    EGL_BLUE_SIZE,
+                                    blue_size,
+                                    EGL_ALPHA_SIZE,
+                                    alpha_size,
+                                    EGL_STENCIL_SIZE,
+                                    8,
+                                    EGL_SAMPLE_BUFFERS,
+                                    eglSampleCnt ? 1 : 0,
+                                    EGL_SAMPLES,
+                                    eglSampleCnt,
+                                    EGL_NONE};
+    DCHECK(eglChooseConfig(display_, configAttribs, &surfaceConfig, 1,
+                            &numConfigs));
+    if (numConfigs < 1) {
+      red_size = 5;
+      green_size = 6;
+      blue_size = 5;
+      alpha_size = 0;
+      color_format_ = GL_RGB565;
+    }
+  }
+
   DCHECK(numConfigs > 0) << "error: " << eglGetError();
+
+  DLOG(INFO) << "Color Format: " << ((color_format_ == GL_RGBA8) ? "GL_RGBA8"
+                                                              : "GL_RGB565");
 
   static const EGLint kEGLContextAttribsForOpenGLES[] = {
       EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
@@ -422,20 +442,16 @@ SkCanvas* SkiaCanvasGL::BeginPaint() {
   GrGLint buffer = 0;
   grGLInterface_->fFunctions.fGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
 
-#ifndef GL_RGBA8
-#define GL_RGBA8 0x8058
-#endif
-
   GrGLFramebufferInfo fb_info;
   fb_info.fFBOID = buffer;
-  fb_info.fFormat = GL_RGBA8;
+  fb_info.fFormat = color_format_/*GL_RGBA8*/;
 
   GrBackendRenderTarget backendRT(width_, height_, sampleCount_, stencilBits_,
                                   fb_info);
   SkSurfaceProps props(SkSurfaceProps::kLegacyFontHost_InitType);
   skSurface_ = SkSurface::MakeFromBackendRenderTarget(
       grContext_.get(), backendRT, kBottomLeft_GrSurfaceOrigin,
-      kRGBA_8888_SkColorType, nullptr, &props);
+      color_format_ == GL_RGBA8?kRGBA_8888_SkColorType:kRGB_565_SkColorType, nullptr, &props);
   if (use_ddl_) {
     SkSurfaceCharacterization characterization;
     bool result = skSurface_->characterize(&characterization);
