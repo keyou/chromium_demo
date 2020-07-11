@@ -68,6 +68,10 @@
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck
 #include "ui/base/x/x11_util_internal.h"
 #include "ui/gfx/x/x11_atom_cache.h"
+#include "ui/gl/gl_visual_picker_glx.h"
+#include "ui/gl/gl_surface_glx.h"
+// #include "/usr/include/GL/glx.h"
+// #include "/usr/include/GL/glx_mangle.h"
 #endif
 
 #if defined(USE_OZONE)
@@ -90,9 +94,19 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   ~DemoWindowHost() override = default;
 
   void Create(const gfx::Rect& bounds) {
+    int system_visual_id = 0;
+    int transparent_visual_id = 0;
     if (base::CommandLine::ForCurrentProcess()->HasSwitch("gl")) {
+      gl::init::InitializeGLOneOff();
+      gl::GLVisualPickerGLX* visual_picker =
+          gl::GLVisualPickerGLX::GetInstance();
+      system_visual_id = visual_picker->system_visual().visualid;
+      transparent_visual_id = visual_picker->rgba_visual().visualid;
       is_software_ = false;
     }
+    ui::XVisualManager::GetInstance()->OnGPUInfoChanged(
+        is_software_, system_visual_id, transparent_visual_id);
+    
     platform_window_ = CreatePlatformWindow(bounds);
     platform_window_->Show();
 
@@ -106,19 +120,14 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     ui::PlatformWindowInitProperties props(bounds);
     props.type = ui::PlatformWindowType::kWindow;
     props.opacity = ui::PlatformWindowOpacity::kTranslucentWindow;
+    props.background_color = 0;
 #if defined(USE_OZONE)
     return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
         this, std::move(props));
 #elif defined(OS_WIN)
     return std::make_unique<ui::WinWindow>(this, props.bounds);
 #elif defined(USE_X11)
-    // if(is_software_ || true || ui::XVisualManager::GetInstance()->ArgbVisualAvailable())
-    {
-      int transparent_visual_id = GetTransparentVisualId();
-      if(transparent_visual_id)
-        props.x_visual_id = transparent_visual_id;
-    }
-    props.background_color = 0;
+    // props.x_visual_id = GetTransparentVisualId();
     auto x11_window = std::make_unique<ui::X11Window>(this);
     x11_window->Initialize(std::move(props));
     return x11_window;
@@ -152,23 +161,22 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       return visualinfo.visualid;
     }
     
-
-    // Chromium 使用下面这种方法
-    // int visuals_len = 0;
-    // XVisualInfo visual_template;
-    // visual_template.screen = DefaultScreen(display);
-    // gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
-    //     display, VisualScreenMask, &visual_template, &visuals_len));
+    // 或者使用下面这种方法
+    int visuals_len = 0;
+    XVisualInfo visual_template;
+    visual_template.screen = DefaultScreen(display);
+    gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
+        display, VisualScreenMask, &visual_template, &visuals_len));
     
-    // for (int i = 0; i < visuals_len; ++i) {
-    //   const XVisualInfo& info = visual_list[i];
-    //   if (info.depth == 32 && info.visual->red_mask == 0xff0000 &&
-    //       info.visual->green_mask == 0x00ff00 &&
-    //       info.visual->blue_mask == 0x0000ff) {
-    //     DLOG(INFO) << "TransparentVID: " << info.visualid;
-    //     return info.visualid;
-    //   }
-    // }
+    for (int i = 0; i < visuals_len; ++i) {
+      const XVisualInfo& info = visual_list[i];
+      if (info.depth == 32 && info.visual->red_mask == 0xff0000 &&
+          info.visual->green_mask == 0x00ff00 &&
+          info.visual->blue_mask == 0x0000ff) {
+        DLOG(INFO) << "TransparentVID: " << info.visualid;
+        return info.visualid;
+      }
+    }
 
     return 0;
   }
@@ -275,9 +283,6 @@ int main(int argc, char** argv) {
 #endif
 
   auto event_source_ = ui::PlatformEventSource::CreateDefault();
-
-  // 使用
-  // gl::init::InitializeGLOneOff();
 
   // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
   base::i18n::InitializeICU();
