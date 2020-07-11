@@ -6,6 +6,7 @@
 #include "base/trace_event/trace_event.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
 #include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
@@ -188,40 +189,7 @@ GrContextOptions CreateGrContextOptions() {
   return options;
 }
 
-}  // namespace
-
-SkiaCanvasGL::SkiaCanvasGL(gfx::AcceleratedWidget widget, int width, int height)
-    : SkiaCanvas(widget, width, height) {
-  background_ = 0x8800FF00;
-  tag_ = "SkiaCanvasGL";
-}
-
-void SkiaCanvasGL::InitializeOnRenderThread() {
-  TRACE_EVENT0("shell", "SkiaCanvasGL::InitializeOnRenderThread");
-  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  EGLint majorVersion;
-  EGLint minorVersion;
-  eglInitialize(display_, &majorVersion, &minorVersion);
-
-  DCHECK(eglBindAPI(EGL_OPENGL_ES_API));
-
-  SkDebugf("EGL: %d.%d", majorVersion, minorVersion);
-  SkDebugf("Vendor: %s", eglQueryString(display_, EGL_VENDOR));
-  SkDebugf("Extensions: %s", eglQueryString(display_, EGL_EXTENSIONS));
-
-  ///////////////////////////////////////////////////////////
-  EGLint config_count = 0;
-  // Get number of all configs, have gotten display from EGL
-  DCHECK(eglGetConfigs(display_, NULL, 0, &config_count));
-  DLOG(INFO) << "Configurations available count: " << config_count;
-
-  // collect information about the configs
-  EGLConfig* configs = new EGLConfig[config_count];
-
-  if (EGL_FALSE == eglGetConfigs(display_, configs, config_count, &config_count)) {
-    delete[] configs;
-    return;
-  }
+void PrintEGLConfig(EGLDisplay display, EGLConfig config) {
   struct {
     EGLint _alpha_size;
     EGLint _bind_to_texture_rgb;
@@ -247,100 +215,137 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
     EGLint _renderable_type;
     EGLint _conformant;
   } newFormat = {0};
-  for (GLint c = 0; c < config_count; ++c) {
-    EGLConfig config = configs[c];
-    eglGetConfigAttrib(display_, config, EGL_ALPHA_SIZE,
-                       &(newFormat._alpha_size));
-    eglGetConfigAttrib(display_, config, EGL_BIND_TO_TEXTURE_RGB,
-                       &(newFormat._bind_to_texture_rgb));
-    eglGetConfigAttrib(display_, config, EGL_BIND_TO_TEXTURE_RGBA,
-                       &(newFormat._bind_to_texture_rgba));
-    eglGetConfigAttrib(display_, config, EGL_BLUE_SIZE,
-                       &(newFormat._blue_size));
-    eglGetConfigAttrib(display_, config, EGL_BUFFER_SIZE,
-                       &(newFormat._buffer_size));
-    eglGetConfigAttrib(display_, config, EGL_CONFIG_CAVEAT,
-                       &(newFormat._config_caveat));
-    eglGetConfigAttrib(display_, config, EGL_CONFIG_ID,
-                       &(newFormat._config_id));
-    eglGetConfigAttrib(display_, config, EGL_DEPTH_SIZE,
-                       &(newFormat._depth_size));
-    eglGetConfigAttrib(display_, config, EGL_GREEN_SIZE,
-                       &(newFormat._green_size));
-    eglGetConfigAttrib(display_, config, EGL_RED_SIZE, &(newFormat._red_size));
-    eglGetConfigAttrib(display_, config, EGL_STENCIL_SIZE, &(newFormat._stencil_size));
-    eglGetConfigAttrib(display_, config, EGL_MAX_PBUFFER_WIDTH,
-                       &(newFormat._max_pbuffer_width));
-    eglGetConfigAttrib(display_, config, EGL_MAX_PBUFFER_HEIGHT,
-                       &(newFormat._max_pbuffer_height));
-    eglGetConfigAttrib(display_, config, EGL_MAX_PBUFFER_PIXELS,
-                       &(newFormat._max_pbuffer_pixels));
-    eglGetConfigAttrib(display_, config, EGL_MAX_SWAP_INTERVAL,
-                       &(newFormat._max_swap_interval));
-    eglGetConfigAttrib(display_, config, EGL_MIN_SWAP_INTERVAL,
-                       &(newFormat._min_swap_interval));
-    eglGetConfigAttrib(display_, config, EGL_NATIVE_RENDERABLE,
-                       &(newFormat._native_renderable));
-    eglGetConfigAttrib(display_, config, EGL_NATIVE_VISUAL_ID,
-                       &(newFormat._native_visual_id));
-    /// etc etc etc for all those that you care about
 
-    if (majorVersion >= 1 && minorVersion >= 2) {
-      // 1.2
-      eglGetConfigAttrib(display_, config, EGL_ALPHA_MASK_SIZE,
-                         &(newFormat._alpha_mask_size));
-      eglGetConfigAttrib(display_, config, EGL_COLOR_BUFFER_TYPE,
-                         &(newFormat._color_buffer_type));
-      eglGetConfigAttrib(display_, config, EGL_LUMINANCE_SIZE,
-                         &(newFormat._luminance_size));
-      eglGetConfigAttrib(display_, config, EGL_RENDERABLE_TYPE,
-                         &(newFormat._renderable_type));
-    }
+  eglGetConfigAttrib(display, config, EGL_ALPHA_SIZE, &(newFormat._alpha_size));
+  eglGetConfigAttrib(display, config, EGL_BIND_TO_TEXTURE_RGB,
+                     &(newFormat._bind_to_texture_rgb));
+  eglGetConfigAttrib(display, config, EGL_BIND_TO_TEXTURE_RGBA,
+                     &(newFormat._bind_to_texture_rgba));
+  eglGetConfigAttrib(display, config, EGL_BLUE_SIZE, &(newFormat._blue_size));
+  eglGetConfigAttrib(display, config, EGL_BUFFER_SIZE,
+                     &(newFormat._buffer_size));
+  eglGetConfigAttrib(display, config, EGL_CONFIG_CAVEAT,
+                     &(newFormat._config_caveat));
+  eglGetConfigAttrib(display, config, EGL_CONFIG_ID, &(newFormat._config_id));
+  eglGetConfigAttrib(display, config, EGL_DEPTH_SIZE, &(newFormat._depth_size));
+  eglGetConfigAttrib(display, config, EGL_GREEN_SIZE, &(newFormat._green_size));
+  eglGetConfigAttrib(display, config, EGL_RED_SIZE, &(newFormat._red_size));
+  eglGetConfigAttrib(display, config, EGL_STENCIL_SIZE,
+                     &(newFormat._stencil_size));
+  eglGetConfigAttrib(display, config, EGL_MAX_PBUFFER_WIDTH,
+                     &(newFormat._max_pbuffer_width));
+  eglGetConfigAttrib(display, config, EGL_MAX_PBUFFER_HEIGHT,
+                     &(newFormat._max_pbuffer_height));
+  eglGetConfigAttrib(display, config, EGL_MAX_PBUFFER_PIXELS,
+                     &(newFormat._max_pbuffer_pixels));
+  eglGetConfigAttrib(display, config, EGL_MAX_SWAP_INTERVAL,
+                     &(newFormat._max_swap_interval));
+  eglGetConfigAttrib(display, config, EGL_MIN_SWAP_INTERVAL,
+                     &(newFormat._min_swap_interval));
+  eglGetConfigAttrib(display, config, EGL_NATIVE_RENDERABLE,
+                     &(newFormat._native_renderable));
+  eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID,
+                     &(newFormat._native_visual_id));
+  /// etc etc etc for all those that you care about
 
-    if (majorVersion >= 1 && minorVersion >= 3) {
-      // 1.3
-      eglGetConfigAttrib(display_, config, EGL_CONFORMANT,
-                         &(newFormat._conformant));
-    }
-    DLOG(INFO) << "newFormat._alpha_size: " << newFormat._alpha_size;
-    DLOG(INFO) << "newFormat._bind_to_texture_rgb: "
-               << newFormat._bind_to_texture_rgb;
-    DLOG(INFO) << "newFormat._bind_to_texture_rgba: "
-               << newFormat._bind_to_texture_rgba;
-    DLOG(INFO) << "newFormat._blue_size: " << newFormat._blue_size;
-    DLOG(INFO) << "newFormat._buffer_size: " << newFormat._buffer_size;
-    DLOG(INFO) << "newFormat._config_caveat: " << newFormat._config_caveat;
-    DLOG(INFO) << "newFormat._config_id: " << newFormat._config_id;
-    DLOG(INFO) << "newFormat._depth_size: " << newFormat._depth_size;
-    DLOG(INFO) << "newFormat._green_size: " << newFormat._green_size;
-    DLOG(INFO) << "newFormat._red_size: " << newFormat._red_size;
-    DLOG(INFO) << "newFormat._stencil_size: " << newFormat._stencil_size;
-    DLOG(INFO) << "newFormat._max_pbuffer_width: "
-               << newFormat._max_pbuffer_width;
-    DLOG(INFO) << "newFormat._max_pbuffer_height: "
-               << newFormat._max_pbuffer_height;
-    DLOG(INFO) << "newFormat._max_pbuffer_pixels: "
-               << newFormat._max_pbuffer_pixels;
-    DLOG(INFO) << "newFormat._max_swap_interval: "
-               << newFormat._max_swap_interval;
-    DLOG(INFO) << "newFormat._min_swap_interval: "
-               << newFormat._min_swap_interval;
-    DLOG(INFO) << "newFormat._native_renderable: "
-               << newFormat._native_renderable;
-    DLOG(INFO) << "newFormat._native_visual_id: "
-               << newFormat._native_visual_id;
-    DLOG(INFO) << "newFormat._alpha_mask_size: " << newFormat._alpha_mask_size;
-    DLOG(INFO) << "newFormat._color_buffer_type: "
-               << newFormat._color_buffer_type;
-    DLOG(INFO) << "newFormat._luminance_size: " << newFormat._luminance_size;
-    DLOG(INFO) << "newFormat._renderable_type: " << newFormat._renderable_type;
-    DLOG(INFO) << "newFormat._conformant: " << newFormat._conformant;
-    DLOG(INFO) << "=========================";
+  {
+    // 1.2
+    eglGetConfigAttrib(display, config, EGL_ALPHA_MASK_SIZE,
+                       &(newFormat._alpha_mask_size));
+    eglGetConfigAttrib(display, config, EGL_COLOR_BUFFER_TYPE,
+                       &(newFormat._color_buffer_type));
+    eglGetConfigAttrib(display, config, EGL_LUMINANCE_SIZE,
+                       &(newFormat._luminance_size));
+    eglGetConfigAttrib(display, config, EGL_RENDERABLE_TYPE,
+                       &(newFormat._renderable_type));
   }
+
+  {
+    // 1.3
+    eglGetConfigAttrib(display, config, EGL_CONFORMANT,
+                       &(newFormat._conformant));
+  }
+
+  DLOG(INFO) << "newFormat._alpha_size: " << newFormat._alpha_size;
+  DLOG(INFO) << "newFormat._bind_to_texture_rgb: "
+             << newFormat._bind_to_texture_rgb;
+  DLOG(INFO) << "newFormat._bind_to_texture_rgba: "
+             << newFormat._bind_to_texture_rgba;
+  DLOG(INFO) << "newFormat._blue_size: " << newFormat._blue_size;
+  DLOG(INFO) << "newFormat._buffer_size: " << newFormat._buffer_size;
+  DLOG(INFO) << "newFormat._config_caveat: " << newFormat._config_caveat;
+  DLOG(INFO) << "newFormat._config_id: " << newFormat._config_id;
+  DLOG(INFO) << "newFormat._depth_size: " << newFormat._depth_size;
+  DLOG(INFO) << "newFormat._green_size: " << newFormat._green_size;
+  DLOG(INFO) << "newFormat._red_size: " << newFormat._red_size;
+  DLOG(INFO) << "newFormat._stencil_size: " << newFormat._stencil_size;
+  DLOG(INFO) << "newFormat._max_pbuffer_width: "
+             << newFormat._max_pbuffer_width;
+  DLOG(INFO) << "newFormat._max_pbuffer_height: "
+             << newFormat._max_pbuffer_height;
+  DLOG(INFO) << "newFormat._max_pbuffer_pixels: "
+             << newFormat._max_pbuffer_pixels;
+  DLOG(INFO) << "newFormat._max_swap_interval: "
+             << newFormat._max_swap_interval;
+  DLOG(INFO) << "newFormat._min_swap_interval: "
+             << newFormat._min_swap_interval;
+  DLOG(INFO) << "newFormat._native_renderable: "
+             << newFormat._native_renderable;
+  DLOG(INFO) << "newFormat._native_visual_id: " << newFormat._native_visual_id;
+  DLOG(INFO) << "newFormat._alpha_mask_size: " << newFormat._alpha_mask_size;
+  DLOG(INFO) << "newFormat._color_buffer_type: "
+             << newFormat._color_buffer_type;
+  DLOG(INFO) << "newFormat._luminance_size: " << newFormat._luminance_size;
+  DLOG(INFO) << "newFormat._renderable_type: " << newFormat._renderable_type;
+  DLOG(INFO) << "newFormat._conformant: " << newFormat._conformant;
+}
+
+}  // namespace
+
+SkiaCanvasGL::SkiaCanvasGL(gfx::AcceleratedWidget widget, int width, int height)
+    : SkiaCanvas(widget, width, height) {
+  background_ = 0x8000FF00;
+  tag_ = "SkiaCanvasGL";
+}
+
+void SkiaCanvasGL::InitializeOnRenderThread() {
+  TRACE_EVENT0("shell", "SkiaCanvasGL::InitializeOnRenderThread");
+  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  EGLint majorVersion;
+  EGLint minorVersion;
+  eglInitialize(display_, &majorVersion, &minorVersion);
+
+  DCHECK(eglBindAPI(EGL_OPENGL_ES_API));
+
+  SkDebugf("EGL: %d.%d", majorVersion, minorVersion);
+  SkDebugf("Vendor: %s", eglQueryString(display_, EGL_VENDOR));
+  SkDebugf("Extensions: %s", eglQueryString(display_, EGL_EXTENSIONS));
+
+  ///////////////////////////////////////////////////////////
+  EGLint config_count = 0;
+  // Get number of all configs, have gotten display from EGL
+  DCHECK(eglGetConfigs(display_, NULL, 0, &config_count));
+  DLOG(INFO) << "Configurations available count: " << config_count;
+
+  // collect information about the configs
+  EGLConfig* configs = new EGLConfig[config_count];
+
+  if (EGL_FALSE ==
+      eglGetConfigs(display_, configs, config_count, &config_count)) {
+    delete[] configs;
+    return;
+  }
+  
+  // for (GLint c = 0; c < config_count; ++c) {
+  //   EGLConfig config = configs[c];
+  //   PrintEGLConfig(display_, config);
+  //   DLOG(INFO) << "========================= " << c;
+  // }
   /////////////////////////////////////////////////////////////
 
   EGLint numConfigs = 0;
   EGLint eglSampleCnt = 0;
+  EGLConfig surfaceConfigs[5];
   EGLConfig surfaceConfig;
   int red_size, green_size, blue_size, alpha_size;
   red_size = green_size = blue_size = alpha_size = 8;
@@ -365,8 +370,8 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
                                     EGL_SAMPLES,
                                     eglSampleCnt,
                                     EGL_NONE};
-    DCHECK(eglChooseConfig(display_, configAttribs, &surfaceConfig, 1,
-                            &numConfigs));
+    DCHECK(eglChooseConfig(display_, configAttribs, surfaceConfigs, 5,
+                           &numConfigs));
     if (numConfigs < 1) {
       red_size = 5;
       green_size = 6;
@@ -378,8 +383,21 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
 
   DCHECK(numConfigs > 0) << "error: " << eglGetError();
 
-  DLOG(INFO) << "Color Format: " << ((color_format_ == GL_RGBA8) ? "GL_RGBA8"
-                                                              : "GL_RGB565");
+  DLOG(INFO) << "Color Format: "
+             << ((color_format_ == GL_RGBA8) ? "GL_RGBA8" : "GL_RGB565");
+  
+  for (int i = 0; i < numConfigs; i++) {
+    surfaceConfig = surfaceConfigs[i];
+    DLOG(INFO) << "ChooseConfig: " << i;
+    PrintEGLConfig(display_, surfaceConfig);
+    surface_ =
+        eglCreateWindowSurface(display_, surfaceConfig, nativeWindow_, nullptr);
+    if(EGL_NO_SURFACE != surface_) {
+      break;
+    }
+  }
+  DCHECK(EGL_NO_SURFACE != surface_) << "eglGetError: " << eglGetError();
+
 
   static const EGLint kEGLContextAttribsForOpenGLES[] = {
       EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
@@ -387,16 +405,16 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
                               kEGLContextAttribsForOpenGLES);
   DCHECK(EGL_NO_CONTEXT != context_);
 
-  surface_ =
-      eglCreateWindowSurface(display_, surfaceConfig, nativeWindow_, nullptr);
-  DCHECK(EGL_NO_SURFACE != surface_);
-
   DCHECK(eglMakeCurrent(display_, surface_, surface_, context_));
   glClearStencil(0);
   // glClearColor(0, 0, 0, 0);
   // glStencilMask(0xffffffff);
-  glClearColor(0.f, 1.f, 0.f, 0.5f);  // 0xFF00DE96
+  // const SkColor4f background = SkColor4f::FromBytes_RGBA(background_);
+  glClearColor(0,0.5f,0,0.5f);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  GLfloat bkColor[4];
+  glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor);
 
   eglGetConfigAttrib(display_, surfaceConfig, EGL_STENCIL_SIZE, &stencilBits_);
   eglGetConfigAttrib(display_, surfaceConfig, EGL_SAMPLES, &sampleCount_);
@@ -444,14 +462,15 @@ SkCanvas* SkiaCanvasGL::BeginPaint() {
 
   GrGLFramebufferInfo fb_info;
   fb_info.fFBOID = buffer;
-  fb_info.fFormat = color_format_/*GL_RGBA8*/;
+  fb_info.fFormat = color_format_ /*GL_RGBA8*/;
 
   GrBackendRenderTarget backendRT(width_, height_, sampleCount_, stencilBits_,
                                   fb_info);
   SkSurfaceProps props(SkSurfaceProps::kLegacyFontHost_InitType);
   skSurface_ = SkSurface::MakeFromBackendRenderTarget(
       grContext_.get(), backendRT, kBottomLeft_GrSurfaceOrigin,
-      color_format_ == GL_RGBA8?kRGBA_8888_SkColorType:kRGB_565_SkColorType, nullptr, &props);
+      color_format_ == GL_RGBA8 ? kRGBA_8888_SkColorType : kRGB_565_SkColorType,
+      nullptr, &props);
   if (use_ddl_) {
     SkSurfaceCharacterization characterization;
     bool result = skSurface_->characterize(&characterization);

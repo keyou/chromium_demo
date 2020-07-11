@@ -112,7 +112,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 #elif defined(OS_WIN)
     return std::make_unique<ui::WinWindow>(this, props.bounds);
 #elif defined(USE_X11)
-    if(is_software_ || ui::XVisualManager::GetInstance()->ArgbVisualAvailable())
+    // if(is_software_ || true || ui::XVisualManager::GetInstance()->ArgbVisualAvailable())
     {
       int transparent_visual_id = GetTransparentVisualId();
       if(transparent_visual_id)
@@ -151,6 +151,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       DLOG(INFO) << "TransparentVID: " << visualinfo.visualid;
       return visualinfo.visualid;
     }
+    
 
     // Chromium 使用下面这种方法
     // int visuals_len = 0;
