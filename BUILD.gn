@@ -19,6 +19,7 @@ group("demo") {
     "demo_resources",
     "demo_viz",
     "demo_cc",
+    "demo_x11",
     "demo_skia",
     "demo_views",
     "demo_android",
@@ -32,6 +33,7 @@ group("demo") {
       "demo_viz",
       "demo_cc",
       "demo_skia",
+      "demo_x11",
     ]
   }
 }

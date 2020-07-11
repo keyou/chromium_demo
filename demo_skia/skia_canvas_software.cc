@@ -9,7 +9,7 @@ namespace demo_jni {
 
 SkiaCanvasSoftware::SkiaCanvasSoftware(gfx::AcceleratedWidget widget,int width,int height)
     : SkiaCanvas(widget, width, height) {
-  background_ = 0xFF00DE96;
+  background_ = 0x8800DE96;
   tag_ = "SkiaCanvasSoftware";
 }
 

@@ -66,6 +66,8 @@
 #if defined(USE_X11)
 #include "ui/gfx/x/x11_connection.h"            // nogncheck
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck
+#include "ui/base/x/x11_util_internal.h"
+#include "ui/gfx/x/x11_atom_cache.h"
 #endif
 
 #if defined(USE_OZONE)
@@ -88,6 +90,9 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   ~DemoWindowHost() override = default;
 
   void Create(const gfx::Rect& bounds) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch("gl")) {
+      is_software_ = false;
+    }
     platform_window_ = CreatePlatformWindow(bounds);
     platform_window_->Show();
 
@@ -100,14 +105,20 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       const gfx::Rect& bounds) {
     ui::PlatformWindowInitProperties props(bounds);
     props.type = ui::PlatformWindowType::kWindow;
-    props.activatable = true;
-    props.remove_standard_frame = false;
+    props.opacity = ui::PlatformWindowOpacity::kTranslucentWindow;
 #if defined(USE_OZONE)
     return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
         this, std::move(props));
 #elif defined(OS_WIN)
     return std::make_unique<ui::WinWindow>(this, props.bounds);
 #elif defined(USE_X11)
+    if(is_software_ || ui::XVisualManager::GetInstance()->ArgbVisualAvailable())
+    {
+      int transparent_visual_id = GetTransparentVisualId();
+      if(transparent_visual_id)
+        props.x_visual_id = transparent_visual_id;
+    }
+    props.background_color = 0;
     auto x11_window = std::make_unique<ui::X11Window>(this);
     x11_window->Initialize(std::move(props));
     return x11_window;
@@ -119,7 +130,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 
   void InitializeDemo() {
     DCHECK_NE(widget_, gfx::kNullAcceleratedWidget);
-    if (base::CommandLine::ForCurrentProcess()->HasSwitch("software")) {
+    if(is_software_) {
       LOG(INFO) << "Create SkiaCanvas: Software";
       skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasSoftware>(
           widget_, platform_window_->GetBounds().width(),
@@ -131,6 +142,27 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
           platform_window_->GetBounds().height());
     }
   }
+#if defined(USE_X11)
+  VisualID GetTransparentVisualId() {
+    auto display = gfx::GetXDisplay();
+    int visuals_len = 0;
+    XVisualInfo visual_template;
+    visual_template.screen = DefaultScreen(display);
+    gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
+        display, VisualScreenMask, &visual_template, &visuals_len));
+    
+    for (int i = 0; i < visuals_len; ++i) {
+      const XVisualInfo& info = visual_list[i];
+      if (info.depth == 32 && info.visual->red_mask == 0xff0000 &&
+          info.visual->green_mask == 0x00ff00 &&
+          info.visual->blue_mask == 0x0000ff) {
+        DLOG(INFO) << "TransparentVID: " << info.visualid;
+        return info.visualid;
+      }
+    }
+    return 0;
+  }
+#endif
 
   // ui::PlatformWindowDelegate:
   void OnBoundsChanged(const gfx::Rect& new_bounds) override {
@@ -144,6 +176,8 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
     widget_ = widget;
+    // 如果需要去除窗口边框，将true改为false
+    ui::SetUseOSWindowFrame(widget_, true);
     if (platform_window_)
       InitializeDemo();
   }
@@ -191,6 +225,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   gfx::AcceleratedWidget widget_;
   base::OnceClosure close_closure_;
   std::unique_ptr<demo_jni::SkiaCanvas> skia_canvas_;
+  bool is_software_ = true;
 
   DISALLOW_COPY_AND_ASSIGN(DemoWindowHost);
 };

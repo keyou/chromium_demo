@@ -283,6 +283,9 @@ int main(int argc, char** argv) {
   child->SetContentsView(view.get());
   child->Show();
 
+  DLOG(INFO) <<"MainWidget: "<< window_widget_->GetNativeView()->GetHost()->GetAcceleratedWidget();
+  DLOG(INFO) <<"ChildWidget: "<< child->GetNativeView()->GetHost()->GetAcceleratedWidget();
+
   LOG(INFO) << "running...";
   run_loop.Run();
 

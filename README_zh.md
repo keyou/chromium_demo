@@ -28,7 +28,8 @@ Demo 列表：
 20. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
 21. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
 22. `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
-23. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+23. `demo_x11`: 演示使用 X11 创建窗口；
+24. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
 
 文档列表：
 
@@ -107,6 +108,10 @@ Demo 列表：
 - 添加 demo, 演示如何使用 PlatformWindow 创建 UI 界面；
 
 ## 更新日志
+
+### 2020.7.11
+
+- 添加 demo_x11, 演示使用 X11 创建透明窗口；
 
 ### 2020.6.28
 
