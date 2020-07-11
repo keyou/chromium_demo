@@ -395,7 +395,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
   glClearStencil(0);
   // glClearColor(0, 0, 0, 0);
   // glStencilMask(0xffffffff);
-  glClearColor(0x00, 0xFF, 0x00, 0x88);  // 0xFF00DE96
+  glClearColor(0.f, 1.f, 0.f, 0.5f);  // 0xFF00DE96
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   eglGetConfigAttrib(display_, surfaceConfig, EGL_STENCIL_SIZE, &stencilBits_);

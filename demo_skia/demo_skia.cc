@@ -145,21 +145,30 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 #if defined(USE_X11)
   VisualID GetTransparentVisualId() {
     auto display = gfx::GetXDisplay();
-    int visuals_len = 0;
-    XVisualInfo visual_template;
-    visual_template.screen = DefaultScreen(display);
-    gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
-        display, VisualScreenMask, &visual_template, &visuals_len));
-    
-    for (int i = 0; i < visuals_len; ++i) {
-      const XVisualInfo& info = visual_list[i];
-      if (info.depth == 32 && info.visual->red_mask == 0xff0000 &&
-          info.visual->green_mask == 0x00ff00 &&
-          info.visual->blue_mask == 0x0000ff) {
-        DLOG(INFO) << "TransparentVID: " << info.visualid;
-        return info.visualid;
-      }
+
+    XVisualInfo visualinfo;
+    if(XMatchVisualInfo(display, DefaultScreen(display), 32, TrueColor, &visualinfo)) {
+      DLOG(INFO) << "TransparentVID: " << visualinfo.visualid;
+      return visualinfo.visualid;
     }
+
+    // Chromium 使用下面这种方法
+    // int visuals_len = 0;
+    // XVisualInfo visual_template;
+    // visual_template.screen = DefaultScreen(display);
+    // gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
+    //     display, VisualScreenMask, &visual_template, &visuals_len));
+    
+    // for (int i = 0; i < visuals_len; ++i) {
+    //   const XVisualInfo& info = visual_list[i];
+    //   if (info.depth == 32 && info.visual->red_mask == 0xff0000 &&
+    //       info.visual->green_mask == 0x00ff00 &&
+    //       info.visual->blue_mask == 0x0000ff) {
+    //     DLOG(INFO) << "TransparentVID: " << info.visualid;
+    //     return info.visualid;
+    //   }
+    // }
+
     return 0;
   }
 #endif
