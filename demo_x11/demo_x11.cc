@@ -82,32 +82,37 @@ int main(int argc, char** argv) {
   base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
   base::RunLoop run_loop;
-
+  
   auto xdisplay = gfx::GetXDisplay();
 
-  // 在 Chromium 中 ui::XVisualManager 类封装了以下关于 Visual 的逻辑
-  int visuals_len = 0;
-  XVisualInfo visual_template;
-  visual_template.screen = DefaultScreen(xdisplay);
-  gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
-      xdisplay, VisualScreenMask, &visual_template, &visuals_len));
+  // query Visual for "TrueColor" and 32 bits depth (RGBA)
+  XVisualInfo visualinfo;
+  if(XMatchVisualInfo(xdisplay, DefaultScreen(xdisplay), 32, TrueColor, &visualinfo)) {
+    printf("TransparentVisualID: %d\n", visualinfo.visualid);
+  } else if(XMatchVisualInfo(xdisplay, DefaultScreen(xdisplay), 24, TrueColor, &visualinfo)) {
+    printf("OpaqueVisualID: %d\n", visualinfo.visualid);
+  } else {
+    auto* visual = DefaultVisual(xdisplay,DefaultScreen(xdisplay));
+    auto visualid = XVisualIDFromVisual(visual);
+    // 在 Chromium 中 ui::XVisualManager 类封装了以下关于 Visual 的逻辑
+    int visuals_len = 0;
+    XVisualInfo visual_template;
+    visual_template.screen = DefaultScreen(xdisplay);
+    gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
+        xdisplay, VisualScreenMask, &visual_template, &visuals_len));
   
-  // 支持透明的 visual
-  XVisualInfo transparent_visual_info;
-
-  for (int i = 0; i < visuals_len; ++i) {
-    const XVisualInfo& info = visual_list[i];
-    if (info.depth == 32 && info.visual->red_mask == 0xff0000 &&
-        info.visual->green_mask == 0x00ff00 &&
-        info.visual->blue_mask == 0x0000ff) {
-      transparent_visual_info = info;
-      DLOG(INFO) << "TransparentVID: " << transparent_visual_info.visualid;
-      break;
+    for (int i = 0; i < visuals_len; ++i) {
+      const XVisualInfo& info = visual_list[i];
+      if (info.visualid == visualid) {
+        visualinfo = info;
+        break;
+      }
     }
+    printf("Use default VisualID: %d\n", visualinfo.visualid);
   }
 
   Colormap colormap = XCreateColormap(xdisplay, DefaultRootWindow(xdisplay),
-                                transparent_visual_info.visual, AllocNone);
+                                visualinfo.visual, AllocNone);
 
   unsigned long attribute_mask = 0;
   XSetWindowAttributes swa;
@@ -126,8 +131,9 @@ int main(int argc, char** argv) {
   auto xwindow_ =
       XCreateWindow(xdisplay, DefaultRootWindow(xdisplay), 
                     0, 0, 400, 300,
-                    0, transparent_visual_info.depth, InputOutput, transparent_visual_info.visual, 
+                    0, visualinfo.depth, InputOutput, visualinfo.visual, 
                     attribute_mask, &swa);
+  
   // 控制窗口边框
   // ui::SetUseOSWindowFrame(xwindow_, false);
   XMapWindow(xdisplay, xwindow_);

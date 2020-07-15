@@ -98,6 +98,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     int transparent_visual_id = 0;
     if (base::CommandLine::ForCurrentProcess()->HasSwitch("gl")) {
       gl::init::InitializeGLOneOff();
+      DLOG(INFO) << "Initialize VisualPicker.";
       gl::GLVisualPickerGLX* visual_picker =
           gl::GLVisualPickerGLX::GetInstance();
       system_visual_id = visual_picker->system_visual().visualid;

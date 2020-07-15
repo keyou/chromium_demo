@@ -27,6 +27,8 @@ executable("demo_x11") {
     # 直接依赖它会导致和chromium中的变量定义冲突
     #"//third_party/skia",
     "//skia",
+    ":demo_x11_glx",
+    ":demo_x11_egl",
   ]
 
   if (use_x11) {
@@ -38,4 +40,71 @@ executable("demo_x11") {
   }
 
   libs = ["EGL","GLESv2"]
+}
+
+executable("demo_x11_glx") {
+  testonly = true
+  
+  sources = [
+    "demo_x11_glx.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//base:i18n",
+    "//gpu",
+    "//gpu:gles2",
+    "//gpu:raster",
+    "//gpu/command_buffer/client",
+    "//gpu/command_buffer/client:gles2_cmd_helper",
+    "//gpu/command_buffer/service",
+    "//gpu/command_buffer/service:gles2",
+    "//ui/base",
+    "//ui/gl",
+    "//ui/gl/init",
+    "//ui/events",
+    "//ui/events/platform",
+    "//ui/platform_window",
+    # 直接依赖它会导致和chromium中的变量定义冲突
+    #"//third_party/skia",
+    "//skia",
+  ]
+
+  configs += [ "//build/config/linux:x11" ]
+  
+  libs = ["EGL","GLESv2","X11","GL"]
+}
+
+
+executable("demo_x11_egl") {
+  testonly = true
+  
+  sources = [
+    "demo_x11_egl.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//base:i18n",
+    "//gpu",
+    "//gpu:gles2",
+    "//gpu:raster",
+    "//gpu/command_buffer/client",
+    "//gpu/command_buffer/client:gles2_cmd_helper",
+    "//gpu/command_buffer/service",
+    "//gpu/command_buffer/service:gles2",
+    "//ui/base",
+    "//ui/gl",
+    "//ui/gl/init",
+    "//ui/events",
+    "//ui/events/platform",
+    "//ui/platform_window",
+    # 直接依赖它会导致和chromium中的变量定义冲突
+    #"//third_party/skia",
+    "//skia",
+  ]
+
+  configs += [ "//build/config/linux:x11" ]
+  
+  libs = ["EGL","GLESv2","X11","GL"]
 }

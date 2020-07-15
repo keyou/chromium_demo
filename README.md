@@ -1,6 +1,6 @@
 # Demo
 
-[中文](./README_zh.md) | EN
+[中文](./README_zh.md)(较新) | EN
 
 ---
 
