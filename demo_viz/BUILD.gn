@@ -19,6 +19,11 @@ template("viz") {
       "//ui/events",
       "//ui/events/platform",
       "//ui/platform_window",
+      "//gpu",
+      "//gpu/ipc/host",
+      "//components/discardable_memory/service",
+      "//components/discardable_memory/client",
+      "//services/viz/public/cpp/gpu",
     ]
 
     if (use_x11) {
@@ -35,13 +40,20 @@ group("demo_viz") {
   testonly = true
   deps = [
     ":demo_viz_gui",
-    ":demo_viz_offscreen"
+    ":demo_viz_gui_gpu",
+    ":demo_viz_offscreen",
   ]
 }
 
 viz("demo_viz_gui") {
   sources = [
       "demo_viz_gui.cc"
+  ]
+}
+
+viz("demo_viz_gui_gpu") {
+  sources = [
+      "demo_viz_gui_gpu.cc"
   ]
 }
 
