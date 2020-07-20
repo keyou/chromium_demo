@@ -4,6 +4,7 @@
 Update:
 
 * 2020.5.22: Perfetto 的 [官网](https://perfetto.dev) 更新了，提供了更多 Perfetto 的文档；
+* 2020.7.20: 添加了 TraceConfig 初始化时的注意事项；
 
 > 文章基于 chromium v80.0.3987 版本的代码。
 
@@ -78,6 +79,11 @@ main(int argc, char ** argv) (\media\keyou\dev2\chromium64\src\demo\demo_tracing
 ```
 
 直接使用 TraceLog 的 demo 见 `demo_tracing_console.cc` .
+
+> 注意（2020.7.20）:  
+> 创建 TraceConfig 对象时，使用1个参数的构造函数和2个参数的构造函数是不一样的，特别是第一个参数。
+> 1个参数的构造函数，参数是json字符串格式的，2个参数的构造函数第一个参数表示categories，不是json格式的。
+> 1个参数的构造函数如果传递了非json格式的字符串，将会启用所有的categories。
 
 ## TracingService/Perfetto
 

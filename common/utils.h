@@ -29,14 +29,14 @@ void InitTrace(const std::string& file) {
   DLOG(INFO) << "Init trace file: " << file;
 }
 
-void StartTrace(const std::string& categories = "") {
+void StartTrace(const std::string& categories = "",base::trace_event::TraceRecordMode mode = base::trace_event::RECORD_CONTINUOUSLY) {
   DLOG(INFO) << "Start trace: " << categories;
   static std::string categories_;
   if (!categories.empty())
     categories_ = categories;
   // 配置及启动 Trace
   base::trace_event::TraceConfig trace_config =
-      base::trace_event::TraceConfig(categories_);
+      base::trace_event::TraceConfig(categories_,mode);
   base::trace_event::TraceLog::GetInstance()->SetEnabled(
       trace_config, base::trace_event::TraceLog::RECORDING_MODE);
 }
