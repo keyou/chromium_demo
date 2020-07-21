@@ -233,9 +233,9 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       AppendSurfaceDrawQuad(frame, render_pass.get());
     }
     if (context_provider_) {
-      // TODO： 这里有个bug，当程序运行25s之后，会出现不明原因的卡顿，
-      // 卡顿位于 SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame 中的 flush() 调用处，
-      // 这种情况在软件渲染中不会出现。
+      // TODO： 这里有个bug，当程序运行25s之后，会出现GPU卡顿，
+      // 卡顿位于 SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame 中的
+      // flush() 调用处,或者 NativeViewGLSurfaceGLX:RealSwapBuffers中， 这种情况在软件渲染中不会出现。
       AppendTileDrawQuad(frame, render_pass.get());
       AppendTextureDrawQuad(frame, render_pass.get());
       AppendPictureDrawQuad(frame, render_pass.get());
@@ -572,7 +572,15 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   }
 
   virtual void DidReceiveCompositorFrameAck(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      const std::vector<::viz::ReturnedResource>& resources) override {
+    TRACE_EVENT1("viz", "LayerTreeFrameSink::DidReceiveCompositorFrameAck",
+                 "size", resources.size());
+    DLOG(INFO) << __FUNCTION__;
+    client_resource_provider_->ReceiveReturnsFromParent(resources);
+    for (auto resource : resources) {
+      client_resource_provider_->RemoveImportedResource(resource.id);
+    }
+  }
 
   virtual void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
@@ -585,10 +593,20 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         /*trace_time=*/0);
   }
 
-  virtual void OnBeginFramePausedChanged(bool paused) override {}
+  virtual void OnBeginFramePausedChanged(bool paused) override {
+    DLOG(INFO) << __FUNCTION__;
+  }
 
   virtual void ReclaimResources(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      const std::vector<::viz::ReturnedResource>& resources) override {
+    TRACE_EVENT1("viz", "LayerTreeFrameSink::ReclaimResources", "size",
+                 resources.size());
+    DLOG(INFO) << __FUNCTION__;
+    client_resource_provider_->ReceiveReturnsFromParent(resources);
+    for (auto resource : resources) {
+      client_resource_provider_->RemoveImportedResource(resource.id);
+    }
+  }
 
   viz::mojom::CompositorFrameSink* GetCompositorFrameSinkPtr() {
     if (frame_sink_associated_remote_.is_bound())
@@ -648,10 +666,14 @@ class Compositor : public viz::HostFrameSinkClient {
   // Called when a CompositorFrame with a new SurfaceId activates for the first
   // time.
   virtual void OnFirstSurfaceActivation(
-      const viz::SurfaceInfo& surface_info) override {}
+      const viz::SurfaceInfo& surface_info) override {
+        DLOG(INFO) << __FUNCTION__;
+      }
 
   // Called when a CompositorFrame with a new frame token is provided.
-  virtual void OnFrameTokenChanged(uint32_t frame_token) override {}
+  virtual void OnFrameTokenChanged(uint32_t frame_token) override {
+    DLOG(INFO) << __FUNCTION__;
+  }
 
  private:
   void InitializeOnThread(
