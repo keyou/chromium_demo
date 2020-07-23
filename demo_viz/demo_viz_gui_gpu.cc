@@ -656,7 +656,7 @@ class Compositor : public viz::HostFrameSinkClient {
       scoped_refptr<viz::ContextProvider> root_context_provider,
       scoped_refptr<viz::ContextProvider> child_context_provider) {
     root_client_->SetContextProvider(root_context_provider);
-    // child_client_->SetContextProvider(child_context_provider);
+    child_client_->SetContextProvider(child_context_provider);
   }
 
   void Resize(gfx::Size size) {
@@ -727,7 +727,7 @@ class Compositor : public viz::HostFrameSinkClient {
         gfx::Rect(size_));
     root_client_->Bind(std::move(root_client_receiver),
                        std::move(frame_sink_remote));
-    // EmbedChildClient(root_frame_sink_id);
+    EmbedChildClient(root_frame_sink_id);
   }
 
   void EmbedChildClient(viz::FrameSinkId parent_frame_sink_id) {
@@ -942,6 +942,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     return gpu_host_->gpu_service();
   }
 
+  // 创建 ContextProvider ，它们都位于相同 stream
   scoped_refptr<viz::ContextProviderCommandBuffer> CreateContextProvider(
       scoped_refptr<gpu::GpuChannelHost> gpu_channel_host,
       gpu::GpuMemoryBufferManager* gpu_memory_buffer_manager,
@@ -971,7 +972,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
 
     GURL url("demo://gpu/GpuService::CreateContextProvider");
     return base::MakeRefCounted<viz::ContextProviderCommandBuffer>(
-        std::move(gpu_channel_host), gpu_memory_buffer_manager, 0,
+        std::move(gpu_channel_host), gpu_memory_buffer_manager, /*stream_id*/0,
         gpu::SchedulingPriority::kHigh, gpu::kNullSurfaceHandle, std::move(url),
         kAutomaticFlushes, support_locking, support_grcontext, memory_limits,
         attributes, type);
