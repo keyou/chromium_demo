@@ -128,7 +128,7 @@ base::AtomicSequenceNumber g_unique_id;
 }  // namespace
 
 // Client 端
-// 在 Chromium 中 cc::LayerTreeFrameSink 的作用就相当于 viz 中的 client.
+// 类似 Chromium 中的 *LayerTreeFrameSink 的作用.
 class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
  public:
   LayerTreeFrameSink(const viz::FrameSinkId& frame_sink_id,
