@@ -29,7 +29,7 @@ void InitTrace(const std::string& file) {
   DLOG(INFO) << "Init trace file: " << file;
 }
 
-void StartTrace(const std::string& categories = "",base::trace_event::TraceRecordMode mode = base::trace_event::RECORD_CONTINUOUSLY) {
+void StartTrace(const std::string& categories = "",base::trace_event::TraceRecordMode mode = base::trace_event::RECORD_AS_MUCH_AS_POSSIBLE) {
   DLOG(INFO) << "Start trace: " << categories;
   static std::string categories_;
   if (!categories.empty())

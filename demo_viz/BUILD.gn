@@ -42,6 +42,7 @@ group("demo_viz") {
     ":demo_viz_gui",
     ":demo_viz_gui_gpu",
     ":demo_viz_offscreen",
+    ":demo_viz_layer",
   ]
 }
 
@@ -63,3 +64,8 @@ viz("demo_viz_offscreen") {
   ]
 }
 
+viz("demo_viz_layer") {
+  sources = [
+      "demo_viz_layer.cc"
+  ]
+}

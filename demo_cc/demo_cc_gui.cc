@@ -2,8 +2,8 @@
 #include "base/base_paths.h"
 #include "base/callback.h"
 #include "base/command_line.h"
-#include "base/files/file_path.h"
 #include "base/files/file.h"
+#include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
 #include "base/macros.h"
@@ -11,8 +11,8 @@
 #include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
-#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/power_monitor/power_monitor.h"
+#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
@@ -28,20 +28,20 @@
 #include "cc/layers/layer.h"
 #include "cc/layers/picture_layer.h"
 #include "cc/test/test_task_graph_runner.h"
-#include "cc/trees/layer_tree_frame_sink_client.h"
 #include "cc/trees/layer_tree_frame_sink.h"
+#include "cc/trees/layer_tree_frame_sink_client.h"
 #include "cc/trees/layer_tree_host.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/demo/host/demo_host.h"
 #include "components/viz/demo/service/demo_service.h"
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
+#include "components/viz/service/display/display.h"
+#include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/display_embedder/software_output_device_x11.h"
 #include "components/viz/service/display_embedder/software_output_surface.h"
-#include "components/viz/service/display/display.h"
-#include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
 #include "mojo/core/embedder/embedder.h"
@@ -69,9 +69,9 @@
 #include "ui/gfx/skia_util.h"
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/init/gl_factory.h"
+#include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
-#include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/x11/x11_window.h"
 
 #if defined(USE_AURA)
@@ -135,18 +135,17 @@ class Layer : public cc::ContentLayerClient {
     display_list->push<cc::DrawColorOp>(color, SkBlendMode::kSrc);
     display_list->EndPaintOfUnpaired(bounds_);
     display_list->Finalize();
-    if (i < 8)
-      base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
-          FROM_HERE,
-          base::BindOnce(
-              [](scoped_refptr<cc::PictureLayer> layer, SkColor color, int i) {
-                LOG(INFO) << "layer->SetNeedsCommit()";
-                // 将整个layer标记为demaged，它内部会调用SetNeedsCommit()
-                // 也可以使用 LayerTreeHost::SetNeedsAnimate() 强制更新
-                layer->SetNeedsDisplay();
-              },
-              content_cc_layer_, color, i),
-          base::TimeDelta::FromSeconds(1));
+    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
+        FROM_HERE,
+        base::BindOnce(
+            [](scoped_refptr<cc::PictureLayer> layer, SkColor color, int i) {
+              LOG(INFO) << "layer->SetNeedsCommit()";
+              // 将整个layer标记为demaged，它内部会调用SetNeedsCommit()
+              // 也可以使用 LayerTreeHost::SetNeedsAnimate() 强制更新
+              layer->SetNeedsDisplay();
+            },
+            content_cc_layer_, color, i),
+        base::TimeDelta::FromSeconds(1));
     return display_list;
   }
   bool FillsBoundsCompletely() const override { return true; }
@@ -288,12 +287,13 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
       override {
     TRACE_EVENT0("cc", "DemoLayerTreeFrameSink::OnBeginFrame");
     LOG(INFO) << "OnBeginFrame: submit a new frame";
-    
-    // 这里用于结束PipelineReporter的 SubmitCompositorFrameToPresentationCompositorFrame
+
+    // 这里用于结束PipelineReporter的
+    // SubmitCompositorFrameToPresentationCompositorFrame
     // PipelineReporter用于统计cc各阶段的耗时，可以在chrome://tracing中查看
     for (const auto& pair : timing_details)
       client_->DidPresentCompositorFrame(pair.first, pair.second);
-    
+
     if (support_->last_activated_local_surface_id() !=
         root_local_surface_id_.local_surface_id()) {
       display_->SetLocalSurfaceId(root_local_surface_id_.local_surface_id(),
