@@ -1652,9 +1652,10 @@ int main(int argc, char** argv) {
 
   base::RunLoop run_loop;
 
-  g_use_gpu =
-      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-          switches::kUseGL) != gl::kGLImplementationSwiftShaderForWebGLName;
+  auto use_gl = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+      switches::kUseGL);
+  g_use_gpu = use_gl != gl::kGLImplementationSwiftShaderForWebGLName &&
+              use_gl != gl::kGLImplementationSwiftShaderName;
 
   demo::DemoVizWindow window(run_loop.QuitClosure());
   window.Create(gfx::Rect(800, 600));

@@ -44,7 +44,6 @@
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
-#include "services/viz/privileged/mojom/viz_main.mojom.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
 #include "ui/base/material_design/material_design_controller.h"

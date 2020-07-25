@@ -13,6 +13,7 @@
 #include "base/power_monitor/power_monitor_device_source.h"
 #include "base/rand_util.h"
 #include "base/run_loop.h"
+#include "base/synchronization/waitable_event.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/test/task_environment.h"
@@ -22,6 +23,8 @@
 #include "base/trace_event/trace_buffer.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
+#include "cc/base/switches.h"
+#include "components/discardable_memory/service/discardable_shared_memory_manager.h"
 #include "components/viz/client/client_resource_provider.h"
 #include "components/viz/common/quads/debug_border_draw_quad.h"
 #include "components/viz/common/quads/picture_draw_quad.h"
@@ -32,19 +35,43 @@
 #include "components/viz/common/quads/video_hole_draw_quad.h"
 #include "components/viz/common/resources/bitmap_allocation.h"
 #include "components/viz/common/resources/resource_format.h"
+#include "components/viz/common/switches.h"
 #include "components/viz/demo/host/demo_host.h"
 #include "components/viz/demo/service/demo_service.h"
+#include "components/viz/host/gpu_host_impl.h"
 #include "components/viz/host/host_frame_sink_manager.h"
+#include "components/viz/host/host_gpu_memory_buffer_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "components/viz/service/gl/gpu_service_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
+#include "components/viz/service/main/viz_main_impl.h"
+#include "content/public/common/content_switches.h"
 #include "demo/common/utils.h"
+#include "gpu/command_buffer/client/gpu_memory_buffer_manager.h"
+#include "gpu/command_buffer/client/shared_image_interface.h"
+#include "gpu/command_buffer/common/shared_image_usage.h"
+#include "gpu/command_buffer/service/gpu_switches.h"
+#include "gpu/command_buffer/service/service_utils.h"
+#include "gpu/config/gpu_finch_features.h"
+#include "gpu/ipc/client/gpu_channel_host.h"
+#include "gpu/ipc/common/gpu_memory_buffer_support.h"
+#include "gpu/ipc/host/shader_disk_cache.h"
+#include "gpu/ipc/service/gpu_init.h"
+#include "ipc/ipc_channel.h"
+#include "ipc/ipc_channel_mojo.h"
+#include "ipc/ipc_logging.h"
+#include "ipc/ipc_sync_channel.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
+#include "mojo/public/cpp/bindings/generic_pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
+#include "services/resource_coordinator/public/mojom/memory_instrumentation/constants.mojom-forward.h"
 #include "services/viz/privileged/mojom/viz_main.mojom.h"
+#include "services/viz/public/cpp/gpu/context_provider_command_buffer.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
 #include "ui/base/material_design/material_design_controller.h"
@@ -66,38 +93,6 @@
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
-#include "ui/platform_window/x11/x11_window.h"
-
-#include "base/synchronization/waitable_event.h"
-#include "cc/base/switches.h"
-#include "components/discardable_memory/service/discardable_shared_memory_manager.h"
-#include "components/viz/common/switches.h"
-#include "components/viz/host/gpu_host_impl.h"
-#include "components/viz/service/gl/gpu_service_impl.h"
-#include "components/viz/service/main/viz_main_impl.h"
-#include "content/public/common/content_switches.h"
-#include "gpu/command_buffer/service/gpu_switches.h"
-#include "gpu/command_buffer/service/service_utils.h"
-#include "gpu/config/gpu_finch_features.h"
-#include "gpu/ipc/service/gpu_init.h"
-#include "mojo/public/cpp/bindings/generic_pending_receiver.h"
-#include "services/viz/privileged/mojom/viz_main.mojom.h"
-
-#include "gpu/ipc/host/shader_disk_cache.h"
-#include "ipc/ipc_channel.h"
-#include "ipc/ipc_channel_mojo.h"
-#include "ipc/ipc_logging.h"
-#include "ipc/ipc_sync_channel.h"
-
-#include "components/viz/host/host_gpu_memory_buffer_manager.h"
-#include "gpu/command_buffer/client/gpu_memory_buffer_manager.h"
-#include "gpu/command_buffer/client/shared_image_interface.h"
-#include "gpu/command_buffer/common/shared_image_usage.h"
-#include "gpu/ipc/client/gpu_channel_host.h"
-#include "gpu/ipc/common/gpu_memory_buffer_support.h"
-#include "services/resource_coordinator/public/mojom/memory_instrumentation/constants.mojom-forward.h"
-#include "services/viz/public/cpp/gpu/context_provider_command_buffer.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -233,9 +228,6 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       AppendSurfaceDrawQuad(frame, render_pass.get());
     }
     if (context_provider_) {
-      // TODO： 这里有个bug，当程序运行25s之后，会出现GPU卡顿，
-      // 卡顿位于 SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame 中的
-      // flush() 调用处,或者 NativeViewGLSurfaceGLX:RealSwapBuffers中， 这种情况在软件渲染中不会出现。
       AppendTileDrawQuad(frame, render_pass.get());
       AppendTextureDrawQuad(frame, render_pass.get());
       AppendPictureDrawQuad(frame, render_pass.get());
@@ -667,8 +659,8 @@ class Compositor : public viz::HostFrameSinkClient {
   // time.
   virtual void OnFirstSurfaceActivation(
       const viz::SurfaceInfo& surface_info) override {
-        DLOG(INFO) << __FUNCTION__;
-      }
+    DLOG(INFO) << __FUNCTION__;
+  }
 
   // Called when a CompositorFrame with a new frame token is provided.
   virtual void OnFrameTokenChanged(uint32_t frame_token) override {
@@ -972,7 +964,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
 
     GURL url("demo://gpu/GpuService::CreateContextProvider");
     return base::MakeRefCounted<viz::ContextProviderCommandBuffer>(
-        std::move(gpu_channel_host), gpu_memory_buffer_manager, /*stream_id*/0,
+        std::move(gpu_channel_host), gpu_memory_buffer_manager, /*stream_id*/ 0,
         gpu::SchedulingPriority::kHigh, gpu::kNullSurfaceHandle, std::move(url),
         kAutomaticFlushes, support_locking, support_grcontext, memory_limits,
         attributes, type);
