@@ -13,6 +13,7 @@
 #include "base/power_monitor/power_monitor_device_source.h"
 #include "base/rand_util.h"
 #include "base/run_loop.h"
+#include "base/synchronization/waitable_event.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/test/task_environment.h"
@@ -22,7 +23,11 @@
 #include "base/trace_event/trace_buffer.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
+#include "cc/base/switches.h"
+#include "components/discardable_memory/service/discardable_shared_memory_manager.h"
 #include "components/viz/client/client_resource_provider.h"
+#include "components/viz/common/frame_sinks/copy_output_result.h"
+#include "components/viz/common/frame_sinks/copy_output_util.h"
 #include "components/viz/common/quads/debug_border_draw_quad.h"
 #include "components/viz/common/quads/picture_draw_quad.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
@@ -32,19 +37,45 @@
 #include "components/viz/common/quads/video_hole_draw_quad.h"
 #include "components/viz/common/resources/bitmap_allocation.h"
 #include "components/viz/common/resources/resource_format.h"
+#include "components/viz/common/switches.h"
 #include "components/viz/demo/host/demo_host.h"
 #include "components/viz/demo/service/demo_service.h"
+#include "components/viz/host/gpu_host_impl.h"
 #include "components/viz/host/host_frame_sink_manager.h"
+#include "components/viz/host/host_gpu_memory_buffer_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "components/viz/service/gl/gpu_service_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
+#include "components/viz/service/main/viz_main_impl.h"
+#include "content/public/common/content_switches.h"
 #include "demo/common/utils.h"
+#include "gpu/command_buffer/client/gpu_memory_buffer_manager.h"
+#include "gpu/command_buffer/client/shared_image_interface.h"
+#include "gpu/command_buffer/common/shared_image_usage.h"
+#include "gpu/command_buffer/service/gpu_switches.h"
+#include "gpu/command_buffer/service/service_utils.h"
+#include "gpu/config/gpu_finch_features.h"
+#include "gpu/ipc/client/gpu_channel_host.h"
+#include "gpu/ipc/common/gpu_memory_buffer_support.h"
+#include "gpu/ipc/host/shader_disk_cache.h"
+#include "gpu/ipc/service/gpu_init.h"
+#include "ipc/ipc_channel.h"
+#include "ipc/ipc_channel_mojo.h"
+#include "ipc/ipc_logging.h"
+#include "ipc/ipc_sync_channel.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
+#include "mojo/public/cpp/bindings/generic_pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
+#include "services/resource_coordinator/public/mojom/memory_instrumentation/constants.mojom-forward.h"
 #include "services/viz/privileged/mojom/viz_main.mojom.h"
+#include "services/viz/public/cpp/gpu/context_provider_command_buffer.h"
+#include "third_party/skia/include/core/SkImageEncoder.h"
+#include "third_party/skia/include/core/SkStream.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
 #include "ui/base/material_design/material_design_controller.h"
@@ -55,6 +86,8 @@
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
+#include "ui/events/event_utils.h"
+#include "ui/events/platform/platform_event_observer.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/canvas.h"
 #include "ui/gfx/font_util.h"
@@ -67,40 +100,6 @@
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
 #include "ui/platform_window/x11/x11_window.h"
-
-#include "base/synchronization/waitable_event.h"
-#include "cc/base/switches.h"
-#include "components/discardable_memory/service/discardable_shared_memory_manager.h"
-#include "components/viz/common/switches.h"
-#include "components/viz/host/gpu_host_impl.h"
-#include "components/viz/service/gl/gpu_service_impl.h"
-#include "components/viz/service/main/viz_main_impl.h"
-#include "content/public/common/content_switches.h"
-#include "gpu/command_buffer/service/gpu_switches.h"
-#include "gpu/command_buffer/service/service_utils.h"
-#include "gpu/config/gpu_finch_features.h"
-#include "gpu/ipc/service/gpu_init.h"
-#include "mojo/public/cpp/bindings/generic_pending_receiver.h"
-#include "services/viz/privileged/mojom/viz_main.mojom.h"
-
-#include "gpu/ipc/host/shader_disk_cache.h"
-#include "ipc/ipc_channel.h"
-#include "ipc/ipc_channel_mojo.h"
-#include "ipc/ipc_logging.h"
-#include "ipc/ipc_sync_channel.h"
-
-#include "components/viz/host/host_gpu_memory_buffer_manager.h"
-#include "gpu/command_buffer/client/gpu_memory_buffer_manager.h"
-#include "gpu/command_buffer/client/shared_image_interface.h"
-#include "gpu/command_buffer/common/shared_image_usage.h"
-#include "gpu/ipc/client/gpu_channel_host.h"
-#include "gpu/ipc/common/gpu_memory_buffer_support.h"
-#include "services/resource_coordinator/public/mojom/memory_instrumentation/constants.mojom-forward.h"
-#include "services/viz/public/cpp/gpu/context_provider_command_buffer.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
-#include "ui/events/event_utils.h"
-#include "ui/events/platform/platform_event_observer.h"
-#include "ui/gl/gl_switches.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -404,7 +403,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::DidReceiveCompositorFrameAck",
                  "size", resources.size());
-    DLOG(INFO) << __FUNCTION__;
+    // DLOG(INFO) << __FUNCTION__;
     client_resource_provider_->ReceiveReturnsFromParent(resources);
     for (auto resource : resources) {
       client_resource_provider_->RemoveImportedResource(resource.id);
@@ -412,14 +411,14 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
   }
 
   virtual void OnBeginFramePausedChanged(bool paused) override {
-    DLOG(INFO) << __FUNCTION__;
+    // DLOG(INFO) << __FUNCTION__;
   }
 
   virtual void ReclaimResources(
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::ReclaimResources", "size",
                  resources.size());
-    DLOG(INFO) << __FUNCTION__;
+    // DLOG(INFO) << __FUNCTION__;
     client_resource_provider_->ReceiveReturnsFromParent(resources);
     for (auto resource : resources) {
       client_resource_provider_->RemoveImportedResource(resource.id);
@@ -537,7 +536,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     frame.metadata.device_scale_factor = 1.f;
     frame.metadata.local_surface_id_allocation_time =
         local_surface_id_.allocation_time();
-    frame.metadata.frame_token = ++frame_token_generator_;
+    frame.metadata.frame_token = *frame_token_generator_;
 
     const int kRenderPassId = 1;
     const gfx::Rect& output_rect = bounds_;
@@ -563,9 +562,34 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     }
     AppendSolidColorDrawQuad(frame, render_pass.get());
 
+    if(g_use_gpu) {
+      // Add a copy request to the root RenderPass, to capture the results of
+      // drawing all passes for this frame.
+      auto request = std::make_unique<viz::CopyOutputRequest>(
+          viz::CopyOutputResult::Format::RGBA_BITMAP, // RGBA_TEXTURE 
+          base::BindOnce(&LayerTreeFrameSink::OnGetOutputResult,
+                        base::Unretained(this)));
+      request->set_result_task_runner(base::SequencedTaskRunnerHandle::Get());
+      render_pass->copy_requests.push_back(std::move(request));
+    }
+
     frame.render_pass_list.push_back(std::move(render_pass));
 
     return frame;
+  }
+
+  void OnGetOutputResult(std::unique_ptr<viz::CopyOutputResult> result) {
+    DCHECK(!result->IsEmpty());
+    // 保存渲染结果到图片文件
+    constexpr char filename[] = "result_demo_viz_layer.png";
+    base::FilePath path;
+    DCHECK(base::PathService::Get(base::BasePathKey::DIR_EXE, &path));
+    path = path.AppendASCII(filename);
+
+    SkFILEWStream stream(path.value().c_str());
+    DCHECK(
+        SkEncodeImage(&stream, result->AsSkBitmap().pixmap(), SkEncodedImageFormat::kPNG, 0));
+    DLOG(INFO) << "OnGetOutputResult: save the frame to: " << path;
   }
 
   void AppendDebugBorderDrawQuad(viz::CompositorFrame& frame,
@@ -895,7 +919,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::DidReceiveCompositorFrameAck",
                  "size", resources.size());
-    DLOG(INFO) << __FUNCTION__;
+    // DLOG(INFO) << __FUNCTION__;
     client_resource_provider_->ReceiveReturnsFromParent(resources);
     for (auto resource : resources) {
       client_resource_provider_->RemoveImportedResource(resource.id);
@@ -907,10 +931,15 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
       override {
     base::AutoLock lock(lock_);
-    GetCompositorFrameSinkPtr()->SubmitCompositorFrame(
-        local_surface_id_.local_surface_id(), CreateFrame(args),
-        base::Optional<viz::HitTestRegionList>(),
-        /*trace_time=*/0);
+    if (++frame_token_generator_ % 60 == 1) {
+      GetCompositorFrameSinkPtr()->SubmitCompositorFrame(
+          local_surface_id_.local_surface_id(), CreateFrame(args),
+          base::Optional<viz::HitTestRegionList>(),
+          /*trace_time=*/0);
+    } else {
+      GetCompositorFrameSinkPtr()->DidNotProduceFrame(
+          viz::BeginFrameAck(args, false));
+    }
   }
 
   virtual void OnBeginFramePausedChanged(bool paused) override {
@@ -921,7 +950,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::ReclaimResources", "size",
                  resources.size());
-    DLOG(INFO) << __FUNCTION__;
+    // DLOG(INFO) << __FUNCTION__;
     client_resource_provider_->ReceiveReturnsFromParent(resources);
     for (auto resource : resources) {
       client_resource_provider_->RemoveImportedResource(resource.id);
@@ -1547,7 +1576,7 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
     // Next, create the host and the service, and pass them the right ends of
     // the message-pipes.
     host_ = std::make_unique<Compositor>(
-        widget_, platform_window_->GetBounds().size(),
+        /*widget_*/ 0, platform_window_->GetBounds().size(),
         std::move(frame_sink_manager_client_receiver),
         std::move(frame_sink_manager));
 
