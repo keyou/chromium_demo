@@ -20,4 +20,8 @@ TODO: 解决 client 端 raster 的偏色问题。
 ## demo_viz_layer
 
 demo_viz_layer 添加了用户交互控制，重点在于如何控制 UI 的局部刷新及 UI 没有改变的时候的不刷新。
-同时该 demo 支持使用命令行切换渲染模式。
+同时该 demo 支持使用命令行切换渲染模式以及将渲染结果保存到文件。
+
+## demo_viz_layer_offscreen
+
+demo_viz_layer 演示使用 CopyOutput 接口来实现 viz 离屏渲染，然后再将离屏画面渲染到窗口上。

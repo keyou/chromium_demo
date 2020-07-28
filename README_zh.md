@@ -24,16 +24,17 @@ Demo 列表：
 16. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 17. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
 18. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
-19. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
-20. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
-21. `demo_views`: 演示使用 `//ui/views` 创建 UI；
-22. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
-23. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
-24. `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
-25. `demo_x11`: 演示使用 X11 创建透明窗口；
-26. `demo_x11_glx`: 演示在透明窗口中使用 glx;
-27. `demo_x11_egl`: 演示在透明窗口中使用 egl；
-28. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+19. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
+20. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
+21. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
+22. `demo_views`: 演示使用 `//ui/views` 创建 UI；
+23. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
+24. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
+25. `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
+26. `demo_x11`: 演示使用 X11 创建透明窗口；
+27. `demo_x11_glx`: 演示在透明窗口中使用 glx;
+28. `demo_x11_egl`: 演示在透明窗口中使用 egl；
+29. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
 
 文档列表：
 
@@ -106,12 +107,18 @@ Demo 列表：
 - 完善 content 模块的文档 ([docs/content.md](docs/content.md))；
 - 完善 demo_shell 的文档 ([demo_shell/README.md](demo_shell/README.md))；
 - 添加 demo, 演示如何创建 aar 组件；
-- 添加 demo, 演示如何向 Blink 注入新的 JS 对象；
-- 添加 demo, 演示如何实现网页的离屏渲染；
 - 添加 demo, 演示如何使用 aura 创建 UI 界面；
 - 添加 demo, 演示如何使用 PlatformWindow 创建 UI 界面；
+- 添加 demo, 演示如何实现网页的离屏渲染；
+- 添加 demo, 演示如何向 Blink 注入新的 JS 对象；
+- 添加 demo, 演示 `navigator.mediaDevices.getUserMedia()` 的原理；
+- 添加 demo, 演示 `tab capture api` 的原理；
 
 ## 更新日志
+
+### 2020.7.28
+
+- 添加 demo_viz_layer_offscreen, 演示使用 VIZ 的 CopyOutput 接口进行离屏渲染；
 
 ### 2020.7.24
 

@@ -569,38 +569,9 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     }
     AppendSolidColorDrawQuad(frame, render_pass.get());
 
-    // SoftwareOutputDeviceX11 不支持离屏渲染
-    if (g_use_gpu) {
-      // 使用Bitmap方式获取该 render_pass 渲染的结果，
-      // Texture 方式已经在2020.7.23日被移除，详见：
-      // https://bugs.chromium.org/p/chromium/issues/detail?id=1044594
-      auto request = std::make_unique<viz::CopyOutputRequest>(
-          viz::CopyOutputResult::Format::RGBA_BITMAP,  // RGBA_TEXTURE
-          base::BindOnce(&LayerTreeFrameSink::OnGetOutputResult,
-                         base::Unretained(this)));
-      request->set_result_task_runner(base::SequencedTaskRunnerHandle::Get());
-      render_pass->copy_requests.push_back(std::move(request));
-    }
-
     frame.render_pass_list.push_back(std::move(render_pass));
 
     return frame;
-  }
-
-  // 这里也可以改为渲染在其他窗口中，但是无法达到60fps
-  void OnGetOutputResult(std::unique_ptr<viz::CopyOutputResult> result) {
-    TRACE_EVENT0("viz", "LayerTreeFrameSink::OnGetOutputResult");
-    DCHECK(!result->IsEmpty());
-    // 保存渲染结果到图片文件
-    constexpr char filename[] = "result_demo_viz_layer.png";
-    base::FilePath path;
-    DCHECK(base::PathService::Get(base::BasePathKey::DIR_EXE, &path));
-    path = path.AppendASCII(filename);
-
-    SkFILEWStream stream(path.value().c_str());
-    DCHECK(SkEncodeImage(&stream, result->AsSkBitmap().pixmap(),
-                         SkEncodedImageFormat::kPNG, 0));
-    DLOG(INFO) << "OnGetOutputResult: save the frame to: " << path;
   }
 
   void AppendDebugBorderDrawQuad(viz::CompositorFrame& frame,
@@ -942,7 +913,6 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
       override {
     base::AutoLock lock(lock_);
-    // 每 60fps 刷新一帧
     if (++frame_token_generator_ % 60 == 1) {
       GetCompositorFrameSinkPtr()->SubmitCompositorFrame(
           local_surface_id_.local_surface_id(), CreateFrame(args),
@@ -1015,9 +985,13 @@ class Compositor : public viz::HostFrameSinkClient {
 
   void SetContextProvider(
       scoped_refptr<viz::ContextProvider> root_context_provider,
-      scoped_refptr<viz::ContextProvider> child_context_provider) {
+      scoped_refptr<viz::ContextProvider> child_context_provider,
+      scoped_refptr<viz::ContextProvider> main_context_provider) {
     root_client_->SetContextProvider(root_context_provider);
     child_client_->SetContextProvider(child_context_provider);
+    main_context_provider_ = main_context_provider;
+    DCHECK_EQ(main_context_provider_->BindToCurrentThread(),
+              gpu::ContextResult::kSuccess);
   }
 
   void Resize(gfx::Size size) {
@@ -1037,6 +1011,23 @@ class Compositor : public viz::HostFrameSinkClient {
   virtual void OnFrameTokenChanged(uint32_t frame_token) override {
     TRACE_EVENT0("viz", "Compositor::OnFrameTokenChanged");
     // DLOG(INFO) << __FUNCTION__;
+    if (g_use_gpu) {
+      // 使用硬件加速的方法取出viz渲染的结果，然后再渲染到窗口中，模拟将结果嵌入其他UI
+      // RGBA_TEXTURE 方式已经在2020.7.23日被移除，详见：
+      // https://bugs.chromium.org/p/chromium/issues/detail?id=1044594
+      auto request = std::make_unique<viz::CopyOutputRequest>(
+          viz::CopyOutputResult::Format::RGBA_TEXTURE,  // RGBA_BITMAP
+          base::BindOnce(&Compositor::OnGetOutputResult,
+                         base::Unretained(this)));
+      request->set_result_task_runner(base::SequencedTaskRunnerHandle::Get());
+
+      host_frame_sink_manager_.RequestCopyOfOutput(
+          viz::SurfaceId(
+              root_client_->frame_sink_id(),
+              local_surface_id_allocator_.GetCurrentLocalSurfaceIdAllocation()
+                  .local_surface_id()),
+          std::move(request));
+    }
   }
 
  private:
@@ -1045,7 +1036,7 @@ class Compositor : public viz::HostFrameSinkClient {
       mojo::PendingRemote<viz::mojom::FrameSinkManager> manager) {
     host_frame_sink_manager_.BindAndSetManager(std::move(client), nullptr,
                                                std::move(manager));
-    display_client_ = std::make_unique<viz::HostDisplayClient>(widget_);
+    display_client_ = std::make_unique<viz::HostDisplayClient>(/*widget_*/ 0);
 
     // 创建 root client 的 FrameSinkId
     viz::FrameSinkId root_frame_sink_id =
@@ -1067,7 +1058,7 @@ class Compositor : public viz::HostFrameSinkClient {
             root_client_remote.InitWithNewPipeAndPassReceiver();
 
     auto params = viz::mojom::RootCompositorFrameSinkParams::New();
-    params->widget = widget_;
+    params->widget = /*widget_*/ 0;
     params->compositor_frame_sink = std::move(frame_sink_receiver);
     params->compositor_frame_sink_client = std::move(root_client_remote);
     params->frame_sink_id = root_frame_sink_id;
@@ -1092,6 +1083,67 @@ class Compositor : public viz::HostFrameSinkClient {
     root_client_->Bind(std::move(root_client_receiver),
                        std::move(frame_sink_remote));
     EmbedChildClient(root_frame_sink_id);
+  }
+
+  // 获取 viz 的结果然后再渲染到窗口中
+  // 这种方法把每一帧都进行了一次Texture拷贝，在某些GPU差的设备上无法实现60fps，
+  // 可以在viz内部进行一些优化，避免拷贝动作来提升性能
+  void OnGetOutputResult(std::unique_ptr<viz::CopyOutputResult> result) {
+    TRACE_EVENT0("viz", "Compositor::OnGetOutputResult");
+    DCHECK(!result->IsEmpty());
+    gpu::Mailbox mailbox = result->GetTextureResult()->mailbox;
+    gpu::SyncToken sync_token = result->GetTextureResult()->sync_token;
+    gfx::ColorSpace color_space = result->GetTextureResult()->color_space;
+    auto release_callback = result->TakeTextureOwnership();
+
+    base::AutoLock lock(*main_context_provider_->GetLock());
+    gpu::gles2::GLES2Interface* gl = main_context_provider_->ContextGL();
+
+    if (sync_token.HasData())
+      gl->WaitSyncTokenCHROMIUM(sync_token.GetConstData());
+
+    GLuint texture_id = gl->CreateAndConsumeTextureCHROMIUM(mailbox.name);
+
+#ifndef GL_RGBA8
+#define GL_RGBA8 0x8058
+#endif
+    static unsigned int i = 0;
+    // gl->ClearColor(0, (i++) % 10 / 10.f + 0.1f, 0, 1.f);
+    // gl->Clear(GL_COLOR_BUFFER_BIT);
+
+    GrGLint buffer = 0;
+    gl->GetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+    GrGLFramebufferInfo fb_info;
+    fb_info.fFBOID = buffer;
+    fb_info.fFormat = GR_GL_RGBA8;
+
+    auto gr_context = main_context_provider_->GrContext();
+    DCHECK(gr_context);
+    GrBackendRenderTarget backendRT(size_.width(), size_.height(), 0, 8,
+                                    fb_info);
+    SkSurfaceProps props(SkSurfaceProps::kLegacyFontHost_InitType);
+    auto skSurface_ = SkSurface::MakeFromBackendRenderTarget(
+        gr_context, backendRT, kTopLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType,
+        nullptr, &props);
+    DCHECK(skSurface_);
+    auto canvas = skSurface_->getCanvas();
+    canvas->clear(colors[i++ % base::size(colors)]);
+
+    GrGLTextureInfo textureInfo = {GR_GL_TEXTURE_2D, texture_id, GR_GL_RGBA8};
+    GrBackendTexture backendTexture(size_.width(), size_.height(),
+                                    GrMipMapped::kNo, textureInfo);
+    sk_sp<SkImage> image = SkImage::MakeFromTexture(
+        canvas->getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+        kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
+    canvas->drawImage(image, 0, 0);
+    skSurface_->flush();
+    gl->SwapBuffers(1);
+    // 这里强制进行同步，在实际项目中应该尽量避免该操作
+    gl->Finish();
+
+    // 必须等到渲染完毕之后才能销毁资源，否则可能出现画面闪烁
+    // 实际项目中需要添加同步逻辑
+    release_callback->Run(gpu::SyncToken(), false);
   }
 
   void EmbedChildClient(viz::FrameSinkId parent_frame_sink_id) {
@@ -1287,8 +1339,11 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     auto child_context_provider = CreateContextProvider(
         gpu::kNullSurfaceHandle, true,
         viz::command_buffer_metrics::ContextType::BROWSER_WORKER);
+    auto main_context_provider = CreateContextProvider(
+        compositor_->widget(), false,
+        viz::command_buffer_metrics::ContextType::BROWSER_WORKER);
     compositor_->SetContextProvider(
-        root_context_provider, child_context_provider);
+        root_context_provider, child_context_provider, main_context_provider);
   }
 
   gpu::GpuMemoryBufferManager* GetGpuMemoryBufferManager() {
