@@ -25,3 +25,15 @@ demo_viz_layer 添加了用户交互控制，重点在于如何控制 UI 的局�
 ## demo_viz_layer_offscreen
 
 demo_viz_layer 演示使用 CopyOutput 接口来实现 viz 离屏渲染，然后再将离屏画面渲染到窗口上。
+
+## viz 调试技巧
+
+tracing categories:
+
+`viz,gpu,ipc,mojom,skia,disabled-by-default-toplevel.flow` 获取详细的 viz 以及 gpu 执行情况。
+`disabled-by-default-gpu.service` 获取 commandbuffer decoder的执行情况。
+
+命令行参数：
+
+`--enable-gpu-service-tracing` 启动 gpu service tracing，每一个 GL 调用都会被记录到 Trace 中。
+`--use_virtualized_gl_contexts=0` 禁用 virtual GL Context，降低追踪的复杂度。

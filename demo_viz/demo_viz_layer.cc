@@ -400,7 +400,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
       frame_sink_remote_->DidNotProduceFrame(viz::BeginFrameAck(args, false));
     }
     need_redraw_ = false;
-    frame_sink_remote_->SetNeedsBeginFrame(false);
+    // frame_sink_remote_->SetNeedsBeginFrame(false);
   }
 
   virtual void DidReceiveCompositorFrameAck(
@@ -1071,7 +1071,9 @@ class Compositor : public viz::HostFrameSinkClient {
     params->compositor_frame_sink = std::move(frame_sink_receiver);
     params->compositor_frame_sink_client = std::move(root_client_remote);
     params->frame_sink_id = root_frame_sink_id;
-    params->disable_frame_rate_limit = false;
+    params->disable_frame_rate_limit =
+        base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kDisableFrameRateLimit);
     params->gpu_compositing = g_use_gpu;
     // 只有Andorid平台能使用
     // params->refresh_rate = 1.0f;
