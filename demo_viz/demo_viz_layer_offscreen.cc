@@ -159,7 +159,9 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
 
       // 创建要渲染的内容到 SkBitmap 中
       bitmap_ = std::make_unique<SkBitmap>();
-      bitmap_->allocN32Pixels(bounds_.width(), bounds_.height());
+      bitmap_->allocPixels(SkImageInfo::Make(bounds_.width(), bounds_.height(),
+                                             kRGBA_8888_SkColorType,
+                                             kOpaque_SkAlphaType));
       canvas_ = std::make_unique<SkCanvas>(*bitmap_);
       canvas_->clear(SK_ColorWHITE);
       path_.moveTo(0, 0);
@@ -603,7 +605,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // LOG(INFO) << "AppendTileDrawQuad: " << frame_sink_id_ << ":" <<
     // local_surface_id_; 创建要渲染的内容到 SkBitmap 中
     SkBitmap bitmap;
-    bitmap.allocN32Pixels(200, 200);
+    bitmap.allocPixels(SkImageInfo::Make(200, 200, kRGBA_8888_SkColorType,
+                                     kOpaque_SkAlphaType));
     SkCanvas canvas(bitmap);
     canvas.clear(SK_ColorWHITE);
     canvas.drawCircle(
@@ -656,7 +659,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::AppendTextureDrawQuad");
     // 创建要渲染的内容到 SkBitmap 中
     SkBitmap bitmap;
-    bitmap.allocN32Pixels(200, 200);
+    bitmap.allocPixels(SkImageInfo::Make(200, 200, kRGBA_8888_SkColorType,
+                                     kOpaque_SkAlphaType));
     SkCanvas canvas(bitmap);
     canvas.clear(SK_ColorWHITE);
     canvas.drawCircle(
@@ -870,10 +874,15 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                         source.computeByteSize());
     auto format = viz::RGBA_8888;
     auto color_space = gfx::ColorSpace();
+    // 这里直接使用Raster的结果(pixels)创建一个SharedImage
+    // 也可以使用 CHROMIUM_raster_transport 扩展进行 OOP-R Raster
+    // 或者使用 CHROMIUM_shared_image 扩展进行 OOP-D Raster
+    // OOP-D 参考 https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=119;
+    // OOP-R 参考 https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=173;
     gpu::Mailbox mailbox = sii->CreateSharedImage(
         format, size, color_space, gpu::SHARED_IMAGE_USAGE_DISPLAY, pixels);
+    
     gpu::SyncToken sync_token = sii->GenVerifiedSyncToken();
-
     viz::TransferableResource gl_resource = viz::TransferableResource::MakeGL(
         mailbox, GL_LINEAR, GL_TEXTURE_2D, sync_token, size,
         false /* is_overlay_candidate */);
