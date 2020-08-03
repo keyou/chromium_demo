@@ -1,0 +1,72 @@
+From dcf992dac28c1d35803596ea8d59b6a737689ce3 Mon Sep 17 00:00:00 2001
+From: keyou <keyou@users.noreply.github.com>
+Date: Sat, 1 Aug 2020 11:06:30 +0800
+Subject: [PATCH] demo_viz_layer_offscreen: add GetOffscreenTextureId
+
+---
+ .../viz/service/display/skia_output_surface.h    |  3 +++
+ .../skia_output_device_offscreen.cc              | 16 +++++++++++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/components/viz/service/display/skia_output_surface.h b/components/viz/service/display/skia_output_surface.h
+index 2f06602e9c0d..d014af23bdf2 100644
+--- a/components/viz/service/display/skia_output_surface.h
++++ b/components/viz/service/display/skia_output_surface.h
+@@ -41,6 +41,9 @@ namespace copy_output {
+ struct RenderPassGeometry;
+ }  // namespace copy_output
+ 
++#define VIZ_GETOFFSCREENTEXTUREID
++VIZ_SERVICE_EXPORT GrGLuint GetOffscreenTextureId();
++
+ // This class extends the OutputSurface for SkiaRenderer needs. In future, the
+ // SkiaRenderer will be the only renderer. When other renderers are removed,
+ // we will replace OutputSurface with SkiaOutputSurface, and remove all
+diff --git a/components/viz/service/display_embedder/skia_output_device_offscreen.cc b/components/viz/service/display_embedder/skia_output_device_offscreen.cc
+index 9d38dda19d9d..721d09e20d97 100644
+--- a/components/viz/service/display_embedder/skia_output_device_offscreen.cc
++++ b/components/viz/service/display_embedder/skia_output_device_offscreen.cc
+@@ -8,6 +8,7 @@
+ 
+ #include "gpu/command_buffer/service/skia_utils.h"
+ #include "third_party/skia/include/core/SkSurface.h"
++#include "components/viz/service/display/skia_output_surface.h"
+ 
+ namespace viz {
+ 
+@@ -16,9 +17,14 @@ namespace {
+ // Some Vulkan drivers do not support kRGB_888x_SkColorType. Always use
+ // kRGBA_8888_SkColorType instead and initialize surface to opaque as necessary.
+ constexpr SkColorType kSurfaceColorType = kRGBA_8888_SkColorType;
++GrGLuint g_offscreen_texture_id = 0;
+ 
+ }  // namespace
+ 
++GrGLuint GetOffscreenTextureId() {
++  return g_offscreen_texture_id;
++}
++
+ SkiaOutputDeviceOffscreen::SkiaOutputDeviceOffscreen(
+     scoped_refptr<gpu::SharedContextState> context_state,
+     bool flipped,
+@@ -55,8 +61,16 @@ void SkiaOutputDeviceOffscreen::SwapBuffers(
+     std::vector<ui::LatencyInfo> latency_info) {
+   // Reshape should have been called first.
+   DCHECK(backend_texture_.isValid());
+-
++  TRACE_EVENT0("viz", "SkiaOutputDeviceOffscreen::SwapBuffers");
+   StartSwapBuffers(std::move(feedback));
++  
++  GrBackendTexture skia_texture =
++    sk_surface_->getBackendTexture(SkSurface::kFlushRead_BackendHandleAccess);
++  GrGLTextureInfo gl_texture_info;
++  skia_texture.getGLTextureInfo(&gl_texture_info);
++  g_offscreen_texture_id = gl_texture_info.fID;
++  DCHECK(g_offscreen_texture_id);
++
+   FinishSwapBuffers(gfx::SwapResult::SWAP_ACK,
+                     gfx::Size(size_.width(), size_.height()),
+                     std::move(latency_info));
+-- 
+2.17.1
+

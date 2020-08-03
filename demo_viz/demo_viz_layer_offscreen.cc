@@ -1,3 +1,12 @@
+
+/*
+ * 演示取出Chromium的离屏渲染结果进行 GUI 二次渲染。
+ * 编译注意：
+ * 需要先在src中应用 0001 号 patch，否则无法看到效果。
+ *  cd src
+ *  git am demo/patches/0001-demo_viz_layer_offscreen-add-GetOffscreenTextureId.patch
+ */
+
 #include "base/at_exit.h"
 #include "base/callback.h"
 #include "base/command_line.h"
@@ -98,11 +107,12 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/skia_util.h"
 #include "ui/gl/gl_switches.h"
-#include "ui/gl/init/gl_factory.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
 #include "ui/platform_window/x11/x11_window.h"
+
+#include "demo/demo_viz/demo_viz_layer_offscreen_client.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -606,7 +616,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // local_surface_id_; 创建要渲染的内容到 SkBitmap 中
     SkBitmap bitmap;
     bitmap.allocPixels(SkImageInfo::Make(200, 200, kRGBA_8888_SkColorType,
-                                     kOpaque_SkAlphaType));
+                                         kOpaque_SkAlphaType));
     SkCanvas canvas(bitmap);
     canvas.clear(SK_ColorWHITE);
     canvas.drawCircle(
@@ -660,7 +670,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // 创建要渲染的内容到 SkBitmap 中
     SkBitmap bitmap;
     bitmap.allocPixels(SkImageInfo::Make(200, 200, kRGBA_8888_SkColorType,
-                                     kOpaque_SkAlphaType));
+                                         kOpaque_SkAlphaType));
     SkCanvas canvas(bitmap);
     canvas.clear(SK_ColorWHITE);
     canvas.drawCircle(
@@ -877,11 +887,13 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // 这里直接使用Raster的结果(pixels)创建一个SharedImage
     // 也可以使用 CHROMIUM_raster_transport 扩展进行 OOP-R Raster
     // 或者使用 CHROMIUM_shared_image 扩展进行 OOP-D Raster
-    // OOP-D 参考 https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=119;
-    // OOP-R 参考 https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=173;
+    // OOP-D 参考
+    // https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=119;
+    // OOP-R 参考
+    // https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=173;
     gpu::Mailbox mailbox = sii->CreateSharedImage(
         format, size, color_space, gpu::SHARED_IMAGE_USAGE_DISPLAY, pixels);
-    
+
     gpu::SyncToken sync_token = sii->GenVerifiedSyncToken();
     viz::TransferableResource gl_resource = viz::TransferableResource::MakeGL(
         mailbox, GL_LINEAR, GL_TEXTURE_2D, sync_token, size,
@@ -998,15 +1010,15 @@ class Compositor : public viz::HostFrameSinkClient {
       scoped_refptr<viz::ContextProvider> main_context_provider) {
     root_client_->SetContextProvider(root_context_provider);
     child_client_->SetContextProvider(child_context_provider);
-    main_context_provider_ = main_context_provider;
-    DCHECK_EQ(main_context_provider_->BindToCurrentThread(),
-              gpu::ContextResult::kSuccess);
+    // main_context_provider_ = main_context_provider;
+    // DCHECK_EQ(main_context_provider_->BindToCurrentThread(),
+    //           gpu::ContextResult::kSuccess);
   }
 
   void Resize(gfx::Size size) {
     // TODO:
   }
-
+  gfx::Size size() { return size_; }
   gfx::AcceleratedWidget widget() { return widget_; }
 
   // Called when a CompositorFrame with a new SurfaceId activates for the first
@@ -1020,6 +1032,10 @@ class Compositor : public viz::HostFrameSinkClient {
   virtual void OnFrameTokenChanged(uint32_t frame_token) override {
     TRACE_EVENT0("viz", "Compositor::OnFrameTokenChanged");
     // DLOG(INFO) << __FUNCTION__;
+    // 直接从 SkiaOutputDeviceOffscreen 获取底层Texture进行渲染，性能较好
+    Redraw();
+    return;
+    // 使用 CopyOutput 接口获取最终的渲染画面，性能不佳
     if (g_use_gpu) {
       // 使用硬件加速的方法取出viz渲染的结果，然后再渲染到窗口中，模拟将结果嵌入其他UI
       // RGBA_TEXTURE 方式已经在2020.7.23日被移除，详见：
@@ -1071,7 +1087,7 @@ class Compositor : public viz::HostFrameSinkClient {
     params->compositor_frame_sink = std::move(frame_sink_receiver);
     params->compositor_frame_sink_client = std::move(root_client_remote);
     params->frame_sink_id = root_frame_sink_id;
-    params->disable_frame_rate_limit = 
+    params->disable_frame_rate_limit =
         base::CommandLine::ForCurrentProcess()->HasSwitch(
             switches::kDisableFrameRateLimit);
     params->gpu_compositing = g_use_gpu;
@@ -1234,6 +1250,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
   }
 
   void InitIPCServer() {
+    TRACE_EVENT0("viz", "demo::GpuService::InitIPCServer");
     mojo::PendingRemote<IPC::mojom::ChannelBootstrap> bootstrap;
     auto bootstrap_receiver = bootstrap.InitWithNewPipeAndPassReceiver();
 
@@ -1261,6 +1278,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
 
   void InitIPCClient(
       mojo::PendingReceiver<IPC::mojom::ChannelBootstrap> bootstrap_receiver) {
+    TRACE_EVENT0("viz", "demo::GpuService::InitIPCClient");
     mojo::PendingRemote<IPC::mojom::ChannelBootstrap> legacy_ipc_bootstrap;
     mojo::ScopedMessagePipeHandle legacy_ipc_channel_handle =
         legacy_ipc_bootstrap.InitWithNewPipeAndPassReceiver().PassPipe();
@@ -1284,6 +1302,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
   void InitVizHost(
       mojo::PendingReceiver<viz::mojom::FrameSinkManager> receiver,
       mojo::PendingRemote<viz::mojom::FrameSinkManagerClient> client) {
+    TRACE_EVENT0("viz", "demo::GpuService::InitVizHost");
     mojo::PendingAssociatedRemote<viz::mojom::VizMain> viz_main_pending_remote;
     server_channel_->GetAssociatedInterfaceSupport()
         ->GetRemoteAssociatedInterface(
@@ -1314,6 +1333,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
   }
 
   void InitVizMain() {
+    TRACE_EVENT0("viz", "demo::GpuService::InitVizMain");
     auto gpu_init = std::make_unique<gpu::GpuInit>();
     gpu_init->InitializeInProcess(base::CommandLine::ForCurrentProcess(),
                                   GetGpuPreferencesFromCommandLine());
@@ -1327,6 +1347,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
                          const gpu::GPUInfo& gpu_info,
                          const gpu::GpuFeatureInfo& gpu_feature_info,
                          viz::GpuHostImpl::EstablishChannelStatus status) {
+    TRACE_EVENT0("viz", "demo::GpuService::OnEstablishedOnIO");
     if (channel_handle.is_valid()) {
       gpu_channel_host_ = base::MakeRefCounted<gpu::GpuChannelHost>(
           gpu_client_id_, gpu_info, gpu_feature_info,
@@ -1351,7 +1372,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
         gpu::kNullSurfaceHandle, true,
         viz::command_buffer_metrics::ContextType::BROWSER_WORKER);
     auto main_context_provider = CreateContextProvider(
-        compositor_->widget(), false,
+        /*compositor_->widget()*/ gpu::kNullSurfaceHandle, false,
         viz::command_buffer_metrics::ContextType::BROWSER_WORKER);
     compositor_->SetContextProvider(
         root_context_provider, child_context_provider, main_context_provider);
@@ -1479,6 +1500,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
       const base::Optional<gpu::GpuFeatureInfo>&
           gpu_feature_info_for_hardware_gpu,
       const gpu::GpuExtraInfo& gpu_extra_info) override {
+    TRACE_EVENT0("viz", "demo::GpuService::DidInitialize");
     DLOG(INFO) << __FUNCTION__;
     gpu_info_ = gpu_info;
     gpu_feature_info_ = gpu_feature_info;
@@ -1539,7 +1561,14 @@ class GpuService : public viz::GpuHostImpl::Delegate,
   // viz::VizMainImpl::Delegate:
   void OnInitializationFailed() override { DLOG(INFO) << __FUNCTION__; }
   void OnGpuServiceConnection(viz::GpuServiceImpl* gpu_service) override {
+    TRACE_EVENT0("viz", "demo::GpuService::OnGpuServiceConnection");
     DLOG(INFO) << __FUNCTION__;
+    // gpu_main_thread_.task_runner()->PostTask(
+    //     FROM_HERE, base::BindOnce(&InitHostMain, compositor_->widget(),
+    //                               GetGpuPreferencesFromCommandLine(),
+    //                               base::Unretained(gpu_service->GetContextState()->share_group())));
+    InitHostMain(compositor_->widget(), compositor_->size(),
+                 gpu_service);
   }
   void PostCompositorThreadCreated(
       base::SingleThreadTaskRunner* task_runner) override {
@@ -1557,6 +1586,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
   void OnAssociatedInterfaceRequest(
       const std::string& interface_name,
       mojo::ScopedInterfaceEndpointHandle handle) override {
+    TRACE_EVENT0("viz", "demo::GpuService::OnAssociatedInterfaceRequest");
     DLOG(INFO) << __FUNCTION__;
     if (interface_name == viz::VizMainImpl::Name_) {
       if (gpu_main_thread_.task_runner()->BelongsToCurrentThread()) {
@@ -1713,7 +1743,7 @@ int main(int argc, char** argv) {
   // 启动 Trace
   demo::InitTrace("./trace_demo_viz_layer_offscreen.json");
   demo::StartTrace(
-      "viz,gpu,shell,ipc,mojom,skia,disabled-by-default-toplevel.flow");
+      "viz,gpu,shell,ipc,mojom,skia,input,disabled-by-default-toplevel.flow");
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop

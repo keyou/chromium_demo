@@ -73,6 +73,7 @@ viz("demo_viz_layer") {
 
 viz("demo_viz_layer_offscreen") {
   sources = [
-      "demo_viz_layer_offscreen.cc"
+      "demo_viz_layer_offscreen.cc",
+      "demo_viz_layer_offscreen_client.cc"
   ]
 }

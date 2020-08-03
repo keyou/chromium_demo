@@ -24,7 +24,8 @@ demo_viz_layer 添加了用户交互控制，重点在于如何控制 UI 的局�
 
 ## demo_viz_layer_offscreen
 
-demo_viz_layer 演示使用 CopyOutput 接口来实现 viz 离屏渲染，然后再将离屏画面渲染到窗口上。
+demo_viz_layer 演示使用 CopyOutput/SkiaOutputDeviceOffscreen 接口来实现 viz 离屏渲染，然后再将离屏画面渲染到窗口上。
+注意该demo需要先打 patch: patches/0001-*.path
 
 ## viz 调试技巧
 
