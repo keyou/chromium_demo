@@ -116,6 +116,10 @@ Demo 列表：
 
 ## 更新日志
 
+### 2020.7.31
+
+- demo_viz_layer_offscreen 支持使用 SkiaOutputDeviceOffscreen 接口进行离屏渲染；
+
 ### 2020.7.28
 
 - 添加 demo_viz_layer_offscreen, 演示使用 VIZ 的 CopyOutput 接口进行离屏渲染；
