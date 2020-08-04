@@ -136,7 +136,7 @@ Perfetto 是一个跨平台的 tracing 组件，包括一个可嵌入到其他�
 
 TraceViewer 的一个例子：
 
-![TraceViewer](2020-05-22-17-09-02.png)
+![TraceViewer](./images/2020-05-22-17-09-02.png)
 
 完整的 Trace 格式介绍见： <https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/edit#>
 
