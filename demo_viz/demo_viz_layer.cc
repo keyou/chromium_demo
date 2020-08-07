@@ -559,10 +559,6 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       AppendSurfaceDrawQuad(frame, render_pass.get());
     }
     if (context_provider_) {
-      // TODO： 这里有个bug，当程序运行25s之后，会出现GPU卡顿，
-      // 卡顿位于 SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame 中的
-      // flush() 调用处,或者 NativeViewGLSurfaceGLX:RealSwapBuffers中，
-      // 这种情况在软件渲染中不会出现。
       AppendTileDrawQuad(frame, render_pass.get());
       AppendTextureDrawQuad(frame, render_pass.get());
       AppendPictureDrawQuad(frame, render_pass.get());

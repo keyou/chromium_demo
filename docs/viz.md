@@ -1,6 +1,6 @@
 # Viz (Visuals)
 
-TODO: 完善文档。
+> 最新文档见 [keyou.github.io/2020-07-29-how-viz-works.md](https://github.com/keyou/keyou.github.io/blob/master/_posts/2020-07-29-how-viz-works.md)
 
 `Viz` 用于 `compositing`,`gl`,`hit testing`,`media`。
 
@@ -11,16 +11,15 @@ TODO: 完善文档。
 - `//gpu`: gl 部分的实现；
 - `//media`: media 部分的实现；
 
-> 在 `//components/viz/demo` 下有一个官方提供的 Viz 的 demo, 这里的 demo_viz 是参考那个 demo 完成的。在以上几个目录中也存放有关于 viz 的文档，这篇文档是对那些文档的总结和补充。
+> 在 `//components/viz/demo` 下有一个官方提供的 Viz 的 demo, 这里的 demo_viz_gui 是参考那个 demo 完成的。在以上几个目录中也存放有关于 viz 的文档，这篇文档是对那些文档的总结和补充。
 
 Viz 涉及以下三个端：
 
 - `client`: 用于生成要显示的画面，至少有一个根 client，可以有多个子 client，它们组成了一个 client 树，每一个 Client 至少对应一个 FrameSinkId 和一个 LocalSurfaceId，如果父子 client 之间的 UI 需要嵌入，则子 client 作为 SurfaceDrawQuad 嵌入到父 client 中；
-- `host`： 用于注册 client 端，只能运行在特权端，负责协助 client 建立起和 service 的连接，从而建立 client 和 client 之间的树形关系，因此它看起来就像是在把很多 client 组合 (Composite) 在一起，所以 ui::Compositor 是 host 的一个实现就比较好理解了；
-- `service`: 运行 Viz 的内核，host 和 client 都是在和它通信。
+- `host`： 用于注册 client 端，只能运行在特权端，负责协助 client 建立起和 service 的连接，从而建立 client 和 client 之间的树形关系；
+- `service`: 运行 Viz 的内核，进行UI合成以及最终的渲染，host 和 client 都需要和它交互。
 
-> 以上描述比较抽象，简单理解就是： 运行 `viz::mojom::FrameSinkMnagerClient` 的端叫做 host，运行 `viz::mojom::FrameSinkManager` 和 `viz::mojom::CompositorFrameSink` 的端叫 service, 运行 `viz::mojom::CompositorFrameSinkClient` 的端叫 client。  
-> 从名字可以看出在通信层面没有所谓的 host 端，host 端只是 FrameSinkManager 的 client.
+> 以上描述比较抽象，简单理解就是： 运行 `viz::mojom::FrameSinkMnagerClient` 的端叫做 host，运行 `viz::mojom::FrameSinkManager` 和 `viz::mojom::CompositorFrameSink` 的端叫 service, 运行 `viz::mojom::CompositorFrameSinkClient` 的端叫 client。
 
 ## 主要概念解释
 

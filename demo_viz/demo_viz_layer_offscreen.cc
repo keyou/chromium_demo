@@ -4,7 +4,8 @@
  * 编译注意：
  * 需要先在src中应用 0001 号 patch，否则无法看到效果。
  *  cd src
- *  git am demo/patches/0001-demo_viz_layer_offscreen-add-GetOffscreenTextureId.patch
+ *  git am
+ * demo/patches/0001-demo_viz_layer_offscreen-add-GetOffscreenTextureId.patch
  */
 
 #include "base/at_exit.h"
@@ -349,13 +350,15 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
     // 将共享内存及与之对应的资源Id发送到 viz service 端
     frame_sink_remote_->DidAllocateSharedBitmap(std::move(shm.region),
                                                 shared_bitmap_id);
-
+    // 使用 SharedBitmap 创建资源
+    viz::TransferableResource transferable_resource =
+        viz::TransferableResource::MakeSoftware(shared_bitmap_id, size,
+                                                viz::RGBA_8888);
     // 把资源存入 ClientResourceProvider 进行统一管理。
     // 后续会使用 ClientResourceProvider::PrepareSendToParent
     // 将已经存入的资源添加 到 CF 中。
     return client_resource_provider_->ImportResource(
-        viz::TransferableResource::MakeSoftware(shared_bitmap_id, size,
-                                                viz::RGBA_8888),
+        transferable_resource,
         viz::SingleReleaseCallback::Create(base::DoNothing()));
   }
   viz::ResourceId CreateGpuResource(const gfx::Size& size,
@@ -370,10 +373,17 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
                         source.computeByteSize());
     auto format = viz::RGBA_8888;
     auto color_space = gfx::ColorSpace();
+    // 直接使用像素数组创建 SharedImage。
+    // 也可以先创建空的 SharedImage 然后再通过其他 API 来填充 SharedImage
+    // 的内容， 目前有两种填充 SharedImage 内容的方法，OOP-D 和 OOP-R，详见
+    // Chromium GPU Resource Share。
     gpu::Mailbox mailbox = sii->CreateSharedImage(
         format, size, color_space, gpu::SHARED_IMAGE_USAGE_DISPLAY, pixels);
+
+    // 获取用于 GL 同步的 SyncToken，详见 Chromium GPU Synchronization
     gpu::SyncToken sync_token = sii->GenVerifiedSyncToken();
 
+    // 使用 Mailbox 创建 GL 资源
     viz::TransferableResource gl_resource = viz::TransferableResource::MakeGL(
         mailbox, GL_LINEAR, GL_TEXTURE_2D, sync_token, size,
         false /* is_overlay_candidate */);
@@ -382,7 +392,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
     auto release_callback = viz::SingleReleaseCallback::Create(
         base::BindOnce(&InkClient::DeleteSharedImage, base::Unretained(this),
                        context_provider_, mailbox));
-
+    // 同上
     return client_resource_provider_->ImportResource(
         gl_resource, std::move(release_callback));
   }
@@ -570,10 +580,6 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       AppendSurfaceDrawQuad(frame, render_pass.get());
     }
     if (context_provider_) {
-      // TODO： 这里有个bug，当程序运行25s之后，会出现GPU卡顿，
-      // 卡顿位于 SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame 中的
-      // flush() 调用处,或者 NativeViewGLSurfaceGLX:RealSwapBuffers中，
-      // 这种情况在软件渲染中不会出现。
       AppendTileDrawQuad(frame, render_pass.get());
       AppendTextureDrawQuad(frame, render_pass.get());
       AppendPictureDrawQuad(frame, render_pass.get());
@@ -779,7 +785,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   }
 
   // 演示 PictureDrawQuad 的使用
-  // PictureDrawQuad 当前不支持 mojo 的序列化，因此这里无法演示
+  // PictureDrawQuad 当前不支持 mojo 的序列化，因此这里无法演示，
+  // 它当前只用与测试代码或者Android WebView
   void AppendPictureDrawQuad(viz::CompositorFrame& frame,
                              viz::RenderPass* render_pass) {
     return;
@@ -1567,8 +1574,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     //     FROM_HERE, base::BindOnce(&InitHostMain, compositor_->widget(),
     //                               GetGpuPreferencesFromCommandLine(),
     //                               base::Unretained(gpu_service->GetContextState()->share_group())));
-    InitHostMain(compositor_->widget(), compositor_->size(),
-                 gpu_service);
+    InitHostMain(compositor_->widget(), compositor_->size(), gpu_service);
   }
   void PostCompositorThreadCreated(
       base::SingleThreadTaskRunner* task_runner) override {
