@@ -10,34 +10,38 @@ This project is used to demonstrate how to use some basic mechanisms in chromium
 
 Demo list:
 
-1. `demo_exe`: The simplest demo, demonstrate gn and create your own exe;
-2. `demo_log`: Demonstrate the use of log library;
-3. `demo_tracing_console`: Demonstrate the use of Trace output to the console;
-4. `demo_tasks`: demonstrate the use of thread pool ThreadPool;
-5. `demo_messageloop`: demonstrate the use of message loop MessageLoop;
-6. `demo_mojo_single_process`: demonstrate the use of `mojo` library in a single process;
-7. `demo_mojo_multiple_process`: demonstrate the use of the `mojo` library in multiple processes;
-8. `demo_mojo_multiple_process_binding`: demonstrate the use of the binding layer of the `mojo` library in multiple processes;
+1. `demo_exe`: The simplest demo to demonstrate gn and create your own exe;
+2. `demo_log`: Demo log library;
+3. `demo_tracing_console`: Demonstrate using Trace to output to the console;
+4. `demo_tasks`: Demonstrate the use of thread pool ThreadPool;
+5. `demo_messageloop`: Demonstrate using the message loop MessageLoop;
+6. `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
+7. `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
+8. `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
 9. `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
-10. `demo_ipc`: Demonstrate the use of an IPC interface based on `mojo`;
-11. `demo_memory`: demonstrate the use of SharedMemory;
-12. `demo_tracing_perfetto`: Demonstrates the output of Trace to Json format (used to connect with perfetto);
-13. `demo_tracing_perfetto_content`: Demonstrates how the content module interfaces with perfetto;
-14. `demo_resources`: Demo resources related components, including grit, l10n, pak, etc.;
-15. `demo_viz_gui`: demonstrate using `viz` to display the GUI interface;
-16. `demo_viz_offscreen`: Demonstrate off-screen rendering using `viz`;
-17. `demo_cc_gui`: demonstrate using `cc` to display GUI interface;
-18. `demo_cc_offscreen`: Demonstrates the use of `cc` for off-screen rendering;
-19. `demo_views`: Demonstrate using `//ui/views` to create UI;
-20. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
-21. `demo_android_skia`: Demonstrate software rendering and hardware rendering using Skia on Android;
-22. `demo_skia`: Demonstrates the use of Skia for software rendering and hardware rendering on Linux;
-23. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
+10. `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
+11. `demo_memory`: Demonstrate the use of SharedMemory;
+12. `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
+13. `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
+14. `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
+15. `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
+16. `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
+17. `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
+18. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
+19. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
+20. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
+21. `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
+22. `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
+23. `demo_views`: Demonstrate the use of `//ui/views` to create UI;
+24. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
+25. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
+26. `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
+27. `demo_x11`: Demonstrate using X11 to create transparent windows;
+28. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
+29. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
+30. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
 
-Document list:
-
-1. [Mojo](./docs/mojo.md)
-1. [Browser Startup Process Brief](./docs/startup.md)
+Documents:
 
 Public documents are in the [docs](./docs) directory, and other documents are in the corresponding directory of the code.
 
@@ -104,13 +108,44 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Improve the documentation of the UI part ([docs/ui.md](docs/ui.md));
 - Improve the documentation of the content module ([docs/content.md](docs/content.md));
 - Improve the documentation of demo_shell ([demo_shell/README.md](demo_shell/README.md));
-- Add demo to demonstrate how to create aar components;
-- Add demo to demonstrate how to inject new JS objects into Blink;
-- Add demo to demonstrate how to render offscreen web pages;
+- Add demo to demonstrate how to create aar component;
 - Add demo to demonstrate how to use aura to create UI interface;
 - Add demo to demonstrate how to use PlatformWindow to create UI interface;
+- Add demo to demonstrate how to implement off-screen rendering of web pages;
+- Add a demo to demonstrate how to inject new JS objects into Blink;
+- Add a demo to demonstrate the principle of `navigator.mediaDevices.getUserMedia()`;
+- Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2020.8.10
+
+- Add demo_gl, the demo uses the `//ui/gl` module to call GL for rendering;
+
+### 2020.7.31
+
+- demo_viz_layer_offscreen supports off-screen rendering using the SkiaOutputDeviceOffscreen interface;
+
+### 2020.7.28
+
+- Add demo_viz_layer_offscreen to demonstrate using VIZ's CopyOutput interface for off-screen rendering;
+
+### 2020.7.24
+
+- Add demo_viz_layer, demonstrate the use of VIZ for handwriting writing, and support the use of command lines to switch between software and hardware rendering;
+
+### 2020.7.18
+
+- Add demo_viz_gui_gpu to demonstrate the use of VIZ for hardware accelerated rendering and VIZ Client nesting;
+
+### 2020.7.15
+
+- Add demo_x11_glx and demo_x11_egl;
+
+### 2020.7.11
+
+- Add demo_x11 to demonstrate the use of X11 to create transparent windows;
+- Update demo_skia, use software rendering by default, support transparent windows, GL rendering supports GL_RGB565 pixel format;
 
 ### 2020.6.28
 

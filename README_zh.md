@@ -20,26 +20,24 @@ Demo 列表：
 12. `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
 13. `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
 14. `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-15. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
-16. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
-17. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
-18. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
-19. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
-20. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
-21. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
-22. `demo_views`: 演示使用 `//ui/views` 创建 UI；
-23. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
-24. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
-25. `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
-26. `demo_x11`: 演示使用 X11 创建透明窗口；
-27. `demo_x11_glx`: 演示在透明窗口中使用 glx;
-28. `demo_x11_egl`: 演示在透明窗口中使用 egl；
-29. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+15. `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
+16. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
+17. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
+18. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
+19. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
+20. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
+21. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
+22. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
+23. `demo_views`: 演示使用 `//ui/views` 创建 UI；
+24. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
+25. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
+26. `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
+27. `demo_x11`: 演示使用 X11 创建透明窗口；
+28. `demo_x11_glx`: 演示在透明窗口中使用 glx;
+29. `demo_x11_egl`: 演示在透明窗口中使用 egl；
+30. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
 
-文档列表：
-
-1. [Mojo](./docs/mojo.md)
-1. [浏览器启动流程简述](./docs/startup.md)
+文档：
 
 公共文档在 [docs](./docs) 目录，其他文档在代码相应目录下。
 
@@ -115,6 +113,10 @@ Demo 列表：
 - 添加 demo, 演示 `tab capture api` 的原理；
 
 ## 更新日志
+
+### 2020.8.10
+
+- 添加 demo_gl, 演示通过 `//ui/gl` 模块调用 GL 进行渲染；
 
 ### 2020.7.31
 

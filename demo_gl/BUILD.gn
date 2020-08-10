@@ -1,0 +1,39 @@
+
+import("//build/config/ui.gni")
+
+executable("demo_gl") {
+  testonly = true
+  
+  sources = [
+    "demo_gl.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//base:i18n",
+    "//gpu",
+    "//gpu:gles2",
+    "//gpu:raster",
+    # "//gpu/command_buffer/client",
+    # "//gpu/command_buffer/client:gles2_cmd_helper",
+    # "//gpu/command_buffer/service",
+    # "//gpu/command_buffer/service:gles2",
+    "//ui/base",
+    "//ui/gl",
+    "//ui/gl/init",
+    "//ui/events",
+    "//ui/events/platform",
+    "//ui/platform_window",
+    # "//skia",
+  ]
+
+  if (use_x11) {
+    deps += [
+      "//ui/events/platform/x11",
+      "//ui/platform_window/x11",
+    ]
+    configs += [ "//build/config/linux:x11" ]
+  }
+
+  # libs = ["EGL","GLESv2"]
+}

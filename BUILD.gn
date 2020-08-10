@@ -17,6 +17,7 @@ group("demo") {
     ":demo_ipc",
     ":demo_memory",
     "demo_resources",
+    "demo_gl",
     "demo_viz",
     "demo_cc",
     "demo_x11",
@@ -30,6 +31,7 @@ group("demo") {
     deps -= [
       ":demo_services",
       "demo_views",
+      "demo_gl",
       "demo_viz",
       "demo_cc",
       "demo_skia",
