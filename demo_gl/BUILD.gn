@@ -32,7 +32,7 @@ executable("demo_gl") {
       "//ui/events/platform/x11",
       "//ui/platform_window/x11",
     ]
-    configs += [ "//build/config/linux:x11" ]
+    #configs += [ "//build/config/linux:x11" ]
   }
 
   # libs = ["EGL","GLESv2"]

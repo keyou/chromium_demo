@@ -6,7 +6,7 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/message_loop/message_loop.h"
+// #include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -35,7 +35,7 @@
 #include "services/viz/privileged/mojom/viz_main.mojom.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-#include "ui/base/material_design/material_design_controller.h"
+// #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/x/x11_util.h"
@@ -85,9 +85,9 @@
 #endif
 
 #if defined(USE_X11)
-#include "ui/base/x/x11_util_internal.h"
+// #include "ui/base/x/x11_util_internal.h"
 #include "ui/gfx/x/x11_atom_cache.h"
-#include "ui/gfx/x/x11_connection.h"  // nogncheck
+// #include "ui/gfx/x/x11_connection.h"  // nogncheck
 #include "ui/gl/gl_surface_glx.h"
 #include "ui/gl/gl_visual_picker_glx.h"
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck

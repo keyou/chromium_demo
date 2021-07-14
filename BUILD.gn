@@ -13,8 +13,8 @@ group("demo") {
     ":demo_mojo_single_process",
     ":demo_mojo_multiple_process",
     ":demo_mojo_multiple_process_binding",
-    ":demo_services",
-    ":demo_ipc",
+    # ":demo_services",
+    #":demo_ipc",
     ":demo_memory",
     "demo_resources",
     "demo_gl",
@@ -139,43 +139,43 @@ executable("demo_mojo_multiple_process_binding") {
   ]
 }
 
-executable("demo_services") {
-  testonly = true
-  sources = [
-    "demo_services.cc",
-  ]
+#executable("demo_services") {
+#  testonly = true
+#  sources = [
+#    "demo_services.cc",
+#  ]
+#
+#  deps = [
+#    ":mojom_test_service",
+#    "//base",
+#    # TODO: 查明为什么这里必须显式依赖base_static，它明明已经作为base的public_deps了，
+#    # 难道public_deps对静态库（base_static）无效？
+#    "//base:base_static",
+#    "//mojo/public",
+#    "//services/service_manager",
+#    "//services/service_manager/embedder",
+#    "//services/service_manager/public/cpp/service_executable:support"
+#  ]
+#}
 
-  deps = [
-    ":mojom_test_service",
-    "//base",
-    # TODO: 查明为什么这里必须显式依赖base_static，它明明已经作为base的public_deps了，
-    # 难道public_deps对静态库（base_static）无效？
-    "//base:base_static",
-    "//mojo/public",
-    "//services/service_manager",
-    "//services/service_manager/embedder",
-    "//services/service_manager/public/cpp/service_executable:support"
-  ]
-}
-
-executable("demo_ipc") {
-  testonly = true
-  sources = [
-    "demo_ipc.cc",
-    "demo_ipc_messages.h",
-    "demo_ipc_message_generator.h",
-    "demo_ipc_message_generator.cc",
-  ]
-
-  deps = [
-    "//base",
-    "//base:base_static",
-    "//mojo/public",
-    "//services/service_manager/embedder",
-  ]
-
-  deps += [ "//services/service_manager:all" ]
-}
+#executable("demo_ipc") {
+#  testonly = true
+#  sources = [
+#    "demo_ipc.cc",
+#    "demo_ipc_messages.h",
+#    "demo_ipc_message_generator.h",
+#    "demo_ipc_message_generator.cc",
+#  ]
+#
+#  deps = [
+#    "//base",
+#    "//base:base_static",
+#    "//mojo/public",
+#    "//services/service_manager/embedder",
+#  ]
+#
+#  deps += [ "//services/service_manager:all" ]
+#}
 
 mojom("mojom_test") {
   sources = [

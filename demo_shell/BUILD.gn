@@ -1,4 +1,4 @@
-import("//build/config/jumbo.gni")
+#import("//build/config/jumbo.gni")
 import("//build/util/process_version.gni")
 import("//build/util/version.gni")
 import("//third_party/icu/config.gni")
@@ -44,7 +44,7 @@ process_version("demo_webview_version_header") {
   ]
 }
 
-jumbo_static_library("demo_shell_lib") {
+static_library("demo_shell_lib") {
     testonly = true
     sources = [
         "android/demo_shell_manager.cc",
@@ -95,7 +95,7 @@ jumbo_static_library("demo_shell_lib") {
         # ":mojo_bindings_js",
 
         # This exposes all public content APIs.
-        "//content/public/app:both",
+        "//content/public/app",
         "//content/public/browser",
         "//content/public/child",
         "//content/public/common",
@@ -111,7 +111,7 @@ jumbo_static_library("demo_shell_lib") {
         "//base",
         "//base:base_static",
         "//cc",
-        "//components/crash/content/app",
+        "//components/crash/core/app",
         "//components/keyed_service/content",
         "//components/web_cache/browser",
 
@@ -213,6 +213,7 @@ repack("pak") {
     "$root_gen_dir/content/app/resources/content_resources_100_percent.pak",
     "$root_gen_dir/content/browser/tracing/tracing_resources.pak",
     "$root_gen_dir/content/content_resources.pak",
+    "$root_gen_dir/content/dev_ui_content_resources.pak",
     "$root_gen_dir/mojo/public/js/mojo_bindings_resources.pak",
     "$root_gen_dir/net/net_resources.pak",
     "$root_gen_dir/third_party/blink/public/resources/blink_resources.pak",
@@ -229,7 +230,8 @@ repack("pak") {
 
   deps = [
     ":demo_shell_resources_grit",
-    "//content:resources",
+    "//content:content_resources",
+    "//content:dev_ui_content_resources",
     "//content/app/resources",
     "//content/browser/tracing:resources",
     "//mojo/public/js:resources",

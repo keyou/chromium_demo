@@ -1,7 +1,8 @@
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/logging.h"
-#include "base/message_loop/message_loop.h"
+#include "base/run_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 
 int main(int argc, char** argv) {
@@ -12,7 +13,7 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true,false,true,false);
   // 创建主消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_thread_task_executor;
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
