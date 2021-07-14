@@ -4,6 +4,9 @@
 
 ---
 
+> This project is migrating to chromium version 91.0.4472,not done yet,please checkout `c/80.0.3987` branch if you want to success build! If you are interested in this, please feel free to contact me in the Discussions channel.  
+> I have built a WeChat group, used to facilitate technical discussions, if you are interested, welcome to add my WeChat, I will pull you into the discussion group. WeChat: ![wechat](./wechat.jpeg)
+
 This project is used to demonstrate how to use some basic mechanisms in chromium, including asynchronous multitasking, mojo, multi-process, etc.
 
 > Tip: If you are new to chromium, it is recommended to study these demos in order.
