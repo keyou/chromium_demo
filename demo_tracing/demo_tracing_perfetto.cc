@@ -5,7 +5,7 @@
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/memory/ref_counted.h"
-#include "base/message_loop/message_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/process/process.h"
 #include "base/task/post_task.h"
 #include "base/task/task_traits.h"
@@ -52,7 +52,10 @@ class TracingController : public mojo::DataPipeDrainer::Client,
     // 这里进行稍微改造即可支持多进程的 Trace
     start_callback_ = std::move(start_callback);
     perfetto::TraceConfig perfetto_config = tracing::GetDefaultPerfettoConfig(
-        trace_config, /*privacy_filtering_enabled=*/false);
+      trace_config,
+      /*privacy_filtering_enabled=*/false,
+      /*convert_to_legacy_json=*/true,
+      perfetto::protos::gen::ChromeConfig::USER_INITIATED);
     // Initialize the new service instance by pushing a pipe to each currently
     // registered client, including the browser process itself.
     std::vector<tracing::mojom::ClientInfoPtr> initial_clients;
@@ -74,7 +77,7 @@ class TracingController : public mojo::DataPipeDrainer::Client,
     consumer_host_->EnableTracing(
         tracing_session_host_.BindNewPipeAndPassReceiver(),
         receiver_.BindNewPipeAndPassRemote(), std::move(perfetto_config),
-        tracing::mojom::TracingClientPriority::kUserInitiated);
+        base::File());
     return true;
   }
   bool StopTracing(base::OnceClosure stop_callback) {
@@ -83,7 +86,7 @@ class TracingController : public mojo::DataPipeDrainer::Client,
     mojo::ScopedDataPipeProducerHandle producer_handle;
     mojo::ScopedDataPipeConsumerHandle consumer_handle;
     MojoResult result =
-        mojo::CreateDataPipe(nullptr, &producer_handle, &consumer_handle);
+        mojo::CreateDataPipe(nullptr, producer_handle, consumer_handle);
     if (result != MOJO_RESULT_OK) {
       return true;
     }
@@ -100,7 +103,9 @@ class TracingController : public mojo::DataPipeDrainer::Client,
     if (start_callback_)
       std::move(start_callback_).Run();
   }
-  void OnTracingDisabled() override {}
+
+  void OnTracingDisabled(bool tracing_succeeded) override {
+  }
 
   // mojo::DataPipeDrainer::Client
   void OnDataAvailable(const void* data, size_t num_bytes) override {
@@ -145,7 +150,7 @@ int main(int argc, char** argv) {
   base::FeatureList::InitializeInstance(features::kTracingServiceInProcess.name,
                                         "");
 
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_thread_task_executor;
 
   // 初始化线程池，会创建新的线程，在新的线程中会创建消息循环 MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
