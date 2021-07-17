@@ -17,8 +17,8 @@ Demo list:
 1. `demo_exe`: The simplest demo to demonstrate gn and create your own exe;
 2. `demo_log`: Demo log library;
 3. `demo_tracing_console`: Demonstrate using Trace to output to the console;
-4. `demo_tasks`: Demonstrate the use of thread pool ThreadPool;
-5. `demo_messageloop`: Demonstrate using the message loop MessageLoop;
+4. `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
+5. `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
 6. `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
 7. `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
 8. `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;

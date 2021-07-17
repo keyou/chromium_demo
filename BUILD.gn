@@ -8,8 +8,8 @@ group("demo") {
     ":demo_exe",
     ":demo_log",
     "demo_tracing",
-    ":demo_messageloop",
-    ":demo_tasks",
+    ":demo_task_executor",
+    ":demo_task_thread_pool",
     ":demo_mojo_single_process",
     ":demo_mojo_multiple_process",
     ":demo_mojo_multiple_process_binding",
@@ -60,24 +60,20 @@ executable("demo_log") {
   ]
 }
 
-executable("demo_messageloop") {
+executable("demo_task_executor") {
   sources = [
-    "demo_tasks.cc",
+    "demo_task_executor.cc",
   ]
-
-  defines = ["DEMO_MESSAGE_LOOP"]
 
   deps = [
     "//base",
   ]
 }
 
-executable("demo_tasks") {
+executable("demo_task_thread_pool") {
   sources = [
-    "demo_tasks.cc",
+    "demo_task_thread_pool.cc",
   ]
-
-  defines = ["DEMO_TASK"]
 
   deps = [
     "//base",

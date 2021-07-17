@@ -13,8 +13,8 @@ Demo 列表：
 1. `demo_exe`: 最简单的 demo，演示 gn 及创建自己的 exe；
 2. `demo_log`: 演示使用日志库；
 3. `demo_tracing_console`: 演示使用 Trace 输出到控制台；
-4. `demo_tasks`: 演示使用线程池 ThreadPool;
-5. `demo_messageloop`: 演示使用消息循环 MessageLoop;
+4. `demo_task_thread_pool`: 演示使用线程池 ThreadPool;
+5. `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor;
 6. `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
 7. `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
 8. `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；

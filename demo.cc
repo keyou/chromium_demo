@@ -12,8 +12,11 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true,false,true,false);
-  // 创建主消息循环
+
+  // 创建消息循环，旧版本的 MessageLoop 被换成了 SingleThreadTaskExecutor
+  // 详见 commit 636e705be41ed9e7f50cdb13ceb5a9af5e3f4e5c
   base::SingleThreadTaskExecutor main_thread_task_executor;
+  
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
