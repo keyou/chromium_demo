@@ -10,7 +10,7 @@
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/memory/ref_counted.h"
-#include "base/message_loop/message_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/task/task_traits.h"
 #include "base/test/test_timeouts.h"
 #include "base/timer/timer.h"
@@ -153,9 +153,6 @@ int main(int argc, char** argv) {
       std::move(file_endpoint));
   DCHECK(result);
 
-  // 因为我们使用了 content::BrowserTaskEnvironment, 它是用于单元测试的，
-  // 因此默认有任务调度的超时时间，我们不是单元测试，所以禁用任务调度超时机制
-  base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
   stop_tracing_run_loop.Run();
   LOG(INFO) << "save to tracing file: " << file_path;
   return 0;
