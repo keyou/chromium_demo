@@ -4,7 +4,7 @@
 #include "base/logging.h"
 #include "base/memory/ref_counted_memory.h"
 #include "base/memory/scoped_refptr.h"
-#include "base/message_loop/message_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/run_loop.h"
 #include "base/task/post_task.h"
 #include "base/trace_event/common/trace_event_common.h"
@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
   TraceCount(i++);
   TraceCount(i++);
 
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_thread_task_executor;
 
   base::RunLoop run_loop;
   // 停止接收新的 Trace
