@@ -4,8 +4,9 @@
 
 ---
 
-> This project is migrating to chromium version 91.0.4472,not done yet,please checkout `c/80.0.3987` branch if you want to success build! If you are interested in this, please feel free to contact me in the Discussions channel.  
-> I have built a WeChat group, used to facilitate technical discussions, if you are interested, welcome to add my WeChat, I will pull you into the discussion group. WeChat: ![wechat](./wechat.jpeg)
+> This project is migrating to chromium version `91.0.4472`,not done yet,please checkout `c/80.0.3987` branch if you want to success build! If you are interested in this, please feel free to contact me in the Discussions channel.  
+> I have built a WeChat group, used to facilitate technical discussions, if you are interested, welcome to add my WeChat, I will pull you into the discussion group. WeChat:  
+> <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
 This project is used to demonstrate how to use some basic mechanisms in chromium, including asynchronous multitasking, mojo, multi-process, etc.
 
