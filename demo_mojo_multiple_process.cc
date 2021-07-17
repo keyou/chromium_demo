@@ -1,6 +1,7 @@
 #include <base/command_line.h>
 #include <base/logging.h>
-#include <base/message_loop/message_loop.h>
+#include <base/run_loop.h>
+#include <base/task/single_thread_task_executor.h>
 #include <base/task/post_task.h>
 #include <base/task/thread_pool/thread_pool_instance.h>
 
@@ -23,7 +24,7 @@
 // For bindings API
 #include "demo/mojom/test.mojom.h"
 #include "demo/mojom/test2.mojom.h"
-#include "mojo/public/cpp/bindings/binding.h"
+// #include "mojo/public/cpp/bindings/binding.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 
 #include <iostream>
@@ -135,7 +136,7 @@ void MojoProducer() {
     mojo::ScopedDataPipeConsumerHandle consumer;
     // 内部涉及系统资源的分配，可能会失败，因此不建议使用 mojo::DataPipe
     // 来创建，会导致崩溃
-    result = mojo::CreateDataPipe(nullptr, &producer, &consumer);
+    result = mojo::CreateDataPipe(nullptr, producer, consumer);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     result = mojo::WriteMessageRaw(pipe.get(), kMessage, sizeof(kMessage),
                                    &consumer->value(), 1,
@@ -337,7 +338,7 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
   // 创建主线程消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_task_executor;
   base::RunLoop run_loop;
 
   // Init会创建一个sokcetpair和一条pipe，共4个fd
