@@ -1,6 +1,6 @@
 #include "base/command_line.h"
 #include "base/logging.h"
-#include "base/message_loop/message_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/process/launch.h"
 #include "base/task/post_task.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
@@ -23,15 +23,23 @@
 #include "demo/mojom/test2.mojom.h"
 #include "demo/mojom/test3.mojom.h"
 #include "demo/mojom/test4.mojom.h"
-#include "mojo/public/cpp/bindings/binding.h"
+// #include "mojo/public/cpp/bindings/binding.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
+#include "mojo/public/cpp/bindings/receiver.h"
+#include "mojo/public/cpp/bindings/remote.h"
+#include "mojo/public/cpp/bindings/pending_receiver.h"
+#include "mojo/public/cpp/bindings/pending_remote.h"
 
 // For associated bindings API
 #include <iostream>
 #include <vector>
 
-#include "mojo/public/cpp/bindings/associated_binding.h"
-#include "mojo/public/cpp/bindings/associated_interface_ptr.h"
+// #include "mojo/public/cpp/bindings/associated_binding.h"
+#include "mojo/public/cpp/bindings/associated_receiver.h"
+#include "mojo/public/cpp/bindings/associated_remote.h"
+#include "mojo/public/cpp/bindings/pending_associated_receiver.h"
+#include "mojo/public/cpp/bindings/pending_associated_remote.h"
+#include "mojo/public/cpp/bindings/associated_interface_ptr_info.h"
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 
 // 在新版本中这些类被重命名,这里模拟新版本
@@ -40,17 +48,18 @@ using Remote = mojo::InterfacePtr<T>;
 template <class T>
 using PendingRemote = mojo::InterfacePtrInfo<T>;
 template <class T>
-using Receiver = mojo::Binding<T>;
+using Receiver = mojo::Receiver<T>;
+// using Receiver = mojo::InterfaceRequest<T>;
 template <class T>
 using PendingReceiver = mojo::InterfaceRequest<T>;
 
 // 以下定义用于模拟新版本的关联接口
 template <class T>
-using AssociatedRemote = mojo::AssociatedInterfacePtr<T>;
+using AssociatedRemote = mojo::AssociatedRemote<T>;
 template <class T>
 using PendingAssociatedRemote = mojo::AssociatedInterfacePtrInfo<T>;
 template <class T>
-using AssociatedReceiver = mojo::AssociatedBinding<T>;
+using AssociatedReceiver = mojo::AssociatedReceiver<T>;
 template <class T>
 using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
@@ -77,7 +86,7 @@ class TestImpl : public demo::mojom::Test {
 #pragma region Test2
 class Test2Impl : public demo::mojom::Test2 {
  public:
-  explicit Test2Impl(PendingReceiver<demo::mojom::Test2> receiver)
+  explicit Test2Impl(mojo::PendingReceiver<demo::mojom::Test2> receiver)
       : receiver_(this, std::move(receiver)) {}
   void SendMessagePipeHandle(
       mojo::ScopedMessagePipeHandle pipe_handle) override {
@@ -86,7 +95,7 @@ class Test2Impl : public demo::mojom::Test2 {
   }
 
  private:
-  Receiver<demo::mojom::Test2> receiver_;
+  mojo::Receiver<demo::mojom::Test2> receiver_;
 };
 
 class ApiImpl : public demo::mojom::Api {
@@ -101,15 +110,15 @@ class ApiImpl : public demo::mojom::Api {
   }
 
  private:
-  Receiver<Api> receiver_;
+  mojo::Receiver<Api> receiver_;
   AssociatedReceiver<Api> associated_receiver_;
 };
 
 class Api2Impl : public demo::mojom::Api2 {
  public:
-  explicit Api2Impl(PendingReceiver<Api2> receiver)
+  explicit Api2Impl(mojo::PendingReceiver<Api2> receiver)
       : receiver_(this, std::move(receiver)), associated_receiver_(nullptr) {}
-  explicit Api2Impl(PendingAssociatedReceiver<Api2> receiver)
+  explicit Api2Impl(mojo::PendingAssociatedReceiver<Api2> receiver)
       : receiver_(nullptr), associated_receiver_(this, std::move(receiver)) {}
 
   void PrintApi2(const std::string& data) override {
@@ -117,8 +126,8 @@ class Api2Impl : public demo::mojom::Api2 {
   }
 
  private:
-  Receiver<Api2> receiver_;
-  AssociatedReceiver<Api2> associated_receiver_;
+  mojo::Receiver<Api2> receiver_;
+  mojo::AssociatedReceiver<Api2> associated_receiver_;
 };
 #pragma endregion
 
@@ -127,7 +136,7 @@ class Test3Impl : public demo::mojom::Test3 {
  public:
   explicit Test3Impl(PendingReceiver<Test3> receiver)
       : receiver_(this, std::move(receiver)) {}
-  void GetApi(PendingReceiver<Api> api) override {
+  void GetApi(mojo::InterfaceRequest<Api> api) override {
     LOG(INFO) << "Test3 run: GetApi";
     api_ = std::make_unique<ApiImpl>(std::move(api));
   }
@@ -141,12 +150,12 @@ class Test3Impl : public demo::mojom::Test3 {
  private:
   std::unique_ptr<ApiImpl> api_;
   Remote<Api2> remote_api2_;
-  Receiver<Test3> receiver_;
+  mojo::Receiver<Test3> receiver_;
 };
 
 class Test32Impl : public demo::mojom::Test32 {
  public:
-  explicit Test32Impl(PendingReceiver<Test32> receiver)
+  explicit Test32Impl(mojo::PendingReceiver<Test32> receiver)
       : receiver_(this, std::move(receiver)) {}
   void GetApi(PendingAssociatedReceiver<Api> api) override {
     LOG(INFO) << "Test32 run: GetApi";
@@ -161,8 +170,8 @@ class Test32Impl : public demo::mojom::Test32 {
 
  private:
   std::unique_ptr<ApiImpl> api_;
-  AssociatedRemote<Api2> remote_api2_;
-  Receiver<Test32> receiver_;
+  mojo::AssociatedRemote<Api2> remote_api2_;
+  mojo::Receiver<Test32> receiver_;
 };
 #pragma endregion
 
@@ -268,7 +277,7 @@ void MojoProducer() {
     // 在2019年3月之后的代码中这两个类被改为了 Remote,PendingRemote
     using TestPtr = mojo::InterfacePtr<demo::mojom::Test>;
     using TestPtrInfo = mojo::InterfacePtrInfo<demo::mojom::Test>;
-    auto test_ptr = new TestPtr(TestPtrInfo(std::move(pipe), 0));
+    auto* test_ptr = new TestPtr(TestPtrInfo(std::move(pipe), 0));
     auto& test = *test_ptr;
     test->Hello("World!");
     LOG(INFO) << "Test1 call: Hello";
@@ -318,7 +327,7 @@ void MojoProducer() {
   {
     // 使用 pipe32 来调用Test32接口
     // 为了避免pipe32被销毁后Api2Impl无法响应对方的调用,这里使用new
-    auto test32_ptr =
+    auto* test32_ptr =
         new Remote<Test32>(PendingRemote<Test32>(std::move(pipe32), 0));
     auto& test32 = *test32_ptr;
 
@@ -387,11 +396,11 @@ void MojoConsumer() {
   {
     // 这是执行端，需要将Test接口bind到具体的实现类上。
     // 在新的版本中，这两个类被改为了 Receiver,PendingReceiver
-    using TestBinding = mojo::Binding<demo::mojom::Test>;
-    using TestRequest = mojo::InterfaceRequest<demo::mojom::Test>;
-    auto test = new TestImpl;
+    // using TestBinding = mojo::Binding<demo::mojom::Test>;
+    // using TestRequest = mojo::InterfaceRequest<demo::mojom::Test>;
+    auto* test = new TestImpl;
     // 为了测试，故意泄漏，避免pipe被close
-    auto binding = new TestBinding(test, TestRequest(std::move(pipe)));
+    auto* binding = new Receiver<demo::mojom::Test>(test, PendingReceiver<demo::mojom::Test>(std::move(pipe)));
     ALLOW_UNUSED_LOCAL(binding);
   }
   {
@@ -401,7 +410,7 @@ void MojoConsumer() {
   { new Test3Impl(PendingReceiver<Test3>(std::move(pipe31))); }
   { new Test32Impl(PendingReceiver<Test32>(std::move(pipe32))); }
   {
-    auto test4 = new InterfaceBrokerImpl(
+    auto* test4 = new InterfaceBrokerImpl(
         PendingReceiver<InterfaceBroker>(std::move(pipe4)));
     test4->AddMap<Interface1, Interface1Impl>("Interface1");
     test4->AddMap<Interface2, Interface2Impl>("Interface2");
@@ -412,7 +421,7 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
   // 创建主线程消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_task_executor;
   base::RunLoop run_loop;
 
   // Init会创建一个sokcetpair和一条pipe，共4个fd
