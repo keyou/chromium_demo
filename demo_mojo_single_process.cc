@@ -1,6 +1,7 @@
 #include <base/logging.h>
 #include "base/command_line.h"
-#include "base/message_loop/message_loop.h"
+#include "base/run_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include <base/threading/thread.h>
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
@@ -94,7 +95,7 @@ int main(int argc, char** argv) {
   mojo::ScopedDataPipeConsumerHandle consumer;
   // 内部涉及系统资源的分配，可能会失败，因此不建议使用 mojo::DataPipe
   // 来创建，会导致崩溃
-  result = mojo::CreateDataPipe(nullptr, &producer, &consumer);
+  result = mojo::CreateDataPipe(nullptr, producer, consumer);
   // 使用 DataPipe 写数据
   {
     const char kMessage[] = "DataPipe";
@@ -137,7 +138,7 @@ int main(int argc, char** argv) {
   }
 
   // 创建消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_thread_task_executor;
   base::RunLoop run_loop;
   run_loop.Run();
   return 0;
