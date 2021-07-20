@@ -1,6 +1,6 @@
 # Demo
 
-[中文](./README_zh.md)(较新) | EN
+[中文 README](./README_zh.md)
 
 ---
 
@@ -121,6 +121,21 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2021.7.17
+
+- Migrate below demos to v91：  
+    - demo_exe
+    - demo_tracing_perfetto
+    - demo_tracing_perfetto_content
+    - demo_messageloop
+    - demo_tasks
+    - demo_mojo_single_process
+    - demo_mojo_multiple_process
+    - demo_mojo_multiple_process_binding
+-  Rename below demos：
+    - demo_messageloop to demo_task_executor
+    - demo_tasks to demo_task_thread_pool
 
 ### 2020.8.10
 

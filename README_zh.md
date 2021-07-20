@@ -118,6 +118,21 @@ Demo 列表：
 
 ## 更新日志
 
+### 2021.7.17
+
+- 升级以下 demo 到 v91 版本：  
+    - demo_exe
+    - demo_tracing_perfetto
+    - demo_tracing_perfetto_content
+    - demo_messageloop （改名为 demo_task_executor）
+    - demo_tasks （改名为 demo_task_thread_pool）
+    - demo_mojo_single_process
+    - demo_mojo_multiple_process
+    - demo_mojo_multiple_process_binding
+-  重命名以下 demo：
+    - demo_messageloop 改名为 demo_task_executor
+    - demo_tasks 改名为 demo_task_thread_pool
+
 ### 2020.8.10
 
 - 添加 demo_gl, 演示通过 `//ui/gl` 模块调用 GL 进行渲染；

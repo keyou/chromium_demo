@@ -1,9 +1,19 @@
+/**
+ * 升级改动
+ * -------
+ * 80->91:
+ *  - 移除 ServiceManager 相关类，让 Browser 直接管理 Services, 详见
+ *    https://bugs.chromium.org/p/chromium/issues/detail?id=977637
+ *  - 使用新的 Mojo API（新API名称）替换旧的 Mojo API，详见
+ *    https://bugs.chromium.org/p/chromium/issues/detail?id=955171&q=955171&can=1
+ */
+
 #include "base/at_exit.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
-#include "base/message_loop/message_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/no_destructor.h"
 #include "base/task/post_task.h"
 #include "base/task/single_thread_task_executor.h"
@@ -21,23 +31,23 @@
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
 
-#include "mojo/public/cpp/bindings/binding.h"
-#include "mojo/public/cpp/bindings/binding_set.h"
+// #include "mojo/public/cpp/bindings/binding.h"
+// #include "mojo/public/cpp/bindings/binding_set.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 
 // For services
-#include "services/service_manager/embedder/main.h"
-#include "services/service_manager/embedder/main_delegate.h"
-#include "services/service_manager/embedder/switches.h"
+// #include "services/service_manager/embedder/main.h"
+// #include "services/service_manager/embedder/main_delegate.h"
+// #include "services/service_manager/embedder/switches.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
 #include "services/service_manager/public/cpp/manifest.h"
 #include "services/service_manager/public/cpp/manifest_builder.h"
 #include "services/service_manager/public/cpp/service.h"
-#include "services/service_manager/public/cpp/service_binding.h"
+// #include "services/service_manager/public/cpp/service_binding.h"
 #include "services/service_manager/public/cpp/service_executable/service_executable_environment.h"
 #include "services/service_manager/public/cpp/service_executable/switches.h"
-#include "services/service_manager/sandbox/sandbox_type.h"
-#include "services/service_manager/sandbox/switches.h"
+// #include "services/service_manager/sandbox/sandbox_type.h"
+// #include "services/service_manager/sandbox/switches.h"
 #include "services/service_manager/service_manager.h"
 #include "services/service_manager/service_process_host.h"
 #include "services/service_manager/service_process_launcher.h"
@@ -78,17 +88,17 @@ class TestInterfaceImpl : public demo::mojom::TestInterface {
 class TestService : public service_manager::Service {
  public:
   TestService(service_manager::mojom::ServiceRequest request) {
-    service_binding_ = std::make_unique<service_manager::ServiceBinding>(
+    service_receiver_ = std::make_unique<service_manager::ServiceReceiver>(
         this, std::move(request));
   }
   TestService() {
-    service_binding_ = std::make_unique<service_manager::ServiceBinding>(this);
+    service_receiver_ = std::make_unique<service_manager::ServiceReceiver>(this);
   }
   void OnStart() override {
     LOG(INFO) << "TestService Start.";
     // 演示从一个服务内请求其它服务提供的接口
     Remote<RootInterface> root;
-    service_binding_->GetConnector()->BindInterface(
+    service_receiver_->GetConnector()->BindInterface(
         "consumer_service", root.BindNewPipeAndPassReceiver());
     root->Hi("TestService");
   }
@@ -110,7 +120,7 @@ class TestService : public service_manager::Service {
   std::unique_ptr<TestInterfaceImpl> test_interface_;
   // 这里为了demo简单,不使用BinderRegistry
   // service_manager::BinderRegistry registry_;
-  std::unique_ptr<service_manager::ServiceBinding> service_binding_;
+  std::unique_ptr<service_manager::ServiceReceiver> service_receiver_;
 };
 
 const service_manager::Manifest& GetTestManifest() {
@@ -144,9 +154,9 @@ class RootInterfaceImpl : public demo::mojom::RootInterface {
 
 class ConsumerService : public service_manager::Service {
  public:
-  ConsumerService() : service_binding_(this) {}
+  ConsumerService() : service_receiver_(this) {}
   ConsumerService(service_manager::mojom::ServiceRequest request)
-      : service_binding_(this, std::move(request)) {}
+      : service_receiver_(this, std::move(request)) {}
 
   void OnStart() override { LOG(INFO) << "ConsumerService Start."; }
 
@@ -165,7 +175,7 @@ class ConsumerService : public service_manager::Service {
 
  private:
   std::unique_ptr<RootInterfaceImpl> root_interface_;
-  service_manager::ServiceBinding service_binding_;
+  service_manager::ServiceBinding service_receiver_;
 };
 
 const service_manager::Manifest& GetConsumerManifest() {
@@ -304,7 +314,7 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
     }
 
     // 创建主消息循环
-    base::MessageLoop message_loop;
+    base::SingleThreadTaskExecutor single_thread_task_executor;
     // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
     base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
