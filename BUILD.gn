@@ -14,7 +14,7 @@ group("demo") {
     ":demo_mojo_multiple_process",
     ":demo_mojo_multiple_process_binding",
     # ":demo_services",
-    #":demo_ipc",
+    # ":demo_ipc",
     ":demo_memory",
     "demo_resources",
     "demo_gl",
@@ -29,7 +29,7 @@ group("demo") {
 
   if(!is_linux) {
     deps -= [
-      ":demo_services",
+      # ":demo_services",
       "demo_views",
       "demo_gl",
       "demo_viz",
