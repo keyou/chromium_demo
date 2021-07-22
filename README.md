@@ -122,6 +122,11 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ## Changelog
 
+### 2021.7.22
+
+- Migrate below demos to v91：  
+    - demo_memory
+
 ### 2021.7.17
 
 - Migrate below demos to v91：  

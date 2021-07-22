@@ -16,7 +16,8 @@
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/logging.h"
-#include "base/message_loop/message_loop.h"
+#include "base/run_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 
 // For SharedMemoryTest
@@ -74,7 +75,7 @@ void MemoryPresureTest() {
   // https://source.chromium.org/chromium/chromium/src/+/master:content/browser/browser_main_loop.cc;l=367;drc=88c20a4027a89de88d6c559fe2ae49124a01ff8d
   // 初始化，要一直保活
   // 在新版本才有
-  //std::unique_ptr<util::MultiSourceMemoryPressureMonitor> monitor;
+  // std::unique_ptr<util::MultiSourceMemoryPressureMonitor> monitor;
 #if defined(OS_CHROMEOS)
   if (chromeos::switches::MemoryPressureHandlingEnabled())
     monitor = std::make_unique<util::MultiSourceMemoryPressureMonitor>();
@@ -83,6 +84,8 @@ void MemoryPresureTest() {
 #else
   return;
 #endif
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
 
   base::MemoryPressureMonitor* monitor = base::MemoryPressureMonitor::Get();
   base::MemoryPressureMonitor::MemoryPressureLevel level =
@@ -93,6 +96,8 @@ void MemoryPresureTest() {
     LOG(INFO) << "应该释放内存";
     // 应该释放内存
   }
+
+#pragma clang diagnostic pop
 }
 
 int main(int argc, char** argv) {
@@ -103,7 +108,7 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, false, true, false);
   // 创建主消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor single_thread_task_executor;
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
