@@ -4,13 +4,16 @@
 
 ---
 
-> This project is migrating to chromium version `91.0.4472`,not done yet,please checkout `c/80.0.3987` branch if you want to success build! If you are interested in this, please feel free to contact me in the Discussions channel.  
+> This project is migrating to chromium version `91.0.4472`,not done yet,if you want to build all demos,please checkout this project to `c/80.0.3987`, and checkout chromium to `80.0.3987.165`,then run `gclient sync`. If you are interested in this, please feel free to contact me in the Discussions channel.  
 > I have built a WeChat group, used to facilitate technical discussions, if you are interested, welcome to add my WeChat, I will pull you into the discussion group. WeChat:  
 > <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
 This project is used to demonstrate how to use some basic mechanisms in chromium, including asynchronous multitasking, mojo, multi-process, etc.
 
-> Tip: If you are new to chromium, it is recommended to study these demos in order.
+> Tips:   
+> 1. If you are new to chromium, it is recommended to study these demos in order.  
+> 2. These demos are ONLY tested on Linux and Android.
+> 3. Welcome PR/MR.
 
 Demo list:
 
@@ -49,13 +52,14 @@ Documents:
 
 Public documents are in the [docs](./docs) directory, and other documents are in the corresponding directory of the code.
 
-## Usage one (recommended)
+## Usage
 
-1. Enter chromium's `src` directory;
-2. Execute the following command to clone the repository to the `src/demo` directory;
+1. Go to the `src` directory of chromium and switch to a supported branch, such as `80.0.3987.165` for version 80 or `91.0.4472.144` for version 91 (the last version number does not matter). And run `gclient sync` to synchronize the code.
+2. Run the following command to clone this repository to the `src/demo` directory and switch to the corresponding branch, e.g. `c/80.0.3987` for version 80 or `c/91.0.4472` for version 91.
 
     ```sh
     git clone <address of current repository> demo
+    git checkout <the branch>
     ```
 
 3. Find the `out/Default/args.gn` file in your compilation output directory and add the following parameters:
@@ -69,42 +73,9 @@ Public documents are in the [docs](./docs) directory, and other documents are in
     target_cpu="arm64" # Other architectures can be selected as needed x86, x64, arm, mipsel
     ```
 
-4. Run `ninja -C out/Default demo` to generate all demo programs (see [BUILD.gn](./BUILD.gn) for details);
+4. Run `ninja -C out/Default <name in demo list>` to generate the required demo (see [BUILD.gn](. /BUILD.gn)), for example using the name `demo_exe` to generate the demo_exe program. Or use `demo` to generate all programs.
 
-## Usage two (use gclient)
-
-1. Go to the root directory of the chromium project (the directory above the src) and find the `.gclient` file;
-2. Open the `.gclient` file and modify it according to the following settings:
-
-    ```python
-    solutions = [
-        {"name": "src",
-            "url": "https://chromium.googlesource.com/chromium/src.git",
-            "deps_file": "DEPS",
-            "managed": False,
-            "custom_deps": {
-                # let gclient pull demo project to'src/demo' dir
-                "src/demo": "<address of current repository>",
-            },
-            "custom_vars": {},
-        }
-    ]
-    ...
-    ```
-
-3. Find the `out/Default/args.gn` file in your compilation output directory and add the following parameters:
-
-    ```python
-    # add extra deps to gn root
-    root_extra_deps = ["//demo"]
-    
-    # If you want to compile the demo of android platform, you need to add the following parameters
-    target_os="android"
-    target_cpu="arm64" # Other architectures can be selected as needed x86, x64, arm, mipsel
-    ```
-
-4. Execute the `gclient sync` synchronization code, which will pull the `demo` repository to `src/demo`;
-5. Run `ninja -C out/Default demo` to generate all demo programs (see [BUILD.gn](./BUILD.gn) for details);
+> REPEAT: These demos are ONLY tested on Linux and Android.
 
 ## TODO
 

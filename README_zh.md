@@ -1,12 +1,15 @@
 # Demo
 
-> 这个项目正在迁移到 chromium `91.0.4472` 版本，目前还没有完成，如果你想成功编译的话，请切换到 `c/80.0.3987` 分支。如果你对此感兴趣，欢迎随时联系我！  
-> 我打算建一个微信群，用来方便大家进行技术讨论，如果你感兴趣，欢迎加我微信，我会把你拉入讨论群：  
+> 这个项目正在迁移到 chromium `91.0.4472` 版本，目前还没有完成，如果你想成功编译的话，请将当前项目切换到 `c/80.0.3987` 分支，并将 chromium 切换到 `80.0.3987.165` Tag（切换后需要执行 `glcient sync` 同步代码）。如果你对此感兴趣，欢迎随时联系我！  
+> 我建了一个微信群，用来方便大家进行技术讨论，如果你感兴趣，欢迎加我微信，我会把你拉入讨论群：  
 > <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
 这个项目用来演示如何使用 chromium 中的一些基础机制，包括异步多任务，mojo，多进程等。
 
-> 提示：如果你是 chromium 的新手，建议按照顺序学习这些 demo。
+> 提示：  
+> 1. 如果你是 chromium 的新手，建议按照顺序学习这些 demo。  
+> 2. 这些 demo 只在 Linux 和 Android 上进行了测试。
+> 3. 欢迎 PR/MR。
 
 Demo 列表：
 
@@ -45,16 +48,17 @@ Demo 列表：
 
 公共文档在 [docs](./docs) 目录，其他文档在代码相应目录下。
 
-## 用法一（推荐）
+## 用法
 
-1. 进入 chromium 的 `src` 目录；
-2. 执行以下命令将该仓库 clone 到 `src/demo` 目录下；
+1. 进入 chromium 的 `src` 目录，并切换到支持的分支，比如 80 版本的 `80.0.3987.165` 或者 91 版本的 `91.0.4472.144`（最后一位版本号不影响）。并执行 `gclient sync` 同步代码；
+2. 执行以下命令将该仓库 clone 到 `src/demo` 目录下，并切换到对应分支，比如 80 版本的 `c/80.0.3987` 或者 91 版本的 `c/91.0.4472`；
 
     ```sh
     git clone <当前仓库的地址> demo
+    git checkout <对应的分支>
     ```
 
-3. 找到你的编译输出目录中的 `out/Default/args.gn` 文件，添加以下参数：
+3. 找到编译输出目录中的 `out/Default/args.gn` 文件，添加以下参数：
 
     ```python
     # add extra deps to gn root
@@ -65,42 +69,9 @@ Demo 列表：
     target_cpu="arm64" # 可以根据需要选择其它架构 x86,x64,arm,mipsel
     ```
 
-4. 执行 `ninja -C out/Default demo` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
+4. 执行 `ninja -C out/Default <demo列表中的名称>` 生成所需的demo（详见 [BUILD.gn](./BUILD.gn)），比如使用名称 `demo_exe` 生成 demo_exe 程序。或者使用 `demo` 生成所有的程序；
 
-## 用法二（使用 gclient)
-
-1. 进入 chromium 项目的根目录（src 上一层目录）找到 `.gclient` 文件；
-2. 打开 `.gclient` 文件，参照下面的设置进行修改：
-
-    ```python
-    solutions = [
-        { "name"        : "src",
-            "url"         : "https://chromium.googlesource.com/chromium/src.git",
-            "deps_file"   : "DEPS",
-            "managed"     : False,
-            "custom_deps" : {
-                # let gclient pull demo project to 'src/demo' dir
-                "src/demo": "<当前仓库的地址>",
-            },
-            "custom_vars": {},
-        }
-    ]
-    ...
-    ```
-
-3. 找到你的编译输出目录中的 `out/Default/args.gn` 文件，添加以下参数：
-
-    ```python
-    # add extra deps to gn root
-    root_extra_deps = ["//demo"]
-    
-    # 如果要编译 android 平台的 demo 需要额外添加以下参数
-    target_os="android"
-    target_cpu="arm64" # 可以根据需要选择其它架构 x86,x64,arm,mipsel
-    ```
-
-4. 执行 `gclient sync` 同步代码，这会拉取 `demo` 仓库到 `src/demo` ；
-5. 执行 `ninja -C out/Default demo` 生成所有 demo 程序（详见 [BUILD.gn](./BUILD.gn)）；
+> 再次强调，这些 demo 只在 Linux 和 Android 上测试通过，其他平台没有测试，欢迎提交 PR/MR 兼容其他平台。 
 
 ## TODO
 
