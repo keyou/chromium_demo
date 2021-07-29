@@ -17,20 +17,20 @@ This project is used to demonstrate how to use some basic mechanisms in chromium
 
 Demo list:
 
-1. `demo_exe`: The simplest demo to demonstrate gn and create your own exe;
-2. `demo_log`: Demo log library;
-3. `demo_tracing_console`: Demonstrate using Trace to output to the console;
-4. `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
-5. `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
-6. `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
-7. `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
-8. `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
+1. [v91] `demo_exe`: The simplest demo to demonstrate gn and create your own exe;
+2. [v91] `demo_log`: Demo log library;
+3. [v91] `demo_tracing_console`: Demonstrate using Trace to output to the console;
+4. [v91] `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
+5. [v91] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
+6. [v91] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
+7. [v91] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
+8. [v91] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
 9. `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
 10. `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
-11. `demo_memory`: Demonstrate the use of SharedMemory;
-12. `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
-13. `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
-14. `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
+11. [v91] `demo_memory`: Demonstrate the use of SharedMemory;
+12. [v91] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
+13. [v91] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
+14. [v91] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
 15. `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
 16. `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
 17. `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
@@ -92,6 +92,11 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2021.7.29
+
+- Migrate below demos to v91：  
+    - demo_resources
 
 ### 2021.7.22
 
