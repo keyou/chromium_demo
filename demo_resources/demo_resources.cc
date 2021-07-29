@@ -1,7 +1,8 @@
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/logging.h"
-#include "base/message_loop/message_loop.h"
+#include "base/run_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/path_service.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 
@@ -56,25 +57,25 @@ void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
   for (size_t i = 0; i < kDemoGenResourcesSize; i++) {
     auto resource = kDemoGenResources[i];
 
-    std::cout << resource.name << ": ["
-              << bundle.GetRawDataResource(resource.value) << "]" << std::endl;
+    std::cout << resource.path << ": ["
+              << bundle.GetRawDataResource(resource.id) << "]" << std::endl;
     // 读取语言内容
     // 本来应该读不到的，因为语言资源包里没有这些资源，但是内部代码为了单元测试
     // 添加了failback到数据资源包的逻辑，所以这里也能读取出来数据资源
     // 注意我本机是有 locale/xxx.pak 文件的(因为编译过content_shell)
-    std::cout << resource.name << ": ["
-              << l10n_util::GetStringUTF16(resource.value) << "]" << std::endl;
+    std::cout << resource.path << ": ["
+              << l10n_util::GetStringUTF16(resource.id) << "]" << std::endl;
   }
   if (use_strings) {
     std::cout << "------------------------------------------" << std::endl;
     // 遍历demo_gen_strings.pak资源
     for (size_t i = 0; i < kDemoGenStringsSize; i++) {
       auto resource = kDemoGenStrings[i];
-      std::cout << resource.name << ": ["
-                << bundle.GetRawDataResource(resource.value) << "]"
+      std::cout << resource.path << ": ["
+                << bundle.GetRawDataResource(resource.id) << "]"
                 << std::endl;
-      std::cout << resource.name << ": ["
-                << l10n_util::GetStringUTF16(resource.value) << "]"
+      std::cout << resource.path << ": ["
+                << l10n_util::GetStringUTF16(resource.id) << "]"
                 << std::endl;
     }
   }
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, false, true, false);
   // 创建主消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor single_thread_task_executor;
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
