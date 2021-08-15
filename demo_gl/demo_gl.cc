@@ -1,3 +1,7 @@
+/**
+ * 由于目前手上没有 Linux 设备可供调试UI，因此这个 demo 可能不能够直接运行，可能需要添加某些参数配置或者环境初始化代码；
+ */
+
 #include "base/at_exit.h"
 #include "base/callback.h"
 #include "base/command_line.h"
@@ -6,7 +10,6 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/ptr_util.h"
-// #include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -165,7 +168,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       scoped_refptr<gpu::gles2::FeatureInfo> feature_info =
           new gpu::gles2::FeatureInfo(workarounds, gpu_feature_info);
       g_context_state->InitializeGL(gpu_preferences, feature_info);
-      g_context_state->InitializeGrContext(feature_info->workarounds(),
+      g_context_state->InitializeGrContext(gpu_preferences, feature_info->workarounds(),
                                            nullptr);
     }
     DCHECK(g_context_state->MakeCurrent(g_gl_surface.get(), true));
@@ -181,12 +184,13 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   }
 
   // ui::PlatformWindowDelegate:
-  void OnBoundsChanged(const gfx::Rect& new_bounds) override {}
+  void OnBoundsChanged(const BoundsChange& change) override {}
 
+  void OnWillDestroyAcceleratedWidget() override {}
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
     widget_ = widget;
     // 如果需要去除窗口边框，将true改为false
-    ui::SetUseOSWindowFrame(widget_, true);
+    platform_window_->SetUseNativeFrame(true);
     if (platform_window_)
       InitializeDemo();
   }
@@ -207,7 +211,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
         action = 2;
       else
         return;
-      auto located_event = event->AsLocatedEvent();
+      auto* located_event = event->AsLocatedEvent();
       auto location = located_event->location();
       if (action != 2)
         DLOG(INFO) << "action,x,y= " << action << "," << location.x() << ","
@@ -232,7 +236,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   std::unique_ptr<ui::PlatformWindow> platform_window_;
   gfx::AcceleratedWidget widget_;
   base::OnceClosure close_closure_;
-  bool is_software_ = true;
+  // bool is_software_ = true;
   scoped_refptr<gl::GLSurface> g_gl_surface;
   scoped_refptr<gl::GLContext> g_gl_context;
   scoped_refptr<gpu::SharedContextState> g_context_state;
@@ -261,7 +265,7 @@ int main(int argc, char** argv) {
 #if defined(USE_X11)
   // This demo uses InProcessContextFactory which uses X on a separate Gpu
   // thread.
-  gfx::InitializeThreadedX11();
+  // gfx::InitializeThreadedX11();
 
   // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
   // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
@@ -269,7 +273,7 @@ int main(int argc, char** argv) {
   // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
   // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
   // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  ui::SetDefaultX11ErrorHandlers();
+  // ui::SetDefaultX11ErrorHandlers();
 #endif
 
   auto event_source_ = ui::PlatformEventSource::CreateDefault();
@@ -280,7 +284,7 @@ int main(int argc, char** argv) {
   ui::RegisterPathProvider();
 
   // This app isn't a test and shouldn't timeout.
-  base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
+  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
   base::RunLoop run_loop;
 

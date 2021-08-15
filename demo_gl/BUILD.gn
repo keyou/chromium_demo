@@ -35,5 +35,11 @@ executable("demo_gl") {
     #configs += [ "//build/config/linux:x11" ]
   }
 
+  if (use_ozone) {
+    deps += [
+      "//ui/ozone",
+    ]
+  }
+
   # libs = ["EGL","GLESv2"]
 }
