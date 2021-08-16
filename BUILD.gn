@@ -6,16 +6,15 @@ group("demo") {
   # 除非特殊说明，所有demo仅在Linux上进行测试，其他平台未经测试
   deps = [
     ":demo_exe",
-    ":demo_log",
+    "demo_log",
     "demo_tracing",
-    ":demo_task_executor",
-    ":demo_task_thread_pool",
+    "demo_task",
     ":demo_mojo_single_process",
     ":demo_mojo_multiple_process",
     ":demo_mojo_multiple_process_binding",
     # ":demo_services",
     # ":demo_ipc",
-    ":demo_memory",
+    "demo_memory",
     "demo_resources",
     "demo_gl",
     "demo_viz",
@@ -27,15 +26,37 @@ group("demo") {
     "demo_shell",
   ]
 
-  if(!is_linux) {
+  # Windows 暂时无法运行的Demo
+  if(is_win) {
     deps -= [
-      # ":demo_services",
+      ":demo_mojo_multiple_process",
+      ":demo_mojo_multiple_process_binding",
+      ":demo_memory",
+      "demo_tracing",
+      "demo_resources",
+
       "demo_views",
       "demo_gl",
       "demo_viz",
       "demo_cc",
       "demo_skia",
       "demo_x11",
+      "demo_android",
+      "demo_shell",
+    ]
+  }
+  # Mac 暂时无法运行的Demo
+  if(is_mac) {
+    deps -= [
+      
+      "demo_views",
+      "demo_gl",
+      "demo_viz",
+      "demo_cc",
+      "demo_skia",
+      "demo_x11",
+      "demo_android",
+      "demo_shell",
     ]
   }
 }
@@ -50,45 +71,9 @@ executable("demo_exe") {
   ]
 }
 
-executable("demo_log") {
-  sources = [
-    "demo_log.cc",
-  ]
-
-  deps = [
-    "//base",
-  ]
-}
-
-executable("demo_task_executor") {
-  sources = [
-    "demo_task_executor.cc",
-  ]
-
-  deps = [
-    "//base",
-  ]
-}
-
-executable("demo_task_thread_pool") {
-  sources = [
-    "demo_task_thread_pool.cc",
-  ]
-
-  deps = [
-    "//base",
-  ]
-}
-
-executable("demo_memory") {
-  sources = [
-    "demo_memory.cc",
-  ]
-
-  deps = [
-    "//base",
-  ]
-}
+ 
+ 
+ 
 
 executable("demo_mojo_single_process") {
   testonly = true
