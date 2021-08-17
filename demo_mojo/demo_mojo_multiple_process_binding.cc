@@ -19,10 +19,10 @@
 #include "mojo/public/cpp/system/wait.h"
 
 // For bindings API
-#include "demo/mojom/test.mojom.h"
-#include "demo/mojom/test2.mojom.h"
-#include "demo/mojom/test3.mojom.h"
-#include "demo/mojom/test4.mojom.h"
+#include "demo/shared_mojom/test.mojom.h"
+#include "demo/shared_mojom/test2.mojom.h"
+#include "demo/shared_mojom/test3.mojom.h"
+#include "demo/shared_mojom/test4.mojom.h"
 // #include "mojo/public/cpp/bindings/binding.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 #include "mojo/public/cpp/bindings/receiver.h"

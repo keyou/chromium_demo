@@ -53,7 +53,7 @@
 #include "services/service_manager/service_process_launcher.h"
 #include "services/service_manager/service_process_launcher_delegate.h"
 
-#include "demo/mojom/test_service.mojom.h"
+#include "demo/shared_mojom/test_service.mojom.h"
 
 // 在新版本中这些类被重命名,这里模拟新版本
 // template <class T>

@@ -1,5 +1,3 @@
-# for mojo
-import("//mojo/public/tools/bindings/mojom.gni")
 
 group("demo") {
   testonly = true
@@ -9,11 +7,9 @@ group("demo") {
     "demo_log",
     "demo_tracing",
     "demo_task",
-    ":demo_mojo_single_process",
-    ":demo_mojo_multiple_process",
-    ":demo_mojo_multiple_process_binding",
-    # ":demo_services",
-    # ":demo_ipc",
+    "demo_mojo",
+    # "demo_services",
+    # "demo_ipc",
     "demo_memory",
     "demo_resources",
     "demo_gl",
@@ -29,11 +25,10 @@ group("demo") {
   # Windows 暂时无法运行的Demo
   if(is_win) {
     deps -= [
-      ":demo_mojo_multiple_process",
-      ":demo_mojo_multiple_process_binding",
-      ":demo_memory",
+      "demo_memory",
       "demo_tracing",
       "demo_resources",
+      "demo_mojo",
 
       "demo_views",
       "demo_gl",
@@ -48,7 +43,6 @@ group("demo") {
   # Mac 暂时无法运行的Demo
   if(is_mac) {
     deps -= [
-      
       "demo_views",
       "demo_gl",
       "demo_viz",
@@ -72,119 +66,9 @@ executable("demo_exe") {
 }
 
  
- 
- 
 
-executable("demo_mojo_single_process") {
-  testonly = true
-  sources = [
-    "demo_mojo_single_process.cc",
-  ]
 
-  deps = [
-    "//base",
-    "//mojo/public",
-    "//mojo/core/embedder",
-  ]
-}
 
-executable("demo_mojo_multiple_process") {
-  testonly = true
-  sources = [
-    "demo_mojo_multiple_process.cc",
-  ]
 
-  deps = [
-    ":mojom_test",
-    ":mojom_test2",
-    "//base",
-    "//mojo/public",
-    "//mojo/core/embedder",
-  ]
-}
 
-executable("demo_mojo_multiple_process_binding") {
-  testonly = true
-  sources = [
-    "demo_mojo_multiple_process_binding.cc",
-  ]
-
-  deps = [
-    "//base",
-    "//mojo/public",
-    "//mojo/core/embedder",
-    ":mojom_test",
-    ":mojom_test2",
-    ":mojom_test3",
-    ":mojom_test4",
-  ]
-}
-
-executable("demo_services") {
- testonly = true
- sources = [
-   "demo_services.cc",
- ]
-
- deps = [
-   ":mojom_test_service",
-   "//base",
-   # TODO: 查明为什么这里必须显式依赖base_static，它明明已经作为base的public_deps了，
-   # 难道public_deps对静态库（base_static）无效？
-   "//base:base_static",
-   "//mojo/public",
-   "//services/service_manager",
-  #  "//services/service_manager/embedder",
-   "//services/service_manager/public/cpp/service_executable:support"
- ]
-}
-
-#executable("demo_ipc") {
-#  testonly = true
-#  sources = [
-#    "demo_ipc.cc",
-#    "demo_ipc_messages.h",
-#    "demo_ipc_message_generator.h",
-#    "demo_ipc_message_generator.cc",
-#  ]
-#
-#  deps = [
-#    "//base",
-#    "//base:base_static",
-#    "//mojo/public",
-#    "//services/service_manager/embedder",
-#  ]
-#
-#  deps += [ "//services/service_manager:all" ]
-#}
-
-mojom("mojom_test") {
-  sources = [
-    "mojom/test.mojom",
-  ]
-}
-
-mojom("mojom_test2") {
-  sources = [
-    "mojom/test2.mojom",
-  ]
-}
-
-mojom("mojom_test3") {
-  sources = [
-    "mojom/test3.mojom",
-  ]
-}
-
-mojom("mojom_test4") {
-  sources = [
-    "mojom/test4.mojom",
-  ]
-}
-
-mojom("mojom_test_service") {
-  sources = [
-    "mojom/test_service.mojom",
-  ]
-}
 

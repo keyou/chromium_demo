@@ -1,0 +1,44 @@
+# for mojo
+import("//mojo/public/tools/bindings/mojom.gni")
+
+group("shared_mojom"){
+    testonly =true
+    deps = [
+        ":mojom_test",
+        ":mojom_test2",
+        ":mojom_test3",
+        ":mojom_test4",
+        ":mojom_test_service",
+    ]
+}
+
+mojom("mojom_test") {
+  sources = [
+    "test.mojom",
+  ]
+}
+
+mojom("mojom_test2") {
+  sources = [
+    "test2.mojom",
+  ]
+}
+
+mojom("mojom_test3") {
+  sources = [
+    "test3.mojom",
+  ]
+}
+
+mojom("mojom_test4") {
+  sources = [
+    "test4.mojom",
+  ]
+}
+
+mojom("mojom_test_service") {
+  sources = [
+    "test_service.mojom",
+  ]
+}
+

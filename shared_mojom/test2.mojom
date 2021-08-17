@@ -1,0 +1,8 @@
+
+// Ｃhromium 推荐将mojom文件放在单独的mojom目录下
+
+module demo.mojom;
+
+interface Test2 {
+    SendMessagePipeHandle(handle<message_pipe> pipe_handle);
+};

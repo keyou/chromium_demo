@@ -1,0 +1,13 @@
+
+module demo.mojom;
+
+// const string kServiceName = "testservice";
+// const string kTestCapability = "test";
+
+interface TestInterface {
+    Hello(string who);
+};
+
+interface RootInterface {
+    Hi(string who);
+};
