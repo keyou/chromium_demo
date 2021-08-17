@@ -31,7 +31,7 @@ executable("demo_mojo_multiple_process") {
     "//base",
     "//mojo/public",
     "//mojo/core/embedder",
-    "//demo/shared_mojom",
+    "//demo/mojom",
   ]
 }
 
@@ -45,6 +45,6 @@ executable("demo_mojo_multiple_process_binding") {
     "//base",
     "//mojo/public",
     "//mojo/core/embedder",
-    "//demo/shared_mojom"
+    "//demo/mojom",
   ]
 }

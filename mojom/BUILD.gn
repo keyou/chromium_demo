@@ -1,7 +1,7 @@
 # for mojo
 import("//mojo/public/tools/bindings/mojom.gni")
 
-group("shared_mojom"){
+group("mojom"){
     testonly =true
     deps = [
         ":mojom_test",
