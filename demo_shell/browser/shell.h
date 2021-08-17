@@ -53,7 +53,7 @@ class WebContents;
 // buttons and url bar, as well as the web content area.
 class DemoShell : public content::WebContentsDelegate{
  public:
-  ~DemoShell();
+  ~DemoShell() final;
 
   // Do one time initialization at application startup.
   static void Initialize();
