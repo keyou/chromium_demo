@@ -70,6 +70,4 @@ cscope.po.out
 
 *.xmb
 
-# Ignore Mac Files
-.DS_Store
 
