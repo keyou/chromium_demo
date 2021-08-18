@@ -1,0 +1,9 @@
+executable("demo_memory"){
+    sources = [
+        "demo_memory.cc",
+    ]
+
+    deps = [
+        "//base"
+    ]
+}

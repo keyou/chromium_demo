@@ -1,0 +1,18 @@
+#executable("demo_ipc") {
+#  testonly = true
+#  sources = [
+#    "demo_ipc.cc",
+#    "demo_ipc_messages.h",
+#    "demo_ipc_message_generator.h",
+#    "demo_ipc_message_generator.cc",
+#  ]
+#
+#  deps = [
+#    "//base",
+#    "//base:base_static",
+#    "//mojo/public",
+#    "//services/service_manager/embedder",
+#  ]
+#
+#  deps += [ "//services/service_manager:all" ]
+#}

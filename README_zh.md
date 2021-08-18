@@ -16,8 +16,8 @@ Demo 列表：
 1. [v91] `demo_exe`: 最简单的 demo，演示 gn 及创建自己的 exe；
 2. [v91] `demo_log`: 演示使用日志库；
 3. [v91] `demo_tracing_console`: 演示使用 Trace 输出到控制台；
-4. [v91] `demo_task_thread_pool`: 演示使用线程池 ThreadPool;
-5. [v91] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor;
+4. [v91] `demo_task_thread_pool`: 演示使用线程池 ThreadPool 位于demo_task下;
+5. [v91] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor 位于demo_task下;
 6. [v91] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
 7. [v91] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
 8. [v91] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
