@@ -1,0 +1,11 @@
+executable("demo_log") {
+  testonly = true
+  sources = [
+      "demo_log.cc"
+  ]
+  deps = [
+    "//base",
+  ]
+}
+
+ 

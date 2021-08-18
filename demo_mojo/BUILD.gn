@@ -1,0 +1,50 @@
+group("demo_mojo"){
+    testonly = true
+    deps = [
+        ":demo_mojo_single_process",
+        ":demo_mojo_multiple_process",
+        ":demo_mojo_multiple_process_binding"
+    ]
+}
+
+executable("demo_mojo_single_process") {
+  testonly = true
+  sources = [
+    "demo_mojo_single_process.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+    "//mojo/core/embedder",
+  ]
+}
+
+executable("demo_mojo_multiple_process") {
+  testonly = true
+  sources = [
+    "demo_mojo_multiple_process.cc",
+  ]
+
+  deps = [
+    
+    "//base",
+    "//mojo/public",
+    "//mojo/core/embedder",
+    "//demo/mojom",
+  ]
+}
+
+executable("demo_mojo_multiple_process_binding") {
+  testonly = true
+  sources = [
+    "demo_mojo_multiple_process_binding.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+    "//mojo/core/embedder",
+    "//demo/mojom",
+  ]
+}

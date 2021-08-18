@@ -1,0 +1,26 @@
+group("demo_task"){
+    testonly = true
+    deps =[
+        ":demo_task_executor",
+        ":demo_task_thread_pool"
+    ]
+}
+
+executable("demo_task_executor"){
+    sources = [
+        "demo_task_executor.cc"
+    ]
+    deps = [
+         "//base",
+    ]
+}
+
+executable("demo_task_thread_pool"){
+    sources = [
+        "demo_task_thread_pool.cc"
+    ]
+
+    deps = [
+         "//base",
+    ]
+}
