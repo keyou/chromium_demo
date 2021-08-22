@@ -75,6 +75,7 @@ Demo 列表：
 
 ## TODO
 
+- 添加 demo，演示如何在 Browser 进程注册一个 mojo 服务以便 Render 进程可以使用（该 demo 可能需要以 patch 的形式提供）；
 - 完善进程初始化部分的文档 ([docs/startup.md](docs/startup.md))；
 - 完善 UI 部分的文档 ([docs/ui.md](docs/ui.md))；
 - 完善 content 模块的文档 ([docs/content.md](docs/content.md))；

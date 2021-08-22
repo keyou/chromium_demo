@@ -82,6 +82,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ## TODO
 
+- Add a demo showing how to register a mojo service with the Browser process so that the Render process can use it (the demo may need to be provided as a patch).
 - Improve the documentation of the process initialization part ([docs/startup.md](docs/startup.md));
 - Improve the documentation of the UI part ([docs/ui.md](docs/ui.md));
 - Improve the documentation of the content module ([docs/content.md](docs/content.md));
