@@ -20,6 +20,7 @@ group("demo") {
     "demo_views",
     "demo_android",
     "demo_shell",
+    "demo_bind_callback",
   ]
 
   # Windows 暂时无法运行的Demo

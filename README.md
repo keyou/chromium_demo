@@ -50,6 +50,7 @@ Demo list:
 28. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
 29. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
 30. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
+31. [v91] `demo_bind_callback`: Demo Bind&Callback related content；
 
 Documents:
 

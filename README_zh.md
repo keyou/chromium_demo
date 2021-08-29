@@ -43,6 +43,7 @@ Demo 列表：
 28. `demo_x11_glx`: 演示在透明窗口中使用 glx;
 29. `demo_x11_egl`: 演示在透明窗口中使用 egl；
 30. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+31. [v91] `demo_bind_callback`: 演示 Bind&Callback 相关内容；
 
 文档：
 
