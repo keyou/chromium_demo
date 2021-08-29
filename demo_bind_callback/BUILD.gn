@@ -1,0 +1,24 @@
+group("demo_bind_callback"){
+    deps = [
+        ":demo_bind_callback_once",
+        ":demo_bind_callback_repeating",
+    ]
+}
+
+executable("demo_bind_callback_once"){
+    sources =[
+        "once.cc"
+    ]
+    deps = [
+        "//base"
+    ]
+}
+
+executable("demo_bind_callback_repeating"){
+    sources =[
+        "repeating.cc"
+    ]
+    deps = [
+        "//base"
+    ]
+}
