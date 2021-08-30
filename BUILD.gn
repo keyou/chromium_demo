@@ -7,7 +7,6 @@ group("demo") {
     "demo_log",
     "demo_tracing",
     "demo_task",
-    "demo_callback",
     "demo_mojo",
     # "demo_services",
     # "demo_ipc",
@@ -21,7 +20,7 @@ group("demo") {
     "demo_views",
     "demo_android",
     "demo_shell",
-
+    "demo_bind_callback",
   ]
 
   # Windows 暂时无法运行的Demo
