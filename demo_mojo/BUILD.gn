@@ -3,7 +3,8 @@ group("demo_mojo"){
     deps = [
         ":demo_mojo_single_process",
         ":demo_mojo_multiple_process",
-        ":demo_mojo_multiple_process_binding"
+        ":demo_mojo_multiple_process_binding",
+        # ":demo_services"
     ]
 }
 
@@ -47,4 +48,23 @@ executable("demo_mojo_multiple_process_binding") {
     "//mojo/core/embedder",
     "//demo/mojom",
   ]
+}
+
+executable("demo_services") {
+ testonly = true
+ sources = [
+   "demo_services.cc",
+ ]
+
+ deps = [
+   "//demo/mojom",
+   "//base",
+   # TODO: 查明为什么这里必须显式依赖base_static，它明明已经作为base的public_deps了，
+   # 难道public_deps对静态库（base_static）无效？
+   "//base:base_static",
+   "//mojo/public",
+   "//services/service_manager",
+  #  "//services/service_manager/embedder",
+   "//services/service_manager/public/cpp/service_executable:support"
+ ]
 }

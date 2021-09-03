@@ -30,7 +30,7 @@ Demo list:
 8. [v91] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
 9. [v91] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
 10. `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
-11. `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
+11. [v91] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
 12. [v91] `demo_memory`: Demonstrate the use of SharedMemory;
 13. [v91] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
 14. [v91] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
@@ -98,6 +98,10 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2021.9.3
+
+- Migrate demo_ipc to v91；
 
 ### 2021.7.29
 

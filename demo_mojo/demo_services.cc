@@ -6,6 +6,8 @@
  *    https://bugs.chromium.org/p/chromium/issues/detail?id=977637
  *  - 使用新的 Mojo API（新API名称）替换旧的 Mojo API，详见
  *    https://bugs.chromium.org/p/chromium/issues/detail?id=955171&q=955171&can=1
+ *  - 使用轻量级的 mojo::ServiceFactory 进行服务的注册和运行；
+ *  - 不再区分 Service 接口和普通的 mojo 接口，一个 Service 接口就是一个普通的 mojo 接口； 
  */
 
 #include "base/at_exit.h"

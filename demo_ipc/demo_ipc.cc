@@ -6,7 +6,7 @@
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/logging.h"
-#include "base/message_loop/message_loop.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/task/post_task.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/process/launch.h"
@@ -26,17 +26,18 @@
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
 
-// For bindings API
 #include "demo/mojom/test.mojom.h"
 #include "demo/mojom/test2.mojom.h"
 #include "demo/mojom/test3.mojom.h"
 #include "demo/mojom/test4.mojom.h"
-#include "mojo/public/cpp/bindings/binding.h"
+
+// For bindings API
+// #include "mojo/public/cpp/bindings/binding.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 
 // For associated bindings API
-#include "mojo/public/cpp/bindings/associated_binding.h"
-#include "mojo/public/cpp/bindings/associated_interface_ptr.h"
+// #include "mojo/public/cpp/bindings/associated_binding.h"
+// #include "mojo/public/cpp/bindings/associated_interface_ptr.h"
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 
 // For IPC API
@@ -52,20 +53,26 @@
 
 #include "demo_ipc_messages.h"
 
-#include <iostream>
-#include <vector>
-
 // 在新版本中这些类被重命名,这里模拟新版本
-template<class T> using Remote = mojo::InterfacePtr<T>;
-template<class T> using PendingRemote = mojo::InterfacePtrInfo<T>;
-template<class T> using Receiver = mojo::Binding<T>;
-template<class T> using PendingReceiver = mojo::InterfaceRequest<T>;
+template <class T>
+using Remote = mojo::InterfacePtr<T>;
+template <class T>
+using PendingRemote = mojo::InterfacePtrInfo<T>;
+template <class T>
+using Receiver = mojo::Receiver<T>;
+// using Receiver = mojo::InterfaceRequest<T>;
+template <class T>
+using PendingReceiver = mojo::InterfaceRequest<T>;
 
 // 以下定义用于模拟新版本的关联接口
-template<class T> using AssociatedRemote = mojo::AssociatedInterfacePtr<T>;
-template<class T> using PendingAssociatedRemote = mojo::AssociatedInterfacePtrInfo<T>;
-template<class T> using AssociatedReceiver = mojo::AssociatedBinding<T>;
-template<class T> using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
+template <class T>
+using AssociatedRemote = mojo::AssociatedRemote<T>;
+template <class T>
+using PendingAssociatedRemote = mojo::AssociatedInterfacePtrInfo<T>;
+template <class T>
+using AssociatedReceiver = mojo::AssociatedReceiver<T>;
+template <class T>
+using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
 using namespace demo::mojom;
 
@@ -129,6 +136,7 @@ public:
 
 private:
   IPC::MessageRouter router_;
+  ~ConsumerFilter() override{}
 };
 
 // 这不是使用IPC::Channel所必需的，这里是模拟chromium中的使用，用来演示MessageFilter
@@ -143,11 +151,11 @@ public:
     bool result = channel_->Connect();
     if(result) {
       listener_ = std::make_unique<ConsumerListener>();
-      filter_ = std::make_unique<ConsumerFilter>();
+      auto* filter = new ConsumerFilter();
       // 注册一个 routing_id 为 1 的消息监听器，所有id为1的消息都会被该监听器接收
       // 在实际项目中要保证在一条通道上，该id要唯一
-      filter_->AddRoute(1,listener_.get());
-      AddFilter(filter_.get());
+      filter->AddRoute(1,listener_.get());
+      AddFilter(filter);
     }
 
     return result;
@@ -167,7 +175,7 @@ public:
     if (message.routing_id() == MSG_ROUTING_CONTROL) {
       handled = OnControlMessageReceived(message);
     } else {
-      for(auto filter : filters_)
+      for(auto* filter : filters_)
       {
         if(filter->OnMessageReceived(message)) {
           break;
@@ -195,7 +203,6 @@ public:
     return channel_->Send(message);
   }
 
-  std::unique_ptr<ConsumerFilter> filter_;
   std::unique_ptr<ConsumerListener> listener_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::vector<IPC::MessageFilter*> filters_;
@@ -231,10 +238,10 @@ void MojoProducer() {
           [](const std::string& error) { LOG(ERROR) << error; }));
   
   // 创建主线程消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_task_executor;
 
   ProducerListener listener;
-  std::unique_ptr<IPC::Channel> ipc_channel = IPC::Channel::CreateServer(pipe.release(),&listener,message_loop.task_runner());
+  std::unique_ptr<IPC::Channel> ipc_channel = IPC::Channel::CreateServer(pipe.release(),&listener,main_task_executor.task_runner());
   LOG(INFO) << "Producer Connect";
   bool result = ipc_channel->Connect();
   if(result) {
@@ -258,7 +265,7 @@ void MojoConsumer() {
   LOG(INFO) << "pipe: " << pipe->value();
 
   // 创建主线程消息循环
-  base::MessageLoop message_loop;
+  base::SingleThreadTaskExecutor main_task_executor;
 
   // ConsumerListener listener;
   // 这里也可以直接把listener传给Channel，但为了演示使用ConsumerChannel
@@ -266,7 +273,7 @@ void MojoConsumer() {
   // LOG(INFO) << "Consumer Connect";
   // bool result = channel->Connect();
 
-  ConsumerChannel channel(message_loop.task_runner());
+  ConsumerChannel channel(main_task_executor.task_runner());
   bool result = channel.Init(pipe.release());
   DCHECK(result);
   

@@ -23,7 +23,7 @@ Demo 列表：
 8. [v91] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
 0. [v91] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
 10. `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
-11. `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
+11. [v91] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 12. [v91] `demo_memory`: 演示使用 SharedMemory；
 13. [v91] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
 14. [v91] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
@@ -91,6 +91,10 @@ Demo 列表：
 - 添加 demo, 演示 `tab capture api` 的原理；
 
 ## 更新日志
+
+### 2021.9.3
+
+- 升级 demo_ipc 到 v91 版本；
 
 ### 2021.7.29
 

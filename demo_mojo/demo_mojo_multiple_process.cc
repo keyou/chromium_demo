@@ -27,9 +27,6 @@
 // #include "mojo/public/cpp/bindings/binding.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 
-#include <iostream>
-#include <vector>
-
 class PipeReader {
  public:
   PipeReader(mojo::ScopedMessagePipeHandle pipe)
