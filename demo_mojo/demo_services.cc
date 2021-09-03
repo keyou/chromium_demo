@@ -1,13 +1,22 @@
 /**
+ * DEPRECATED: 这个 demo 已经过时！
+ *
  * 升级改动
  * -------
  * 80->91:
- *  - 移除 ServiceManager 相关类，让 Browser 直接管理 Services, 详见
- *    https://bugs.chromium.org/p/chromium/issues/detail?id=977637
+ *  - 在 chromium 的中移除对 ServiceManager 相关类的依赖，让 Browser 直接管理
+ * Services,详见 https://bugs.chromium.org/p/chromium/issues/detail?id=977637
  *  - 使用新的 Mojo API（新API名称）替换旧的 Mojo API，详见
  *    https://bugs.chromium.org/p/chromium/issues/detail?id=955171&q=955171&can=1
- *  - 使用轻量级的 mojo::ServiceFactory 进行服务的注册和运行；
- *  - 不再区分 Service 接口和普通的 mojo 接口，一个 Service 接口就是一个普通的 mojo 接口； 
+ *  - 使用轻量级的 mojo::ServiceFactory 进行服务的注册和运行，不再使用
+ * ServiceManager；
+ *  - 不再区分 Service 接口和普通的 mojo 接口，一个 Service 接口就是一个普通的
+ * mojo 接口；
+ *
+ * NOTE: Chromium 产品中已经不再使用 ServiceManager，也不再这样使用
+ * Service，因此这个 demo 已经不再重要。在新版中在学习完 mojo bindings
+ * 接口之后，只需要再看一下 mojo::ServiceFactory 类即可，不需要再学习这个 demo,
+ * 虽然它目前依然可以正常运行。
  */
 
 #include "base/at_exit.h"
@@ -15,59 +24,39 @@
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
-#include "base/task/single_thread_task_executor.h"
 #include "base/no_destructor.h"
 #include "base/task/post_task.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-//#include "base/task/task_scheduler/task_scheduler.h"
 
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
 #include "mojo/public/c/system/buffer.h"
 #include "mojo/public/c/system/data_pipe.h"
 #include "mojo/public/c/system/message_pipe.h"
+#include "mojo/public/cpp/bindings/interface_ptr.h"
 #include "mojo/public/cpp/system/buffer.h"
 #include "mojo/public/cpp/system/data_pipe.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
 
-// #include "mojo/public/cpp/bindings/binding.h"
-// #include "mojo/public/cpp/bindings/binding_set.h"
-#include "mojo/public/cpp/bindings/interface_ptr.h"
-
 // For services
-// #include "services/service_manager/embedder/main.h"
-// #include "services/service_manager/embedder/main_delegate.h"
-// #include "services/service_manager/embedder/switches.h"
+#include "sandbox/policy/sandbox_type.h"
+#include "sandbox/policy/switches.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
+#include "services/service_manager/public/cpp/identity.h"
 #include "services/service_manager/public/cpp/manifest.h"
 #include "services/service_manager/public/cpp/manifest_builder.h"
 #include "services/service_manager/public/cpp/service.h"
-// #include "services/service_manager/public/cpp/service_binding.h"
 #include "services/service_manager/public/cpp/service_executable/service_executable_environment.h"
 #include "services/service_manager/public/cpp/service_executable/switches.h"
-// #include "services/service_manager/sandbox/sandbox_type.h"
-// #include "services/service_manager/sandbox/switches.h"
 #include "services/service_manager/service_manager.h"
 #include "services/service_manager/service_process_host.h"
 #include "services/service_manager/service_process_launcher.h"
 #include "services/service_manager/service_process_launcher_delegate.h"
 
 #include "demo/mojom/test_service.mojom.h"
-
-// 在新版本中这些类被重命名,这里模拟新版本
-// template <class T>
-// using Remote = mojo::InterfacePtr<T>;
-// template <class T>
-// using PendingRemote = mojo::InterfacePtrInfo<T>;
-// template <class T>
-// using Receiver = mojo::Binding<T>;
-// template <class T>
-// using PendingReceiver = mojo::InterfaceRequest<T>;
-// template <class T>
-// using ReceiverSet = mojo::BindingSet<T>;
 
 using namespace demo::mojom;
 using namespace mojo;
@@ -77,7 +66,7 @@ class TestInterfaceImpl : public demo::mojom::TestInterface {
   TestInterfaceImpl(PendingReceiver<TestInterface> receiver)
       : receiver_(this, std::move(receiver)) {}
 
-  void Hello(const std::string& who) {
+  void Hello(const std::string& who) override {
     LOG(INFO) << "TestInterfaceImpl run: Hello " << who;
   }
 
@@ -94,7 +83,8 @@ class TestService : public service_manager::Service {
         this, std::move(request));
   }
   TestService() {
-    service_receiver_ = std::make_unique<service_manager::ServiceReceiver>(this);
+    service_receiver_ =
+        std::make_unique<service_manager::ServiceReceiver>(this);
   }
   void OnStart() override {
     LOG(INFO) << "TestService Start.";
@@ -160,7 +150,14 @@ class ConsumerService : public service_manager::Service {
   ConsumerService(service_manager::mojom::ServiceRequest request)
       : service_receiver_(this, std::move(request)) {}
 
-  void OnStart() override { LOG(INFO) << "ConsumerService Start."; }
+  void OnStart() override {
+    LOG(INFO) << "ConsumerService Start.";
+    // 演示从一个服务内请求其它服务提供的接口
+    Remote<TestInterface> test;
+    service_receiver_.GetConnector()->BindInterface(
+        "test_service", test.BindNewPipeAndPassReceiver());
+    test->Hello("ConsumerService");
+  }
 
   void OnBindInterface(const service_manager::BindSourceInfo& source,
                        const std::string& interface_name,
@@ -177,7 +174,7 @@ class ConsumerService : public service_manager::Service {
 
  private:
   std::unique_ptr<RootInterfaceImpl> root_interface_;
-  service_manager::ServiceBinding service_receiver_;
+  service_manager::ServiceReceiver service_receiver_;
 };
 
 const service_manager::Manifest& GetConsumerManifest() {
@@ -191,14 +188,12 @@ const service_manager::Manifest& GetConsumerManifest() {
   return *manifest;
 }
 
-const char kProcessTypeEmbedderService[] = "service-embedder";
+const char kProcessTypeEmbedderService[] = "utility";
 
 class ServiceProcessLauncherDelegateImpl
     : public service_manager::ServiceProcessLauncherDelegate {
  public:
-  explicit ServiceProcessLauncherDelegateImpl(
-      service_manager::MainDelegate* main_delegate)
-      : main_delegate_(main_delegate) {}
+  explicit ServiceProcessLauncherDelegateImpl() {}
   ~ServiceProcessLauncherDelegateImpl() override {}
 
  private:
@@ -206,16 +201,10 @@ class ServiceProcessLauncherDelegateImpl
   void AdjustCommandLineArgumentsForTarget(
       const service_manager::Identity& target,
       base::CommandLine* command_line) override {
-    if (main_delegate_->ShouldLaunchAsServiceProcess(target)) {
-      // 本来应该是 service_manager::switches::kProcessTypeService ,但是它有bug
-      command_line->AppendSwitchASCII(service_manager::switches::kProcessType,
-                                      kProcessTypeEmbedderService);
-    }
-
-    main_delegate_->AdjustServiceProcessCommandLine(target, command_line);
+    // 本来应该是 service_manager::switches::kProcessTypeService ,但是它有bug
+    command_line->AppendSwitchASCII(sandbox::policy::switches::kProcessType,
+                                    kProcessTypeEmbedderService);
   }
-
-  service_manager::MainDelegate* const main_delegate_;
 
   DISALLOW_COPY_AND_ASSIGN(ServiceProcessLauncherDelegateImpl);
 };
@@ -227,13 +216,11 @@ class DemoServiceProcessHost : public service_manager::ServiceProcessHost {
                   base::CommandLine::ForCurrentProcess()->GetProgram()) {}
   mojo::PendingRemote<service_manager::mojom::Service> Launch(
       const service_manager::Identity& identity,
-      service_manager::SandboxType sandbox_type,
-      const base::string16& display_name,
+      sandbox::policy::SandboxType sandbox_type,
+      const std::u16string& display_name,
       LaunchCallback callback) override {
-    return launcher_
-        .Start(identity, service_manager::SandboxType::SANDBOX_TYPE_NO_SANDBOX,
-               std::move(callback))
-        .PassInterface();
+    return launcher_.Start(identity, sandbox::policy::SandboxType::kService,
+                           std::move(callback));
   }
 
  private:
@@ -273,10 +260,9 @@ class DemoServiceManagerDelegate
   ServiceProcessLauncherDelegateImpl* delegate_;
 };
 
-class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
+class DemoServerManagerMainDelegate {
  public:
-  int Initialize(
-      const service_manager::MainDelegate::InitializeParams& params) override {
+  int Initialize() {
     // 设置日志格式
     logging::SetLogItems(true, false, true, false);
     LOG(INFO) << "Command Line: "
@@ -287,7 +273,7 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
   // 在调用RunEmbedderProcess之前已经执行了很多必要的初始化动作,包括:
   // - 初始化CommanLine
   // - 初始化mojo
-  int RunEmbedderProcess() override {
+  int RunEmbedderProcess() {
     LOG(INFO) << "RunEmbedderProcess";
     base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
     base::FeatureList::InitializeInstance(
@@ -295,8 +281,9 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
         command_line->GetSwitchValueASCII(switches::kDisableFeatures));
 
     if (command_line->GetSwitchValueASCII(
-            service_manager::switches::kProcessType) ==
+            sandbox::policy::switches::kProcessType) ==
         kProcessTypeEmbedderService) {
+      logging::SetLogPrefix("embedder");
       std::string service_name =
           base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
               service_manager::switches::kServiceName);
@@ -315,6 +302,7 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
       return 0;
     }
 
+    logging::SetLogPrefix("host");
     // 创建主消息循环
     base::SingleThreadTaskExecutor single_thread_task_executor;
     // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
@@ -327,7 +315,7 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
         ipc_thread.task_runner(),
         mojo::core::ScopedIPCSupport::ShutdownPolicy::FAST);
 
-    ServiceProcessLauncherDelegateImpl service_process_launcher_delegate(this);
+    ServiceProcessLauncherDelegateImpl service_process_launcher_delegate;
     // service_manager::BackgroundServiceManager service_manager(
     //     &service_process_launcher_delegate, this->GetServiceManifests());
     auto service_manager = std::make_unique<service_manager::ServiceManager>(
@@ -364,36 +352,13 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
     base::ThreadPoolInstance::Get()->Shutdown();
     return 0;
   }
-  std::vector<service_manager::Manifest> GetServiceManifests() override {
+  std::vector<service_manager::Manifest> GetServiceManifests() {
     LOG(INFO) << "GetServiceManifests";
     return std::vector<service_manager::Manifest>(
         {GetTestManifest(), GetConsumerManifest()});
   }
-  service_manager::ProcessType OverrideProcessType() override {
-    LOG(INFO) << "OverrideProcessType";
-    return service_manager::ProcessType::kDefault;
-  }
-  void OnServiceManagerInitialized(
-      base::OnceClosure quit_closure,
-      service_manager::BackgroundServiceManager* service_manager) override {
-    LOG(INFO) << "OnServiceManagerInitialized";
-  }
-  bool ShouldLaunchAsServiceProcess(
-      const service_manager::Identity& identity) override {
-    return true;
-  }
-  void AdjustServiceProcessCommandLine(
-      const service_manager::Identity& identity,
-      base::CommandLine* command_line) override {
-    if (identity.name() == "consumer_service") {
-      // command_line->AppendSwitchASCII();
-    }
-  }
+
   // 在Service进程中被调用,用来创建Service实例
-  std::unique_ptr<service_manager::Service> CreateEmbeddedService(
-      const std::string& service_name) override {
-    return CreateEmbeddedService(service_name, nullptr);
-  }
   std::unique_ptr<service_manager::Service> CreateEmbeddedService(
       const std::string& service_name,
       service_manager::mojom::ServiceRequest request) {
@@ -410,9 +375,13 @@ class DemoServerManagerMainDelegate : public service_manager::MainDelegate {
 
 int main(int argc, const char** argv) {
   base::AtExitManager at_exit;
+  base::CommandLine::Init(argc, argv);
+  LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
+
+  mojo::core::Init();
+
   DemoServerManagerMainDelegate delegate;
-  service_manager::MainParams main_params(&delegate);
-  main_params.argc = argc;
-  main_params.argv = argv;
-  return service_manager::Main(main_params);
+  delegate.Initialize();
+  delegate.RunEmbedderProcess();
+  return 0;
 }

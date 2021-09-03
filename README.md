@@ -29,13 +29,13 @@ Demo list:
 7. [v91] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
 8. [v91] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
 9. [v91] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
-10. `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
+10. [v91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
 11. [v91] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
 12. [v91] `demo_memory`: Demonstrate the use of SharedMemory;
 13. [v91] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
 14. [v91] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
 15. [v91] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
-16. `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
+16. [v91] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
 17. `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
 18. `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 19. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
@@ -101,7 +101,12 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2021.9.3
 
-- Migrate demo_ipc to v91；
+- Migrate demo_ipc to v91;
+- Migrate demo_services to v91;
+
+### 2021.8.15
+
+- Migrate demo_gl to v91;
 
 ### 2021.7.29
 

@@ -22,13 +22,13 @@ Demo 列表：
 7. [v91] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
 8. [v91] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
 0. [v91] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
-10. `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
+10. [v91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
 11. [v91] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 12. [v91] `demo_memory`: 演示使用 SharedMemory；
 13. [v91] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
 14. [v91] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
 15. [v91] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-16. `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
+16. [v91] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
 17. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
 18. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 19. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
@@ -95,6 +95,11 @@ Demo 列表：
 ### 2021.9.3
 
 - 升级 demo_ipc 到 v91 版本；
+- 升级 demo_services 到 v91 版本；
+
+### 2021.8.15
+
+- 升级 demo_gl 到 v91 版本；
 
 ### 2021.7.29
 
