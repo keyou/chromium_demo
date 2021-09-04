@@ -18,10 +18,10 @@
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
 
-#include "demo/mojom/test.mojom.h"
-#include "demo/mojom/test2.mojom.h"
-#include "demo/mojom/test3.mojom.h"
-#include "demo/mojom/test4.mojom.h"
+#include "demo/demo_mojo/mojom/test.mojom.h"
+#include "demo/demo_mojo/mojom/test2.mojom.h"
+#include "demo/demo_mojo/mojom/test3.mojom.h"
+#include "demo/demo_mojo/mojom/test4.mojom.h"
 
 // For bindings API
 // #include "mojo/public/cpp/bindings/binding.h"
@@ -61,10 +61,10 @@ using AssociatedReceiver = mojo::AssociatedReceiver<T>;
 template <class T>
 using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
-using namespace demo::mojom;
+using namespace demo::demo_mojo::mojom;
 
 #pragma region Test
-class TestImpl : public demo::mojom::Test {
+class TestImpl : public demo::demo_mojo::mojom::Test {
  public:
   void Hello(const std::string& who) override {
     who_ = who;
@@ -82,9 +82,9 @@ class TestImpl : public demo::mojom::Test {
 #pragma endregion
 
 #pragma region Test2
-class Test2Impl : public demo::mojom::Test2 {
+class Test2Impl : public demo::demo_mojo::mojom::Test2 {
  public:
-  explicit Test2Impl(mojo::PendingReceiver<demo::mojom::Test2> receiver)
+  explicit Test2Impl(mojo::PendingReceiver<demo::demo_mojo::mojom::Test2> receiver)
       : receiver_(this, std::move(receiver)) {}
   void SendMessagePipeHandle(
       mojo::ScopedMessagePipeHandle pipe_handle) override {
@@ -93,10 +93,10 @@ class Test2Impl : public demo::mojom::Test2 {
   }
 
  private:
-  mojo::Receiver<demo::mojom::Test2> receiver_;
+  mojo::Receiver<demo::demo_mojo::mojom::Test2> receiver_;
 };
 
-class ApiImpl : public demo::mojom::Api {
+class ApiImpl : public demo::demo_mojo::mojom::Api {
  public:
   explicit ApiImpl(PendingReceiver<Api> receiver)
       : receiver_(this, std::move(receiver)), associated_receiver_(nullptr) {}
@@ -112,7 +112,7 @@ class ApiImpl : public demo::mojom::Api {
   AssociatedReceiver<Api> associated_receiver_;
 };
 
-class Api2Impl : public demo::mojom::Api2 {
+class Api2Impl : public demo::demo_mojo::mojom::Api2 {
  public:
   explicit Api2Impl(mojo::PendingReceiver<Api2> receiver)
       : receiver_(this, std::move(receiver)), associated_receiver_(nullptr) {}
@@ -130,7 +130,7 @@ class Api2Impl : public demo::mojom::Api2 {
 #pragma endregion
 
 #pragma region Test3
-class Test3Impl : public demo::mojom::Test3 {
+class Test3Impl : public demo::demo_mojo::mojom::Test3 {
  public:
   explicit Test3Impl(PendingReceiver<Test3> receiver)
       : receiver_(this, std::move(receiver)) {}
@@ -151,7 +151,7 @@ class Test3Impl : public demo::mojom::Test3 {
   mojo::Receiver<Test3> receiver_;
 };
 
-class Test32Impl : public demo::mojom::Test32 {
+class Test32Impl : public demo::demo_mojo::mojom::Test32 {
  public:
   explicit Test32Impl(mojo::PendingReceiver<Test32> receiver)
       : receiver_(this, std::move(receiver)) {}
@@ -273,8 +273,8 @@ void MojoProducer() {
   {
     // 这是调用端，注意以下代码不依赖Test的任何实现细节。
     // 在2019年3月之后的代码中这两个类被改为了 Remote,PendingRemote
-    using TestPtr = mojo::InterfacePtr<demo::mojom::Test>;
-    using TestPtrInfo = mojo::InterfacePtrInfo<demo::mojom::Test>;
+    using TestPtr = mojo::InterfacePtr<demo::demo_mojo::mojom::Test>;
+    using TestPtrInfo = mojo::InterfacePtrInfo<demo::demo_mojo::mojom::Test>;
     auto* test_ptr = new TestPtr(TestPtrInfo(std::move(pipe), 0));
     auto& test = *test_ptr;
     test->Hello("World!");
@@ -398,7 +398,7 @@ void MojoConsumer() {
     // using TestRequest = mojo::InterfaceRequest<demo::mojom::Test>;
     auto* test = new TestImpl;
     // 为了测试，故意泄漏，避免pipe被close
-    auto* binding = new Receiver<demo::mojom::Test>(test, PendingReceiver<demo::mojom::Test>(std::move(pipe)));
+    auto* binding = new Receiver<demo::demo_mojo::mojom::Test>(test, PendingReceiver<demo::demo_mojo::mojom::Test>(std::move(pipe)));
     ALLOW_UNUSED_LOCAL(binding);
   }
   {

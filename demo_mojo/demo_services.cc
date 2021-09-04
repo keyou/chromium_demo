@@ -56,12 +56,12 @@
 #include "services/service_manager/service_process_launcher.h"
 #include "services/service_manager/service_process_launcher_delegate.h"
 
-#include "demo/mojom/test_service.mojom.h"
+#include "demo/demo_mojo/mojom/test_service.mojom.h"
 
-using namespace demo::mojom;
+using namespace demo::demo_mojo::mojom;
 using namespace mojo;
 
-class TestInterfaceImpl : public demo::mojom::TestInterface {
+class TestInterfaceImpl : public demo::demo_mojo::mojom::TestInterface {
  public:
   TestInterfaceImpl(PendingReceiver<TestInterface> receiver)
       : receiver_(this, std::move(receiver)) {}
@@ -73,7 +73,7 @@ class TestInterfaceImpl : public demo::mojom::TestInterface {
  private:
   // 也可以用StrongBinding
   // 要想让当前接口的一个实例可以服务多个Remote,这里可以使用ReceiverSet
-  Receiver<demo::mojom::TestInterface> receiver_;
+  Receiver<demo::demo_mojo::mojom::TestInterface> receiver_;
 };
 // 这里故意把Service的实现和接口的实现分开,因为很多情况下一个Service会提供多个接口
 class TestService : public service_manager::Service {
@@ -126,13 +126,13 @@ const service_manager::Manifest& GetTestManifest() {
                   .WithSandboxType("none")
                   .Build())
           .ExposeCapability("test", service_manager::Manifest::InterfaceList<
-                                        demo::mojom::TestInterface>())
+                                        demo::demo_mojo::mojom::TestInterface>())
           .RequireCapability("consumer_service", "root")
           .Build()};
   return *manifest;
 }
 
-class RootInterfaceImpl : public demo::mojom::RootInterface {
+class RootInterfaceImpl : public demo::demo_mojo::mojom::RootInterface {
  public:
   RootInterfaceImpl(PendingReceiver<RootInterface> receiver)
       : receiver_(this, std::move(receiver)) {}
@@ -182,7 +182,7 @@ const service_manager::Manifest& GetConsumerManifest() {
       service_manager::ManifestBuilder()
           .WithServiceName("consumer_service")
           .ExposeCapability("root", service_manager::Manifest::InterfaceList<
-                                        demo::mojom::RootInterface>())
+                                        demo::demo_mojo::mojom::RootInterface>())
           .RequireCapability("test_service", "test")
           .Build()};
   return *manifest;

@@ -1,7 +1,7 @@
 
 // Ｃhromium 推荐将mojom文件放在单独的mojom目录下
 
-module demo.mojom;
+module demo.demo_mojo.mojom;
 
 // generic_pending_receiver 在新版中才有
 // import "mojo/public/mojom/base/generic_pending_receiver.mojom";

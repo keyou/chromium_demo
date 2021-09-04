@@ -1,5 +1,5 @@
 
-module demo.mojom;
+module demo.demo_mojo.mojom;
 
 // const string kServiceName = "testservice";
 // const string kTestCapability = "test";

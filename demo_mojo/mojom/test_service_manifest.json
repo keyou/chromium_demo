@@ -4,7 +4,7 @@
     "interface_provider_specs": {
         "service_manager:connector": {
             "provides": {
-                "test": ["demo.mojom.TestInterface"]
+                "test": ["demo.demo_mojo.mojom.TestInterface"]
             },
             "requires": {
                 "consumer_service":["root"]
