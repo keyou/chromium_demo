@@ -6,7 +6,7 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/message_loop/message_loop.h"
+#include "base/single_thread_task_runner.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -26,6 +26,7 @@
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
 #include "components/viz/service/display/display.h"
+#include "components/viz/service/display/overlay_processor_stub.h"
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
@@ -41,7 +42,7 @@
 #include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-#include "ui/base/material_design/material_design_controller.h"
+// #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/x/x11_util.h"
@@ -68,7 +69,7 @@
 #endif
 
 #if defined(USE_X11)
-#include "ui/gfx/x/x11_connection.h"            // nogncheck
+// #include "ui/gfx/x/x11_connection.h"            // nogncheck
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck
 #endif
 
@@ -90,7 +91,7 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     DLOG(INFO) << "BeginPaint: get a canvas for paint";
     return viz::SoftwareOutputDevice::BeginPaint(damage_rect);
   }
-  virtual void OnSwapBuffers(SwapBuffersCallback swap_ack_callback) override {
+  void OnSwapBuffers(SwapBuffersCallback swap_ack_callback) override {
     auto image = surface_->makeImageSnapshot();
     SkBitmap bitmap;
     DCHECK(image->asLegacyBitmap(&bitmap));
@@ -129,14 +130,13 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     // 生成 root client 的 LocalSurfaceId
     root_local_surface_id_allocator_.GenerateId();
     root_local_surface_id_ =
-        root_local_surface_id_allocator_.GetCurrentLocalSurfaceIdAllocation();
+        root_local_surface_id_allocator_.GetCurrentLocalSurfaceId();
 
     // 创建 support 用于将提交的CF存入Surface
     constexpr bool is_root = true;
-    constexpr bool needs_sync_points = true;
+    // constexpr bool needs_sync_points = true;
     support_ = std::make_unique<viz::CompositorFrameSinkSupport>(
-        this, frame_sink_manager_.get(), root_frame_sink_id_, is_root,
-        needs_sync_points);
+        this, frame_sink_manager_.get(), root_frame_sink_id_, is_root);
 
     // 表示一个timer，会根据设置定时触发回调
     auto time_source =
@@ -156,9 +156,16 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
         output_surface->capabilities().max_frames_pending);
     viz::RendererSettings settings = viz::CreateRendererSettings();
     settings.use_skia_renderer = false;
+    // auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
-        shared_bitmap_manager_.get(), settings, root_frame_sink_id_,
-        std::move(output_surface), std::move(scheduler), task_runner);
+        shared_bitmap_manager_.get(), settings, &debug_settings_, root_frame_sink_id_,
+        nullptr, std::move(output_surface), nullptr,
+        std::move(scheduler), task_runner);
+    // display_ = std::make_unique<viz::Display>(
+    //   shared_bitmap_manager_.get(), renderer_settings_, debug_settings_,
+    //   frame_sink_id_, std::move(display_controller),
+    //   std::move(display_output_surface), std::move(overlay_processor),
+    //   std::move(scheduler), compositor_task_runner_);
     display_->Initialize(this, frame_sink_manager_->surface_manager());
 
     frame_sink_manager_->RegisterFrameSinkId(root_frame_sink_id_, false);
@@ -175,15 +182,15 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
 
     frame.metadata.begin_frame_ack = viz::BeginFrameAck(args, true);
     frame.metadata.device_scale_factor = 1.f;
-    frame.metadata.local_surface_id_allocation_time =
-        root_local_surface_id_.allocation_time();
+    // frame.metadata.local_surface_id_allocation_time =
+    //     root_local_surface_id_.allocation_time();
     frame.metadata.frame_token = ++frame_token_generator_;
 
     const int kRenderPassId = 1;
     const gfx::Rect& output_rect = gfx::Rect(size_);
     const gfx::Rect& damage_rect = output_rect;
-    std::unique_ptr<viz::RenderPass> render_pass = viz::RenderPass::Create();
-    render_pass->SetNew(kRenderPassId, output_rect, damage_rect,
+    std::unique_ptr<viz::CompositorRenderPass> render_pass = viz::CompositorRenderPass::Create();
+    render_pass->SetNew(viz::CompositorRenderPassId{kRenderPassId}, output_rect, damage_rect,
                         gfx::Transform());
 
     // Add a solid-color draw-quad for the big rectangle covering the entire
@@ -194,7 +201,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
         gfx::Transform(),
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*mask_filter_info=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/gfx::Rect(),
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -210,42 +217,43 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     return frame;
   }
 
-  virtual void DidReceiveCompositorFrameAck(
+  void DidReceiveCompositorFrameAck(
       const std::vector<::viz::ReturnedResource>& resources) override {}
 
-  virtual void OnBeginFrame(
+  void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
       const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
       override {
     DLOG(INFO) << "OnBeginFrame: submit a new frame";
-    if (support_->last_activated_local_surface_id() !=
-        root_local_surface_id_.local_surface_id()) {
-      display_->SetLocalSurfaceId(root_local_surface_id_.local_surface_id(),
-                                  1.0f);
+    if (support_->last_activated_local_surface_id() != root_local_surface_id_) {
+      display_->SetLocalSurfaceId(root_local_surface_id_, 1.0f);
     }
-    support_->SubmitCompositorFrame(root_local_surface_id_.local_surface_id(),
+    support_->SubmitCompositorFrame(root_local_surface_id_,
                                     CreateFrame(args),
                                     base::Optional<viz::HitTestRegionList>(),
                                     /*trace_time=*/0);
   }
 
-  virtual void OnBeginFramePausedChanged(bool paused) override {}
-
-  virtual void ReclaimResources(
+  void OnBeginFramePausedChanged(bool paused) override {}
+  void OnCompositorFrameTransitionDirectiveProcessed(uint32_t sequence_id) override {}
+  void ReclaimResources(
       const std::vector<::viz::ReturnedResource>& resources) override {}
 
   // viz::DisplayClient overrides.
   void DisplayOutputSurfaceLost() override {}
-  void DisplayWillDrawAndSwap(bool will_draw_and_swap,
-                              viz::RenderPassList* render_passes) override {}
+  void DisplayWillDrawAndSwap(
+      bool will_draw_and_swap,
+      viz::AggregatedRenderPassList* render_passes) override {}
   void DisplayDidDrawAndSwap() override {}
+  void SetWideColorEnabled(bool enabled) override {}
   void DisplayDidReceiveCALayerParams(
       const gfx::CALayerParams& ca_layer_params) override {}
   void DisplayDidCompleteSwapWithSize(const gfx::Size& pixel_size) override {}
   void SetPreferredFrameInterval(base::TimeDelta interval) override {}
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
-      const viz::FrameSinkId& id) override {
-    return frame_sink_manager_->GetPreferredFrameIntervalForFrameSinkId(id);
+      const viz::FrameSinkId& id,
+      viz::mojom::CompositorFrameSinkType* type) override {
+    return frame_sink_manager_->GetPreferredFrameIntervalForFrameSinkId(id, type);
   }
 
   base::Thread thread_;
@@ -253,6 +261,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   std::unique_ptr<viz::CompositorFrameSinkSupport> support_;
   std::unique_ptr<viz::DelayBasedBeginFrameSource> begin_frame_source_;
+  const viz::DebugRendererSettings debug_settings_;
   std::unique_ptr<viz::Display> display_;
   // 由于要将显示存储为图片，所以使用1FPS
   double fps_ = 1.0;
@@ -261,7 +270,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
 
   viz::FrameSinkId root_frame_sink_id_{0, 1};
   viz::ParentLocalSurfaceIdAllocator root_local_surface_id_allocator_;
-  viz::LocalSurfaceIdAllocation root_local_surface_id_;
+  viz::LocalSurfaceId root_local_surface_id_;
   viz::FrameTokenGenerator frame_token_generator_;
 };
 
@@ -302,7 +311,7 @@ int main(int argc, char** argv) {
   ui::RegisterPathProvider();
 
   // This app isn't a test and shouldn't timeout.
-  base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
+  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
   base::RunLoop run_loop;
 
@@ -312,7 +321,7 @@ int main(int argc, char** argv) {
   // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
   // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
   // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  ui::SetDefaultX11ErrorHandlers();
+  // ui::SetDefaultX11ErrorHandlers();
 
   // 每秒生成一张图片保存到文件中
   // 可以使用这种原理将浏览器嵌入其他程序，当然这个demo演示的并不是最优方案，只是一种可行方案

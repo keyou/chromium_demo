@@ -37,7 +37,7 @@ Demo list:
 15. [v91] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
 16. [v91] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
 17. `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
-18. `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
+18. [v91] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 19. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
 20. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
 21. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
@@ -98,6 +98,10 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2021.9.4
+
+- Migrate demo_viz_offscreen to v91；
 
 ### 2021.9.3
 

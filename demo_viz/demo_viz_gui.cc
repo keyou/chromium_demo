@@ -6,7 +6,7 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/message_loop/message_loop.h"
+#include "base/single_thread_task_runner.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -46,7 +46,7 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-#include "ui/base/material_design/material_design_controller.h"
+// #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/x/x11_util.h"
@@ -73,7 +73,7 @@
 #endif
 
 #if defined(USE_X11)
-#include "ui/gfx/x/x11_connection.h"            // nogncheck
+// #include "ui/gfx/x/x11_connection.h"            // nogncheck
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck
 #endif
 
@@ -82,7 +82,7 @@
 #endif
 
 #if defined(OS_WIN)
-#include "ui/base/cursor/cursor_loader_win.h"
+// #include "ui/base/cursor/cursor_loader_win.h"
 #include "ui/platform_window/win/win_window.h"
 #endif
 
@@ -95,7 +95,7 @@ constexpr SkColor colors[] = {SK_ColorRED, SK_ColorGREEN, SK_ColorYELLOW};
 class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
  public:
   LayerTreeFrameSink(const viz::FrameSinkId& frame_sink_id,
-                     const viz::LocalSurfaceIdAllocation& local_surface_id,
+                     const viz::LocalSurfaceId& local_surface_id,
                      const gfx::Rect& bounds)
       : frame_sink_id_(frame_sink_id),
         local_surface_id_(local_surface_id),

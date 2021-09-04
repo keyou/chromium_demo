@@ -30,7 +30,7 @@ Demo 列表：
 15. [v91] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
 16. [v91] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
 17. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
-18. `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
+18. [v91] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 19. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
 20. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
 21. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
@@ -91,6 +91,10 @@ Demo 列表：
 - 添加 demo, 演示 `tab capture api` 的原理；
 
 ## 更新日志
+
+### 2021.9.4
+
+- 升级 demo_viz_offscreen 到 v91 版本；
 
 ### 2021.9.3
 
