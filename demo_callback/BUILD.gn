@@ -7,7 +7,7 @@ group("demo_callback"){
 
 executable("demo_callback_once"){
     sources =[
-        "once.cc"
+        "demo_callback_once.cc"
     ]
     deps = [
         "//base"
@@ -16,7 +16,7 @@ executable("demo_callback_once"){
 
 executable("demo_callback_repeating"){
     sources =[
-        "repeating.cc"
+        "demo_callback_repeating.cc"
     ]
     deps = [
         "//base"
