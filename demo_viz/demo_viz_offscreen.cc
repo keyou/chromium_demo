@@ -156,16 +156,11 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
         output_surface->capabilities().max_frames_pending);
     viz::RendererSettings settings = viz::CreateRendererSettings();
     settings.use_skia_renderer = false;
-    // auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
+    auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
         shared_bitmap_manager_.get(), settings, &debug_settings_, root_frame_sink_id_,
-        nullptr, std::move(output_surface), nullptr,
+        nullptr, std::move(output_surface), std::move(overlay_processor),
         std::move(scheduler), task_runner);
-    // display_ = std::make_unique<viz::Display>(
-    //   shared_bitmap_manager_.get(), renderer_settings_, debug_settings_,
-    //   frame_sink_id_, std::move(display_controller),
-    //   std::move(display_output_surface), std::move(overlay_processor),
-    //   std::move(scheduler), compositor_task_runner_);
     display_->Initialize(this, frame_sink_manager_->surface_manager());
 
     frame_sink_manager_->RegisterFrameSinkId(root_frame_sink_id_, false);
