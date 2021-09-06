@@ -42,7 +42,7 @@ Demo list:
 20. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
 21. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
 22. `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
-23. `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
+23. [v91] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
 24. [v91] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
 25. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
 26. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
@@ -102,6 +102,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 ### 2021.9.6
 
 - Migrate demo_views to v91；
+- Migrate demo_cc_offscreen to v91；
 
 ### 2021.9.4
 

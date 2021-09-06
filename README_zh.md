@@ -35,7 +35,7 @@ Demo 列表：
 20. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
 21. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
 22. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
-23. `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
+23. [v91] `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
 24. [v91] `demo_views`: 演示使用 `//ui/views` 创建 UI；
 25. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
 26. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
@@ -95,6 +95,7 @@ Demo 列表：
 ### 2021.9.6
 
 - 升级 demo_views 到 v91 版本；
+- 升级 demo_cc_offscreen 到 v91 版本；
 
 ### 2021.9.4
 
