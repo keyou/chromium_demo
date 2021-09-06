@@ -6,12 +6,12 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
 #include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
+#include "base/single_thread_task_runner.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/test/task_environment.h"
@@ -33,7 +33,6 @@
 #include "ui/aura/window_tree_host_observer.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-#include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/x/x11_util.h"
@@ -62,8 +61,6 @@
 #include "ui/views/widget/desktop_aura/desktop_screen.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/widget/widget_delegate.h"
-#include "ui/views/background.h"
-#include "ui/events/event.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -75,12 +72,11 @@
 #endif
 
 #if defined(USE_X11)
-#include "ui/gfx/x/x11_connection.h"  // nogncheck
+#include "ui/gfx/x/connection.h"  // nogncheck
 #endif
 
 // Maintain the UI controls and web view for content shell
-class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,
-                                    public views::ButtonListener {
+class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
  public:
   DemoViewsWidgetDelegateView(base::OnceClosure on_close)
       : on_close_(std::move(on_close)) {
@@ -95,24 +91,25 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,
     // this->SetLayoutManager(std::make_unique<views::FillLayout>());
 
     // 添加一个使用 Material Design 的按钮
-    button_ =
-        views::MdTextButton::Create(this, base::ASCIIToUTF16("MaterialButton"));
+    button_ = std::make_unique<views::MdTextButton>(
+        base::BindRepeating(&DemoViewsWidgetDelegateView::ButtonPressed,
+                            base::Unretained(this)),
+        base::ASCIIToUTF16("MaterialButton"));
     button_->SetBounds(0, 0, 100, 50);
     this->AddChildView(button_.release());
   }
 
-  // Overridden from ButtonListener
-  void ButtonPressed(views::Button* sender, const ui::Event& event) override {
+  void ButtonPressed(const ui::Event& event) {
     DLOG(INFO) << "ButtonPressed()";
-    // 使用无障碍接口来修改按钮文本
-    sender->GetViewAccessibility().AnnounceText(base::ASCIIToUTF16("Pressed"));
+    // 使用无障碍接口来修改按钮文
+    button_->GetViewAccessibility().AnnounceText(base::ASCIIToUTF16("Pressed"));
   }
 
   // Overridden from WidgetDelegateView
   bool CanResize() const override { return true; }
   bool CanMaximize() const override { return true; }
   bool CanMinimize() const override { return true; }
-  base::string16 GetWindowTitle() const override {
+  std::u16string GetWindowTitle() const override {
     DLOG(INFO) << "GetWindowTitle()";
     return base::ASCIIToUTF16("Demo Widget");
   }
@@ -137,9 +134,7 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView,
 
 class SolidBackground : public views::Background {
  public:
-  explicit SolidBackground(SkColor color) {
-    SetNativeControlColor(color);
-  }
+  explicit SolidBackground(SkColor color) { SetNativeControlColor(color); }
 
   void Paint(gfx::Canvas* canvas, views::View* view) const override {
     // Fill the background. Note that we don't constrain to the bounds as
@@ -153,7 +148,7 @@ class SolidBackground : public views::Background {
 
 class InkView : public views::View {
  public:
-  InkView() { 
+  InkView() {
     path_.moveTo(0, 0);
     paint_flags_.setColor(SK_ColorWHITE);
     paint_flags_.setStyle(cc::PaintFlags::Style::kStroke_Style);
@@ -161,7 +156,7 @@ class InkView : public views::View {
   }
   void OnMouseMoved(const ui::MouseEvent& event) override {
     DLOG(INFO) << "OnMouseMoved()";
-    path_.lineTo(event.x(),event.y());
+    path_.lineTo(event.x(), event.y());
     SchedulePaint();
   }
   void OnPaint(gfx::Canvas* canvas) override {
@@ -184,14 +179,15 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
   // 启动 Trace
-  // auto trace_config = base::trace_event::TraceConfig("cc"/*, "trace-to-console"*/);
+  // auto trace_config = base::trace_event::TraceConfig("cc"/*,
+  // "trace-to-console"*/);
   // base::trace_event::TraceLog::GetInstance()->SetEnabled(
   //     trace_config, base::trace_event::TraceLog::RECORDING_MODE);
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoViews");
-  
+
   // 初始化mojo
   mojo::core::Init();
 
@@ -199,7 +195,7 @@ int main(int argc, char** argv) {
 #if defined(USE_X11)
   // This demo uses InProcessContextFactory which uses X on a separate Gpu
   // thread.
-  gfx::InitializeThreadedX11();
+  // gfx::InitializeThreadedX11();
 #endif
 
   // 加载相应平台的GL库及GL绑定
@@ -235,7 +231,7 @@ int main(int argc, char** argv) {
   wm::WMState wm_state;
   std::unique_ptr<aura::Env> env = aura::Env::CreateInstance();
   aura::Env::GetInstance()->set_context_factory(context_factory.get());
-  aura::Env::GetInstance()->set_context_factory_private(context_factory.get());
+  // aura::Env::GetInstance()->set_context_factory_private(context_factory.get());
 #endif
 
 #if BUILDFLAG(ENABLE_DESKTOP_AURA)
@@ -247,10 +243,10 @@ int main(int argc, char** argv) {
   ui::InitializeInputMethodForTesting();
 
   // 初始化 Material Design 风格，使用MD控件时才需要初始化
-  ui::MaterialDesignController::Initialize();
+  // ui::MaterialDesignController::Initialize();
 
   // This app isn't a test and shouldn't timeout.
-  base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
+  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
   base::RunLoop run_loop;
 
@@ -260,7 +256,7 @@ int main(int argc, char** argv) {
   // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
   // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
   // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  ui::SetDefaultX11ErrorHandlers();
+  // ui::SetDefaultX11ErrorHandlers();
 
   views::Widget* window_widget_ = new views::Widget;
   views::Widget::InitParams params;
@@ -271,7 +267,8 @@ int main(int argc, char** argv) {
   window_widget_->Init(std::move(params));
   window_widget_->Show();
 
-  views::Widget::InitParams child_params(views::Widget::InitParams::TYPE_CONTROL);
+  views::Widget::InitParams child_params(
+      views::Widget::InitParams::TYPE_CONTROL);
   child_params.parent = window_widget_->GetNativeView();
   child_params.ownership = views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
   child_params.opacity = views::Widget::InitParams::WindowOpacity::kTranslucent;
@@ -283,8 +280,11 @@ int main(int argc, char** argv) {
   child->SetContentsView(view.get());
   child->Show();
 
-  DLOG(INFO) <<"MainWidget: "<< window_widget_->GetNativeView()->GetHost()->GetAcceleratedWidget();
-  DLOG(INFO) <<"ChildWidget: "<< child->GetNativeView()->GetHost()->GetAcceleratedWidget();
+  DLOG(INFO)
+      << "MainWidget: "
+      << window_widget_->GetNativeView()->GetHost()->GetAcceleratedWidget();
+  DLOG(INFO) << "ChildWidget: "
+             << child->GetNativeView()->GetHost()->GetAcceleratedWidget();
 
   LOG(INFO) << "running...";
   run_loop.Run();
