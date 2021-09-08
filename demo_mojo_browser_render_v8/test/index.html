@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<head> 
+    <title>Mojo实际应用测试页面</title>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+   <h1>Mojo&V8在Chromiu中的应用Demo</h1>
+   <p>
+       再次感谢博佬
+
+       我们在页面加载完毕后，应该会在IDE的调试控制台中看到
+       >> Binding Call BindRemote
+       >> DemoImpl Call Hello:manonloki
+   </p>
+   <script type="text/javascript">
+      const demo = new Demo();
+      demo.hello("manonloki")  
+   </script>
+</body>

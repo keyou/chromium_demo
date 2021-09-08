@@ -1,0 +1,7 @@
+module demo.mojom;
+
+interface Demo {
+    Hello(string name);
+};
+
+
