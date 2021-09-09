@@ -55,7 +55,15 @@ shared_library("libdemo_shell_content_view") {
 
 android_resources("demo_shell_java_resources") {
   testonly = true
-  resource_dirs = [ "java/res" ]
+  sources = [ 
+    "java/res/layout/shell_view.xml",
+    "java/res/mipmap-hdpi/app_icon.png",
+    "java/res/mipmap-mdpi/app_icon.png",
+    "java/res/mipmap-xhdpi/app_icon.png",
+    "java/res/mipmap-xxhdpi/app_icon.png",
+    "java/res/mipmap-xxxhdpi/app_icon.png",
+    "java/res/values/strings.xml",
+   ]
   custom_package = "org.chromium.demo_shell"
 }
 
@@ -78,13 +86,13 @@ android_library("demo_shell_java") {
     "//net/android:net_java",
     "//ui/android:ui_java",
   ]
-  java_files = [
+  sources = [
     "java/src/org/chromium/demo_shell/Shell.java",
     "java/src/org/chromium/demo_shell/ShellManager.java",
     "java/src/org/chromium/demo_shell/ShellViewAndroidDelegate.java",
   ]
 
-  android_manifest_for_lint = demo_shell_manifest
+  # android_manifest_for_lint = demo_shell_manifest
   annotation_processor_deps = [ "//base/android/jni_generator:jni_processor" ]
 }
 
@@ -97,7 +105,10 @@ jinja_template("demo_shell_manifest") {
 
 android_resources("demo_shell_apk_resources") {
   testonly = true
-  resource_dirs = [ "shell_apk/res" ]
+  sources = [ 
+    "shell_apk/res/layout/demo_shell_activity.xml",
+    "shell_apk/res/values/strings.xml",
+  ]
   deps = [
     ":demo_shell_java_resources",
   ]
@@ -122,7 +133,7 @@ android_library("demo_shell_apk_java") {
     "//ui/android:ui_java",
   ]
 
-  java_files = [
+  sources = [
     #"shell_apk/src/org/chromium/demo_shell_apk/ChildProcessLauncherTestHelperService.java",
     #"shell_apk/src/org/chromium/demo_shell_apk/ChildProcessLauncherTestUtils.java",
     "shell_apk/src/org/chromium/demo_shell_apk/DemoShellActivity.java",

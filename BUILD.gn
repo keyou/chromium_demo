@@ -1,57 +1,92 @@
 
 group("demo") {
   testonly = true
-  # 除非特殊说明，所有demo仅在Linux上进行测试，其他平台未经测试
-  deps = [
-    ":demo_exe",
-    "demo_log",
-    "demo_tracing",
-    "demo_task",
-    "demo_callback",
-    "demo_mojo",
-    "demo_ipc",
-    "demo_memory",
-    "demo_resources",
-    "demo_gl",
-    "demo_viz",
-    "demo_cc",
-    "demo_x11",
-    "demo_skia",
-    "demo_views",
-    "demo_android",
-    "demo_shell",
 
-  ]
-
-  # Windows 暂时无法运行的Demo
-  if(is_win) {
-    deps -= [
-      "demo_memory",
+  if(is_linux) {
+    deps = [
+      ":demo_exe",
+      "demo_log",
       "demo_tracing",
-      "demo_resources",
+      "demo_task",
+      "demo_callback",
       "demo_mojo",
-
-      "demo_views",
+      "demo_ipc",
+      "demo_memory",
+      "demo_resources",
       "demo_gl",
       "demo_viz",
       "demo_cc",
-      "demo_skia",
       "demo_x11",
-      "demo_android",
+      "demo_skia",
+      "demo_views",
+      # "demo_android",
       "demo_shell",
     ]
   }
-  # Mac 暂时无法运行的Demo
-  if(is_mac) {
-    deps -= [
-      "demo_views",
-      "demo_gl",
-      "demo_viz",
-      "demo_cc",
-      "demo_skia",
-      "demo_x11",
+
+    if(is_android) {
+    deps = [
+      ":demo_exe",
+      "demo_log",
+      # "demo_tracing",
+      "demo_task",
+      "demo_callback",
+      # "demo_mojo",
+      # "demo_ipc",
+      # "demo_memory",
+      # "demo_resources",
+      # "demo_gl",
+      # "demo_viz",
+      # "demo_cc",
+      # "demo_x11",
+      # "demo_skia",
+      # "demo_views",
       "demo_android",
-      "demo_shell",
+      # "demo_shell",
+    ]
+  }
+
+  if(is_win) {
+    deps = [
+      ":demo_exe",
+      "demo_log",
+      # "demo_tracing",
+      "demo_task",
+      "demo_callback",
+      # "demo_mojo",
+      # "demo_ipc",
+      # "demo_memory",
+      # "demo_resources",
+      # "demo_gl",
+      # "demo_viz",
+      # "demo_cc",
+      # "demo_x11",
+      # "demo_skia",
+      # "demo_views",
+      # "demo_android",
+      # "demo_shell",
+    ]
+  }
+  
+  if(is_mac) {
+    deps = [
+      ":demo_exe",
+      "demo_log",
+      "demo_tracing",
+      "demo_task",
+      "demo_callback",
+      "demo_mojo",
+      "demo_ipc",
+      "demo_memory",
+      "demo_resources",
+      # "demo_gl",
+      # "demo_viz",
+      # "demo_cc",
+      # "demo_x11",
+      # "demo_skia",
+      # "demo_views",
+      # "demo_android",
+      # "demo_shell",
     ]
   }
 }
@@ -65,11 +100,3 @@ executable("demo_exe") {
     "//base",
   ]
 }
-
- 
-
-
-
-
-
-

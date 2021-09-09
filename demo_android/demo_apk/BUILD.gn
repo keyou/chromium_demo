@@ -14,7 +14,11 @@ import("//third_party/icu/config.gni")
 
 android_resources("demo_apk_resources") {
   testonly = true
-  resource_dirs = [ "res" ]
+  sources = [
+    "res/layout/demo_apk_activity.xml",
+    "res/mipmap-hdpi/app_icon.png",
+    "res/values/strings.xml",
+  ]
   custom_package = "org.chromium.demo_apk"
 }
 
@@ -40,7 +44,7 @@ android_library("demo_apk_java") {
     "//ui/android:ui_java",
   ]
 
-  java_files = [
+  sources = [
     "src/org/chromium/demo_apk/DemoApkActivity.java",
     "src/org/chromium/demo_apk/DemoApkApplication.java",
     "src/org/chromium/demo_jni/DemoFoo.java",

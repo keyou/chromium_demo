@@ -74,8 +74,8 @@ Public documents are in the [docs](./docs) directory, and other documents are in
     root_extra_deps = ["//demo"]
     
     # If you want to compile the demo of android platform, you need to add the following parameters
-    target_os="android"
-    target_cpu="arm64" # Other architectures can be selected as needed x86, x64, arm, mipsel
+    # target_os="android"
+    # target_cpu="arm64" # Other architectures can be selected as needed x86, x64, arm, mipsel
     ```
 
 4. Run `ninja -C out/Default <name in demo list>` to generate the required demo (see [BUILD.gn](. /BUILD.gn)), for example using the name `demo_exe` to generate the demo_exe program. Or use `demo` to generate all programs.

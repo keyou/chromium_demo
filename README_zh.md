@@ -67,8 +67,8 @@ Demo 列表：
     root_extra_deps = ["//demo"]
     
     # 如果要编译 android 平台的 demo 需要额外添加以下参数
-    target_os="android"
-    target_cpu="arm64" # 可以根据需要选择其它架构 x86,x64,arm,mipsel
+    # target_os="android"
+    # target_cpu="arm64" # 可以根据需要选择其它架构 x86,x64,arm,mipsel
     ```
 
 4. 执行 `ninja -C out/Default <demo列表中的名称>` 生成所需的demo（详见 [BUILD.gn](./BUILD.gn)），比如使用名称 `demo_exe` 生成 demo_exe 程序。或者使用 `demo` 生成所有的程序；
