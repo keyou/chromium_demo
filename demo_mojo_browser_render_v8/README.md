@@ -139,7 +139,7 @@ void ChromeContentRendererClient::WillReleaseScriptContext(
 # ...
 
 no_check_targets = [
-    "demo/demo_mojo_browser_render_v8:&"
+    "demo/demo_mojo_browser_render_v8:*"
     #...
 ]
 
