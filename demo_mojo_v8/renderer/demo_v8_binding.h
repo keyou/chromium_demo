@@ -6,8 +6,8 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "v8/include/v8.h"
 
-#include "demo/demo_mojo_browser_render_v8/mojom/demo.mojom.h"
-#include "demo/demo_mojo_browser_render_v8/v8/node_object_wrap.h"
+#include "demo/demo_mojo_v8/mojom/demo.mojom.h"
+#include "demo/demo_mojo_v8/v8/node_object_wrap.h"
 
 namespace demo {
 

@@ -25,7 +25,7 @@ static_library("browser") {
    #...
    public_deps = [
        # 加入我们的依赖
-       "//demo/demo_mojo_browser_render_v8:browser",
+       "//demo/demo_mojo_v8:browser",
        #...
    ]
 }
@@ -36,7 +36,7 @@ chrome/browser/chrome_content_browser_client_receiver_bindings.cc
 
 ```cpp
 // ...
-#include "demo/demo_mojo_browser_render_v8/browser/receiver_register.h"
+#include "demo/demo_mojo_v8/browser/receiver_register.h"
 
 void ChromeContentBrowserClient::ExposeInterfacesToRenderer(
     service_manager::BinderRegistry* registry,
@@ -61,7 +61,7 @@ static_library("renderer") {
 
     deps = [
           #加入我们的依赖
-        "//demo/demo_mojo_browser_render_v8:render",
+        "//demo/demo_mojo_v8:renderer",
         # ...
     ]
 }
@@ -73,8 +73,8 @@ chrome/renderer/chrome_content_renderer_client.h
 ```cpp
 
 // ...
-#include "demo/demo_mojo_browser_render_v8/render/render_frame_observer.h"
-#include "demo/demo_mojo_browser_render_v8/render/v8_bindings_register.h"
+#include "demo/demo_mojo_v8/renderer/render_frame_observer.h"
+#include "demo/demo_mojo_v8/renderer/v8_bindings_register.h"
 
 class ChromeContentRendererClient
     : public content::ContentRendererClient,
@@ -139,7 +139,7 @@ void ChromeContentRendererClient::WillReleaseScriptContext(
 # ...
 
 no_check_targets = [
-    "demo/demo_mojo_browser_render_v8:*"
+    "demo/demo_mojo_v8:*"
     #...
 ]
 

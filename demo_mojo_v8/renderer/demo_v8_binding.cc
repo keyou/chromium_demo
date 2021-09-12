@@ -1,8 +1,8 @@
-#include "demo/demo_mojo_browser_render_v8/render/demo_v8_binding.h"
+#include "demo/demo_mojo_v8/renderer/demo_v8_binding.h"
 
 #include "content/public/renderer/render_thread.h"
-#include "demo/demo_mojo_browser_render_v8/v8/node_version.h"
-#include "demo/demo_mojo_browser_render_v8/v8/node.h"
+#include "demo/demo_mojo_v8/v8/node_version.h"
+#include "demo/demo_mojo_v8/v8/node.h"
 
 
 namespace {

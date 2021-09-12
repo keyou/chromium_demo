@@ -5,7 +5,7 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
 
-#include "demo/demo_mojo_browser_render_v8/mojom/demo.mojom.h"
+#include "demo/demo_mojo_v8/mojom/demo.mojom.h"
 namespace demo {
 
 // 实现Demo Mojom

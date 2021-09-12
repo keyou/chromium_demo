@@ -1,4 +1,4 @@
-#include "demo/demo_mojo_browser_render_v8/browser/demo_impl.h"
+#include "demo/demo_mojo_v8/browser/demo_impl.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 
 namespace demo {

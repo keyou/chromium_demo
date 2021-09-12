@@ -1,7 +1,7 @@
 import("//mojo/public/tools/bindings/mojom.gni")
 
 # 应用于渲染进程
-source_set("render"){
+source_set("renderer"){
     # 工具类只有头文件，声明在这里
     public = [
         "v8/node_object_wrap.h",
@@ -11,12 +11,10 @@ source_set("render"){
     # 我们实现的全部源码
     sources =[
         # Render部分
-        "render/demo_v8_binding.cc",
-        "render/demo_v8_binding.h",
-        "render/v8_bindings_register.cc",
-        "render/v8_bindings_register.h",
-        "render/render_frame_observer.cc",
-        "render/render_frame_observer.h",
+        "renderer/demo_render_frame_observer.cc",
+        "renderer/demo_render_frame_observer.h",
+        "renderer/demo_v8_binding.cc",
+        "renderer/demo_v8_binding.h",
     ]
     # 依赖
     public_deps =[
@@ -38,8 +36,6 @@ source_set("browser"){
         # Browser部分
         "browser/demo_impl.h",
         "browser/demo_impl.cc",
-        "browser/receiver_register.h",
-        "browser/receiver_register.cc",
     ]
     # 依赖
     public_deps =[
@@ -49,7 +45,6 @@ source_set("browser"){
         "//base",
         "//mojo/public:sdk",
         "//mojo/public/mojom/base",
-        "//v8",
     ]
 }
 # mojom
