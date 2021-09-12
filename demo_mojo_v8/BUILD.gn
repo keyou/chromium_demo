@@ -1,5 +1,9 @@
 import("//mojo/public/tools/bindings/mojom.gni")
 
+group("demo_mojo_v8") {
+    print("demo_mojo_v8: Please read the README file in 'demo_mojo_v8/' directory!")
+}
+
 # 应用于渲染进程
 source_set("renderer"){
     # 工具类只有头文件，声明在这里
