@@ -12,5 +12,6 @@ executable("demo_ipc") {
     "//base:base_static",
     "//mojo/public",
     "//mojo/core/embedder",
+    "//demo/demo_mojo/mojom",
  ]
 }

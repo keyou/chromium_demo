@@ -33,6 +33,13 @@ template("viz") {
       ]
       #configs += [ "//build/config/linux:x11" ]
     }
+
+    if (is_win) {
+      deps += [
+        "//ui/platform_window/win:win",
+      ]
+    }
+
   }
 }
 
@@ -40,11 +47,16 @@ group("demo_viz") {
   testonly = true
   deps = [
     ":demo_viz_gui",
-    ":demo_viz_gui_gpu",
     ":demo_viz_offscreen",
-    ":demo_viz_layer",
-    ":demo_viz_layer_offscreen",
   ]
+  if (!is_win) {
+    # windows暂时编译不过
+    deps += [
+      ":demo_viz_layer_offscreen",
+      ":demo_viz_layer",
+      ":demo_viz_gui_gpu",
+    ]
+  }
 }
 
 viz("demo_viz_gui") {

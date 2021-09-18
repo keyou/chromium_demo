@@ -18,10 +18,17 @@
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
 
+#if defined(OS_WIN)
+#include "demo/demo_mojo/mojom/test.mojom.h"
+#include "demo/demo_mojo/mojom/test2.mojom.h"
+#include "demo/demo_mojo/mojom/test3.mojom.h"
+#include "demo/demo_mojo/mojom/test4.mojom.h"
+#else
 #include "demo/mojom/test.mojom.h"
 #include "demo/mojom/test2.mojom.h"
 #include "demo/mojom/test3.mojom.h"
 #include "demo/mojom/test4.mojom.h"
+#endif
 
 // For bindings API
 // #include "mojo/public/cpp/bindings/binding.h"
@@ -417,6 +424,14 @@ void MojoConsumer() {
 
 int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
+
   LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
   // 创建主线程消息循环
   base::SingleThreadTaskExecutor main_task_executor;

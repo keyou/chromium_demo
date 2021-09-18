@@ -53,7 +53,6 @@
 // #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/base/x/x11_util.h"
 #include "ui/compositor/paint_recorder.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
@@ -69,7 +68,6 @@
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
-#include "ui/platform_window/x11/x11_window.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -77,6 +75,7 @@
 #endif
 
 #if defined(USE_X11)
+#include "ui/base/x/x11_util.h"
 #include "ui/gfx/x/connection.h"                // nogncheck
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck
 #endif
@@ -86,7 +85,7 @@
 #endif
 
 #if defined(OS_WIN)
-#include "ui/base/cursor/cursor_loader_win.h"
+// #include "ui/base/cursor/cursor_loader_win.h"
 #include "ui/platform_window/win/win_window.h"
 #endif
 
@@ -169,7 +168,7 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     DCHECK(base::PathService::Get(base::BasePathKey::DIR_EXE, &path));
     path = path.AppendASCII(filename);
 
-    SkFILEWStream stream(path.value().c_str());
+    SkFILEWStream stream(path.AsUTF8Unsafe().c_str());
     DCHECK(
         SkEncodeImage(&stream, bitmap.pixmap(), SkEncodedImageFormat::kPNG, 0));
     LOG(INFO) << "OnSwapBuffers: save the frame to: " << path;
@@ -500,6 +499,14 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
+
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop

@@ -5,10 +5,11 @@
 #include "base/bind.h"
 #include "base/callback.h"
 #include "base/command_line.h"
-#include "base/files/file.h"
 #include "base/files/file_path.h"
+#include "base/files/file.h"
 #include "base/logging.h"
 #include "base/memory/ref_counted_memory.h"
+#include "base/strings/sys_string_conversions.h"
 #include "base/threading/thread.h"
 #include "base/trace_event/trace_buffer.h"
 
@@ -20,10 +21,16 @@ std::unique_ptr<base::File>& trace_file() {
 }
 
 void InitTrace(const std::string& file) {
+#if defined(OS_WIN)
+  trace_file() = std::make_unique<base::File>(
+      base::FilePath(base::SysUTF8ToWide(file)), base::File::FLAG_OPEN_ALWAYS |
+                                base::File::FLAG_WRITE);
+#else
   trace_file() = std::make_unique<base::File>(
       base::FilePath(file), base::File::FLAG_OPEN_ALWAYS |
                                 base::File::FLAG_WRITE |
                                 base::File::FLAG_OPEN_TRUNCATED);
+#endif
   DCHECK(trace_file()->IsValid());
   trace_file()->WriteAtCurrentPos("[", 1);
   DLOG(INFO) << "Init trace file: " << file;

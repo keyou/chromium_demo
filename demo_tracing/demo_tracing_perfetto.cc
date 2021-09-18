@@ -14,6 +14,7 @@
 #include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
 #include "base/timer/timer.h"
+#include "base/threading/platform_thread.h"
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "components/tracing/common/trace_startup_config.h"
@@ -131,7 +132,11 @@ void TraceMe() {
   TRACE_EVENT0("test", "TraceMe");
   TRACE_EVENT1("test", "TraceMe", "value", 1);
   TRACE_EVENT2("test", "TraceMe", "value", 1, "value2", 2);
+#if defined(OS_WIN)
+  base::PlatformThread::Sleep(base::TimeDelta::FromSeconds(5));
+#else
   usleep(50 * 1000);
+#endif
 }
 
 void TraceCount(int times) {
@@ -139,12 +144,23 @@ void TraceCount(int times) {
   // Counter 类型的 Trace 是进程级别的，因此在 TraceViewer
   // 中它不会显示在某一个线程中
   TRACE_COUNTER1("test", "TraceCounter", times);
+#if defined(OS_WIN)
+  base::PlatformThread::Sleep(base::TimeDelta::FromSeconds(1));
+#else
   usleep(10 * 1000);
+#endif
 }
 
 int main(int argc, char** argv) {
   base::AtExitManager at_exit;
   base::CommandLine::Init(argc, argv);
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
 
   // 使用单进程的 Tracing
   base::FeatureList::InitializeInstance(features::kTracingServiceInProcess.name,

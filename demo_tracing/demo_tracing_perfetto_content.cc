@@ -8,8 +8,10 @@
 #include "base/command_line.h"
 #include "base/debug/stack_trace.h"
 #include "base/feature_list.h"
+#include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/memory/ref_counted.h"
+#include "base/path_service.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/task_traits.h"
 #include "base/test/test_timeouts.h"
@@ -47,14 +49,22 @@ void TraceMe() {
   TRACE_EVENT0("test", "TraceMe");
   TRACE_EVENT1("test", "TraceMe", "value", 1);
   TRACE_EVENT2("test", "TraceMe", "value", 1, "value2", 2);
+#if defined(OS_WIN)
+  base::PlatformThread::Sleep(base::TimeDelta::FromSeconds(5));
+#else
   usleep(50 * 1000);
+#endif
 }
 
 void TraceCount(int times) {
   TRACE_EVENT1("test", "TraceCount", "times", times);
   // Counter 类型的 Trace 是进程级别的，因此在 TraceViewer 中它不会显示在某一个线程中
   TRACE_COUNTER1("test", "TraceCounter", times);
+#if defined(OS_WIN)
+  base::PlatformThread::Sleep(base::TimeDelta::FromSeconds(1));
+#else
   usleep(10 * 1000);
+#endif
 }
 
 int main(int argc, char** argv) {
@@ -141,7 +151,13 @@ int main(int argc, char** argv) {
           stop_tracing_run_loop.QuitClosure()));
 
   // 用于将Trace的结果保存到文件
+#if defined(OS_WIN)
+  base::FilePath file_path;
+  base::PathService::Get(base::BasePathKey::DIR_EXE, &file_path);
+  file_path = file_path.AppendASCII("\\demo_tracing_perfetto.json");
+#else
   base::FilePath file_path("./demo_tracing_perfetto.json");
+#endif
   auto file_endpoint = content::TracingController::CreateFileEndpoint(
       file_path,
       base::BindOnce(

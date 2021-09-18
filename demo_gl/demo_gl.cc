@@ -41,7 +41,9 @@
 // #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
+#if defined(USE_X11)
 #include "ui/base/x/x11_util.h"
+#endif
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
 #include "ui/events/event_constants.h"
@@ -56,7 +58,9 @@
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
+#if defined(USE_X11)
 #include "ui/platform_window/x11/x11_window.h"
+#endif
 
 #include "GL/gl.h"
 #include "gpu/command_buffer/service/feature_info.h"
@@ -101,7 +105,7 @@
 #endif
 
 #if defined(OS_WIN)
-#include "ui/base/cursor/cursor_loader_win.h"
+// #include "ui/base/cursor/cursor_loader_win.h"
 #include "ui/platform_window/win/win_window.h"
 #endif
 
@@ -189,8 +193,10 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   void OnWillDestroyAcceleratedWidget() override {}
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
     widget_ = widget;
+#if !defined(OS_WIN)
     // 如果需要去除窗口边框，将true改为false
-    platform_window_->SetUseNativeFrame(true);
+    platform_window_->SetUseNativeFrame(true); // windows crash here
+#endif
     if (platform_window_)
       InitializeDemo();
   }
@@ -253,6 +259,14 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
+
   // 启动 Trace
   demo::InitTrace("./trace_demo_gl.json");
   demo::StartTrace("gpu,shell,disabled-by-default-toplevel.flow");
@@ -289,6 +303,7 @@ int main(int argc, char** argv) {
   base::RunLoop run_loop;
 
   demo::DemoWindowHost window(run_loop.QuitClosure());
+
   window.Create(gfx::Rect(800, 600));
 
   LOG(INFO) << "running...";

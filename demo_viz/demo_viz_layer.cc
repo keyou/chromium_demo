@@ -6,7 +6,7 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/message_loop/message_loop.h"
+// #include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -81,10 +81,9 @@
 #include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-#include "ui/base/material_design/material_design_controller.h"
+// #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/base/x/x11_util.h"
 #include "ui/compositor/paint_recorder.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
@@ -102,7 +101,6 @@
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
-#include "ui/platform_window/x11/x11_window.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -110,6 +108,7 @@
 #endif
 
 #if defined(USE_X11)
+#include "ui/base/x/x11_util.h"
 #include "ui/gfx/x/x11_connection.h"            // nogncheck
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck
 #endif
@@ -119,7 +118,7 @@
 #endif
 
 #if defined(OS_WIN)
-#include "ui/base/cursor/cursor_loader_win.h"
+// #include "ui/base/cursor/cursor_loader_win.h"
 #include "ui/platform_window/win/win_window.h"
 #endif
 
@@ -136,7 +135,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
                   public ui::PlatformEventObserver {
  public:
   InkClient(const viz::FrameSinkId& frame_sink_id,
-            const viz::LocalSurfaceIdAllocation& local_surface_id,
+            const viz::LocalSurfaceId& local_surface_id,
             const gfx::Rect& bounds)
       : frame_sink_id_(frame_sink_id),
         local_surface_id_(local_surface_id),
@@ -144,7 +143,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
         thread_("Demo_" + frame_sink_id.ToString()) {
     CHECK(thread_.Start());
   }
-  ~InkClient() {}
+  ~InkClient() override {}
   void Bind(
       mojo::PendingReceiver<viz::mojom::CompositorFrameSinkClient> receiver,
       mojo::PendingRemote<viz::mojom::CompositorFrameSink> remote) {
@@ -155,7 +154,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
       // 告诉 CompositorFrameSink 可以开始请求 CompositorFrame 了
       frame_sink_remote_->SetNeedsBeginFrame(true);
       client_resource_provider_ =
-          std::make_unique<viz::ClientResourceProvider>(false);
+          std::make_unique<viz::ClientResourceProvider>();
 
       // 创建要渲染的内容到 SkBitmap 中
       bitmap_ = std::make_unique<SkBitmap>();
@@ -192,10 +191,10 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
 
  private:
   // This is called before the dispatcher receives the event.
-  virtual void WillProcessEvent(const ui::PlatformEvent& event) override {}
+  void WillProcessEvent(const ui::PlatformEvent& event) override {}
 
   // This is called after the event has been dispatched to the dispatcher(s).
-  virtual void DidProcessEvent(const ui::PlatformEvent& event) override {
+  void DidProcessEvent(const ui::PlatformEvent& event) override {
     ui::EventType type = ui::EventTypeFromNative(event);
     std::unique_ptr<ui::LocatedEvent> located_event;
     if (type == ui::ET_MOUSE_MOVED) {
@@ -229,15 +228,15 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
     viz::CompositorFrame frame;
     frame.metadata.begin_frame_ack = viz::BeginFrameAck(args, true);
     frame.metadata.device_scale_factor = 1.f;
-    frame.metadata.local_surface_id_allocation_time =
-        local_surface_id_.allocation_time();
+    // frame.metadata.local_surface_id_allocation_time =
+    //     local_surface_id_.allocation_time();
     frame.metadata.frame_token = ++frame_token_generator_;
     frame.metadata.send_frame_token_to_embedder = true;
 
-    const int kRenderPassId = 1;
+    viz::CompositorRenderPassId kRenderPassId{1};
     const gfx::Rect& output_rect = bounds_;
     const gfx::Rect& damage_rect = output_rect;
-    std::unique_ptr<viz::RenderPass> render_pass = viz::RenderPass::Create();
+    std::unique_ptr<viz::CompositorRenderPass> render_pass = viz::CompositorRenderPass::Create();
     render_pass->SetNew(kRenderPassId, output_rect, damage_rect,
                         gfx::Transform());
 
@@ -251,7 +250,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
 
   // 演示 TextureDrawQuad 的使用
   void AppendTextureDrawQuad(viz::CompositorFrame& frame,
-                             viz::RenderPass* render_pass) {
+                             viz::CompositorRenderPass* render_pass) {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::AppendTextureDrawQuad");
 
     gfx::Size tile_size(bounds_.width(), bounds_.height());
@@ -267,7 +266,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
         transform,
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/output_rect,
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -289,7 +288,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
   }
   // 演示 SolidColorDrawQuad 的使用
   void AppendSolidColorDrawQuad(viz::CompositorFrame& frame,
-                                viz::RenderPass* render_pass) {
+                                viz::CompositorRenderPass* render_pass) {
     auto color =
         colors[(*frame_token_generator_ / 60 + 1) % base::size(colors)];
     TRACE_EVENT1("viz", "LayerTreeFrameSink::AppendSolidColorDrawQuad", "color",
@@ -303,7 +302,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
         gfx::Transform(),
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/gfx::Rect(),
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -360,7 +359,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
     auto format = viz::RGBA_8888;
     auto color_space = gfx::ColorSpace();
     gpu::Mailbox mailbox = sii->CreateSharedImage(
-        format, size, color_space, gpu::SHARED_IMAGE_USAGE_DISPLAY, pixels);
+        format, size, color_space, GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin, SkAlphaType::kPremul_SkAlphaType, gpu::SHARED_IMAGE_USAGE_DISPLAY, pixels);
     gpu::SyncToken sync_token = sii->GenVerifiedSyncToken();
 
     viz::TransferableResource gl_resource = viz::TransferableResource::MakeGL(
@@ -387,14 +386,16 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
     sii->DestroySharedImage(sync_token, mailbox);
   }
 
-  virtual void OnBeginFrame(
+  void OnCompositorFrameTransitionDirectiveProcessed(uint32_t sequence_id) override {}
+
+  void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
       const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
       override {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::OnBeginFrame");
     if (need_redraw_) {
       frame_sink_remote_->SubmitCompositorFrame(
-          local_surface_id_.local_surface_id(), CreateFrame(args),
+          local_surface_id_, CreateFrame(args),
           base::Optional<viz::HitTestRegionList>(),
           /*trace_time=*/0);
     } else {
@@ -404,7 +405,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
     // frame_sink_remote_->SetNeedsBeginFrame(false);
   }
 
-  virtual void DidReceiveCompositorFrameAck(
+  void DidReceiveCompositorFrameAck(
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::DidReceiveCompositorFrameAck",
                  "size", resources.size());
@@ -415,11 +416,11 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
     }
   }
 
-  virtual void OnBeginFramePausedChanged(bool paused) override {
+  void OnBeginFramePausedChanged(bool paused) override {
     // DLOG(INFO) << __FUNCTION__;
   }
 
-  virtual void ReclaimResources(
+  void ReclaimResources(
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::ReclaimResources", "size",
                  resources.size());
@@ -431,7 +432,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
   }
 
   viz::FrameSinkId frame_sink_id_;
-  viz::LocalSurfaceIdAllocation local_surface_id_;
+  viz::LocalSurfaceId local_surface_id_;
   gfx::Rect bounds_;
   // 模拟每个 Client 都在独立的线程中生成 CF
   base::Thread thread_;
@@ -455,7 +456,7 @@ class InkClient : public viz::mojom::CompositorFrameSinkClient,
 class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
  public:
   LayerTreeFrameSink(const viz::FrameSinkId& frame_sink_id,
-                     const viz::LocalSurfaceIdAllocation& local_surface_id,
+                     const viz::LocalSurfaceId& local_surface_id,
                      const gfx::Rect& bounds)
       : frame_sink_id_(frame_sink_id),
         local_surface_id_(local_surface_id),
@@ -464,7 +465,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     CHECK(thread_.Start());
   }
 
-  virtual ~LayerTreeFrameSink() {}
+  ~LayerTreeFrameSink() override {}
 
   // remote 和 associated_remote 只能一个有效.
   // remote 用于非 root 的 client, associated_remote 用于 root client.
@@ -507,12 +508,12 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
 
   viz::FrameSinkId frame_sink_id() { return frame_sink_id_; }
 
-  viz::LocalSurfaceIdAllocation EmbedChild(
+  viz::LocalSurfaceId EmbedChild(
       const viz::FrameSinkId& child_frame_sink_id) {
     base::AutoLock lock(lock_);
     child_frame_sink_id_ = child_frame_sink_id;
     local_surface_id_allocator_.GenerateId();
-    return local_surface_id_allocator_.GetCurrentLocalSurfaceIdAllocation();
+    return local_surface_id_allocator_.GetCurrentLocalSurfaceId();
   }
 
  private:
@@ -530,7 +531,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // 告诉 CompositorFrameSink 可以开始请求 CompositorFrame 了
     GetCompositorFrameSinkPtr()->SetNeedsBeginFrame(true);
     client_resource_provider_ =
-        std::make_unique<viz::ClientResourceProvider>(false);
+        std::make_unique<viz::ClientResourceProvider>();
   }
 
   viz::CompositorFrame CreateFrame(const ::viz::BeginFrameArgs& args) {
@@ -541,15 +542,15 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     viz::CompositorFrame frame;
     frame.metadata.begin_frame_ack = viz::BeginFrameAck(args, true);
     frame.metadata.device_scale_factor = 1.f;
-    frame.metadata.local_surface_id_allocation_time =
-        local_surface_id_.allocation_time();
+    // frame.metadata.local_surface_id_allocation_time =
+    //     local_surface_id_.allocation_time();
     frame.metadata.frame_token = *frame_token_generator_;
     frame.metadata.send_frame_token_to_embedder = true;
 
-    const int kRenderPassId = 1;
+    viz::CompositorRenderPassId kRenderPassId{1};
     const gfx::Rect& output_rect = bounds_;
     const gfx::Rect& damage_rect = output_rect;
-    std::unique_ptr<viz::RenderPass> render_pass = viz::RenderPass::Create();
+    std::unique_ptr<viz::CompositorRenderPass> render_pass = viz::CompositorRenderPass::Create();
     render_pass->SetNew(kRenderPassId, output_rect, damage_rect,
                         gfx::Transform());
 
@@ -593,15 +594,18 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     base::FilePath path;
     DCHECK(base::PathService::Get(base::BasePathKey::DIR_EXE, &path));
     path = path.AppendASCII(filename);
-
+#if defined(OS_WIN)
+    SkFILEWStream stream(path.AsUTF8Unsafe().c_str());
+#else
     SkFILEWStream stream(path.value().c_str());
-    DCHECK(SkEncodeImage(&stream, result->AsSkBitmap().pixmap(),
+#endif
+    DCHECK(SkEncodeImage(&stream, result->ScopedAccessSkBitmap().bitmap(),
                          SkEncodedImageFormat::kPNG, 0));
     DLOG(INFO) << "OnGetOutputResult: save the frame to: " << path;
   }
 
   void AppendDebugBorderDrawQuad(viz::CompositorFrame& frame,
-                                 viz::RenderPass* render_pass) {
+                                 viz::CompositorRenderPass* render_pass) {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::AppendDebugBorderDrawQuad");
     gfx::Rect output_rect = bounds_;
 
@@ -610,7 +614,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         gfx::Transform(),
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/output_rect,
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -624,7 +628,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
 
   // 演示 TileDrawQuad 的使用
   void AppendTileDrawQuad(viz::CompositorFrame& frame,
-                          viz::RenderPass* render_pass) {
+                          viz::CompositorRenderPass* render_pass) {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::AppendTileDrawQuad");
     // LOG(INFO) << "AppendTileDrawQuad: " << frame_sink_id_ << ":" <<
     // local_surface_id_; 创建要渲染的内容到 SkBitmap 中
@@ -659,7 +663,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         transform,
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/output_rect,
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -679,7 +683,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
 
   // 演示 TextureDrawQuad 的使用
   void AppendTextureDrawQuad(viz::CompositorFrame& frame,
-                             viz::RenderPass* render_pass) {
+                             viz::CompositorRenderPass* render_pass) {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::AppendTextureDrawQuad");
     // 创建要渲染的内容到 SkBitmap 中
     SkBitmap bitmap;
@@ -713,7 +717,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         transform,
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/output_rect,
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -735,7 +739,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   }
 
   void AppendSurfaceDrawQuad(viz::CompositorFrame& frame,
-                             viz::RenderPass* render_pass) {
+                             viz::CompositorRenderPass* render_pass) {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::AppendSurfaceDrawQuad");
     gfx::Rect output_rect{0, 0, 200, 200};
     gfx::Transform transform;
@@ -746,15 +750,14 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         transform,
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/output_rect,
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
 
     viz::SurfaceId child_surface_id(
         child_frame_sink_id_,
-        local_surface_id_allocator_.GetCurrentLocalSurfaceIdAllocation()
-            .local_surface_id());
+        local_surface_id_allocator_.GetCurrentLocalSurfaceId());
     auto* surface_quad =
         render_pass->CreateAndAppendDrawQuad<viz::SurfaceDrawQuad>();
     surface_quad->SetNew(quad_state, output_rect, output_rect,
@@ -767,7 +770,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   // SK_ColorMAGENTA 色块
   // TODO: 研究 viz overlay 机制
   void AppendVideoHoleDrawQuad(viz::CompositorFrame& frame,
-                               viz::RenderPass* render_pass) {
+                               viz::CompositorRenderPass* render_pass) {
     TRACE_EVENT0("viz", "LayerTreeFrameSink::AppendVideoHoleDrawQuad");
     gfx::Rect output_rect{0, 0, 200, 200};
     gfx::Transform transform;
@@ -778,7 +781,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         transform,
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/output_rect,
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -795,8 +798,9 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   // 演示 PictureDrawQuad 的使用
   // PictureDrawQuad 当前不支持 mojo 的序列化，因此这里无法演示
   void AppendPictureDrawQuad(viz::CompositorFrame& frame,
-                             viz::RenderPass* render_pass) {
+                             viz::CompositorRenderPass* render_pass) {
     return;
+#if !defined(OS_WIN)
     gfx::Rect output_rect = bounds_;
     output_rect.Inset(10, 10, 10, 10);
 
@@ -812,7 +816,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         gfx::Transform(),
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/gfx::Rect(),
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -822,11 +826,12 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     picture_quad->SetNew(quad_state, output_rect, output_rect, true,
                          gfx::RectF(output_rect), output_rect.size(), false,
                          viz::RGBA_8888, output_rect, 1.f, {}, display_list);
+#endif
   }
 
   // 演示 SolidColorDrawQuad 的使用
   void AppendSolidColorDrawQuad(viz::CompositorFrame& frame,
-                                viz::RenderPass* render_pass) {
+                                viz::CompositorRenderPass* render_pass) {
     auto color = colors[(*frame_token_generator_ / 60) % base::size(colors)];
     TRACE_EVENT1("viz", "LayerTreeFrameSink::AppendSolidColorDrawQuad", "color",
                  color);
@@ -839,7 +844,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         gfx::Transform(),
         /*quad_layer_rect=*/output_rect,
         /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::RRectF(),
+        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
         /*clip_rect=*/gfx::Rect(),
         /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
         /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
@@ -904,7 +909,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // OOP-D 参考 https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=119;
     // OOP-R 参考 https://source.chromium.org/chromium/chromium/src/+/master:cc/raster/gpu_raster_buffer_provider.cc;l=173;
     gpu::Mailbox mailbox = sii->CreateSharedImage(
-        format, size, color_space, gpu::SHARED_IMAGE_USAGE_DISPLAY, pixels);
+        format, size, color_space, GrSurfaceOrigin::kTopLeft_GrSurfaceOrigin, SkAlphaType::kPremul_SkAlphaType, gpu::SHARED_IMAGE_USAGE_DISPLAY, pixels);
     gpu::SyncToken sync_token = sii->GenVerifiedSyncToken();
 
     viz::TransferableResource gl_resource = viz::TransferableResource::MakeGL(
@@ -930,7 +935,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     sii->DestroySharedImage(sync_token, mailbox);
   }
 
-  virtual void DidReceiveCompositorFrameAck(
+  void DidReceiveCompositorFrameAck(
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::DidReceiveCompositorFrameAck",
                  "size", resources.size());
@@ -941,7 +946,9 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     }
   }
 
-  virtual void OnBeginFrame(
+  void OnCompositorFrameTransitionDirectiveProcessed(uint32_t sequence_id) override {}
+
+  void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
       const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
       override {
@@ -949,7 +956,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // 每 60fps 刷新一帧
     if (++frame_token_generator_ % 60 == 1) {
       GetCompositorFrameSinkPtr()->SubmitCompositorFrame(
-          local_surface_id_.local_surface_id(), CreateFrame(args),
+          local_surface_id_, CreateFrame(args),
           base::Optional<viz::HitTestRegionList>(),
           /*trace_time=*/0);
     } else {
@@ -958,11 +965,11 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     }
   }
 
-  virtual void OnBeginFramePausedChanged(bool paused) override {
+  void OnBeginFramePausedChanged(bool paused) override {
     DLOG(INFO) << __FUNCTION__;
   }
 
-  virtual void ReclaimResources(
+  void ReclaimResources(
       const std::vector<::viz::ReturnedResource>& resources) override {
     TRACE_EVENT1("viz", "LayerTreeFrameSink::ReclaimResources", "size",
                  resources.size());
@@ -984,7 +991,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
       frame_sink_associated_remote_;
   mojo::Remote<viz::mojom::CompositorFrameSink> frame_sink_remote_;
   viz::FrameSinkId frame_sink_id_;
-  viz::LocalSurfaceIdAllocation local_surface_id_;
+  viz::LocalSurfaceId local_surface_id_;
   gfx::Rect bounds_;
   viz::ParentLocalSurfaceIdAllocator local_surface_id_allocator_;
   viz::FrameSinkId child_frame_sink_id_;
@@ -1032,13 +1039,14 @@ class Compositor : public viz::HostFrameSinkClient {
 
   // Called when a CompositorFrame with a new SurfaceId activates for the first
   // time.
-  virtual void OnFirstSurfaceActivation(
+  void OnFirstSurfaceActivation(
       const viz::SurfaceInfo& surface_info) override {
     DLOG(INFO) << __FUNCTION__;
   }
 
   // Called when a CompositorFrame with a new frame token is provided.
-  virtual void OnFrameTokenChanged(uint32_t frame_token) override {
+    void OnFrameTokenChanged(uint32_t frame_token,
+                           base::TimeTicks activation_time) override {
     TRACE_EVENT0("viz", "Compositor::OnFrameTokenChanged");
     // DLOG(INFO) << __FUNCTION__;
   }
@@ -1093,7 +1101,7 @@ class Compositor : public viz::HostFrameSinkClient {
     local_surface_id_allocator_.GenerateId();
     root_client_ = std::make_unique<LayerTreeFrameSink>(
         root_frame_sink_id,
-        local_surface_id_allocator_.GetCurrentLocalSurfaceIdAllocation(),
+        local_surface_id_allocator_.GetCurrentLocalSurfaceId(),
         gfx::Rect(size_));
     root_client_->Bind(std::move(root_client_receiver),
                        std::move(frame_sink_remote));
@@ -1171,8 +1179,8 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     host_io_thread_.task_runner()->PostTask(
         FROM_HERE,
         base::BindOnce(&GpuService::InitVizHost, base::Unretained(this),
-                       base::Passed(std::move(receiver)),
-                       base::Passed(std::move(client))));
+                       std::move(receiver),
+                       std::move(client)));
     // InitVizHost(std::move(receiver), std::move(client));
   }
 
@@ -1197,7 +1205,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     gpu_main_thread_.task_runner()->PostTask(
         FROM_HERE,
         base::BindOnce(&GpuService::InitIPCClient, base::Unretained(this),
-                       base::Passed(std::move(bootstrap_receiver))));
+                       std::move(bootstrap_receiver)));
 
     DCHECK(server_channel_->Connect());
   }
@@ -1231,7 +1239,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     server_channel_->GetAssociatedInterfaceSupport()
         ->GetRemoteAssociatedInterface(
             viz_main_pending_remote.InitWithNewEndpointAndPassReceiver());
-
+    
     viz::GpuHostImpl::InitFontRenderParams(
         gfx::GetFontRenderParams(gfx::FontRenderParamsQuery(), nullptr));
     factory_instance_ = new gpu::ShaderCacheFactory();
@@ -1248,7 +1256,12 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     gpu_host_ = std::make_unique<viz::GpuHostImpl>(
         this, std::move(viz_main_pending_remote), std::move(params));
     gpu_host_->SetProcessId(base::GetCurrentProcId());
-    gpu_host_->ConnectFrameSinkManager(std::move(receiver), std::move(client));
+    viz::DebugRendererSettings settings;
+    settings.tint_composited_content = true;
+    settings.show_overdraw_feedback = true;
+    settings.show_dc_layer_debug_borders = true;
+    settings.show_aggregated_damage = true;
+    gpu_host_->ConnectFrameSinkManager(std::move(receiver), std::move(client), settings);
     gpu_client_id_ = g_unique_id.GetNext() + 1;
     gpu_host_->EstablishGpuChannel(
         gpu_client_id_, memory_instrumentation::mojom::kServiceTracingProcessId,
@@ -1301,6 +1314,9 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     return gpu_memory_buffer_manager_.get();
   }
 
+  void MaybeShutdownGpuProcess() override {}
+  void DidUpdateGPUInfo(const gpu::GPUInfo& gpu_info) override {}
+
   viz::mojom::GpuService* GetGpuService(
       base::OnceClosure connection_error_handler) {
     gpu_host_->AddConnectionErrorHandler(std::move(connection_error_handler));
@@ -1339,7 +1355,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
 
   viz::VizMainImpl::ExternalDependencies CreateVizMainDependencies() {
     viz::VizMainImpl::ExternalDependencies deps;
-    deps.create_display_compositor = true;
+    // deps.create_display_compositor = true;
     // if (!base::PowerMonitor::IsInitialized()) {
     //   deps.power_monitor_source =
     //       std::make_unique<base::PowerMonitorDeviceSource>();
@@ -1418,7 +1434,7 @@ class GpuService : public viz::GpuHostImpl::Delegate,
       const base::Optional<gpu::GPUInfo>& gpu_info_for_hardware_gpu,
       const base::Optional<gpu::GpuFeatureInfo>&
           gpu_feature_info_for_hardware_gpu,
-      const gpu::GpuExtraInfo& gpu_extra_info) override {
+      const gfx::GpuExtraInfo& gpu_extra_info) override {
     DLOG(INFO) << __FUNCTION__;
     gpu_info_ = gpu_info;
     gpu_feature_info_ = gpu_feature_info;
@@ -1465,11 +1481,11 @@ class GpuService : public viz::GpuHostImpl::Delegate,
   }
   // void BindHostReceiver(mojo::GenericPendingReceiver generic_receiver)
   // override;
-  void RunService(const std::string& service_name,
-                  mojo::PendingReceiver<service_manager::mojom::Service>
-                      receiver) override {
-    DLOG(INFO) << __FUNCTION__;
-  }
+  // void RunService(const std::string& service_name,
+  //                 mojo::PendingReceiver<service_manager::mojom::Service>
+  //                     receiver) override {
+  //   DLOG(INFO) << __FUNCTION__;
+  // }
 #if defined(USE_OZONE)
   void TerminateGpuProcess(const std::string& message) override;
 #endif
@@ -1500,14 +1516,14 @@ class GpuService : public viz::GpuHostImpl::Delegate,
     DLOG(INFO) << __FUNCTION__;
     if (interface_name == viz::VizMainImpl::Name_) {
       if (gpu_main_thread_.task_runner()->BelongsToCurrentThread()) {
-        viz_main_->BindAssociated(
-            mojo::PendingAssociatedReceiver<viz::mojom::VizMain>(
+        viz_main_->Bind(
+            mojo::PendingReceiver<viz::mojom::VizMain>(
                 std::move(handle)));
       } else {
         gpu_main_thread_.task_runner()->PostTask(
             FROM_HERE, base::BindOnce(&GpuService::OnAssociatedInterfaceRequest,
                                       base::Unretained(this), interface_name,
-                                      base::Passed(std::move(handle))));
+                                      std::move(handle)));
       }
     }
   }
@@ -1603,8 +1619,8 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
   }
 
   // ui::PlatformWindowDelegate:
-  void OnBoundsChanged(const gfx::Rect& new_bounds) override {
-    host_->Resize(new_bounds.size());
+  void OnBoundsChanged(const BoundsChange& change) override {
+    host_->Resize(change.bounds.size());
   }
 
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
@@ -1615,6 +1631,7 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
 
   void OnDamageRect(const gfx::Rect& damaged_region) override {}
   void DispatchEvent(ui::Event* event) override {}
+  void OnWillDestroyAcceleratedWidget() override {}
   void OnCloseRequest() override {
     // TODO: Use a more robust exit method
     platform_window_->Close();
@@ -1691,7 +1708,7 @@ int main(int argc, char** argv) {
   ui::RegisterPathProvider();
 
   // This app isn't a test and shouldn't timeout.
-  base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
+  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
   auto discardable_shared_memory_manager =
       std::make_unique<discardable_memory::DiscardableSharedMemoryManager>();

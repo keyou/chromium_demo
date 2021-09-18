@@ -35,7 +35,6 @@
 #include "ui/base/ime/init/input_method_initializer.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/base/x/x11_util.h"
 #include "ui/compositor/paint_recorder.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
@@ -72,6 +71,7 @@
 #endif
 
 #if defined(USE_X11)
+#include "ui/base/x/x11_util.h"
 #include "ui/gfx/x/connection.h"  // nogncheck
 #endif
 
@@ -178,6 +178,14 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
+
   // 启动 Trace
   // auto trace_config = base::trace_event::TraceConfig("cc"/*,
   // "trace-to-console"*/);
