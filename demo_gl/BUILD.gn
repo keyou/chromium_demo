@@ -41,5 +41,11 @@ executable("demo_gl") {
     ]
   }
 
+  if (is_win) {
+    deps += [
+      "//ui/platform_window/win:win",
+    ]
+  }
+
   # libs = ["EGL","GLESv2"]
 }

@@ -67,10 +67,17 @@ void MojoProducer() {
   // 创建一条系统级的IPC通信通道
   // 在linux上是 domain socket, Windows 是 named pipe，MacOS是Mach Port,该通道用于支持夸进程的消息通信
   mojo::PlatformChannel channel;
+#if defined(OS_WIN)
+  LOG(INFO) << "local: "
+            << channel.local_endpoint().platform_handle().GetHandle().Get()
+            << " remote: "
+            << channel.remote_endpoint().platform_handle().GetHandle().Get();
+#else
   LOG(INFO) << "local: "
             << channel.local_endpoint().platform_handle().GetFD().get()
             << " remote: "
             << channel.remote_endpoint().platform_handle().GetFD().get();
+#endif
 
   mojo::OutgoingInvitation invitation;
   // 创建1个Ｍessage Pipe用来和其他进程通信
@@ -243,7 +250,11 @@ void MojoConsumer() {
     DCHECK_EQ(result, MOJO_RESULT_OK);
     // 仅用于测试，上面只能保证至少有一个消息可读，为了代码简单sleep
     // 1s，保证下面的所有读都可以成功
+#if defined(OS_WIN)
+    Sleep(1 * 1000);
+#else
     sleep(1);
+#endif
   }
   // C++ platform API, message pipe read test
   {
@@ -333,6 +344,14 @@ void MojoConsumer() {
 
 int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
+
   LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
   // 创建主线程消息循环
   base::SingleThreadTaskExecutor main_task_executor;

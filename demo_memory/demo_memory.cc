@@ -27,7 +27,9 @@
 
 // For MemoryPressureTest
 #include "base/memory/memory_pressure_monitor.h"
-//#include "base/util/memory_pressure/multi_source_memory_pressure_monitor.h"
+#if !defined(OS_LINUX)
+#include "base/util/memory_pressure/multi_source_memory_pressure_monitor.h"
+#endif
 
 void SharedMemoryTest() {
   base::WritableSharedMemoryRegion memory =
@@ -75,15 +77,17 @@ void MemoryPresureTest() {
   // https://source.chromium.org/chromium/chromium/src/+/master:content/browser/browser_main_loop.cc;l=367;drc=88c20a4027a89de88d6c559fe2ae49124a01ff8d
   // 初始化，要一直保活
   // 在新版本才有
-  // std::unique_ptr<util::MultiSourceMemoryPressureMonitor> monitor;
-#if defined(OS_CHROMEOS)
-  if (chromeos::switches::MemoryPressureHandlingEnabled())
-    monitor = std::make_unique<util::MultiSourceMemoryPressureMonitor>();
-#elif defined(OS_MACOSX) || defined(OS_WIN) || defined(OS_FUCHSIA)
-  monitor = std::make_unique<util::MultiSourceMemoryPressureMonitor>();
-#else
+#if defined(OS_LINUX)
   return;
 #endif
+// #if defined(OS_CHROMEOS)
+//   if (chromeos::switches::MemoryPressureHandlingEnabled())
+//     monitor = std::make_unique<util::MultiSourceMemoryPressureMonitor>();
+// #elif defined(OS_MACOSX) || defined(OS_WIN) || defined(OS_FUCHSIA)
+//   monitor = std::make_unique<util::MultiSourceMemoryPressureMonitor>();
+// #else
+//   return;
+// #endif
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
 
@@ -107,13 +111,21 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, false, true, false);
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
+
   // 创建主消息循环
   base::SingleThreadTaskExecutor single_thread_task_executor;
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
   SharedMemoryTest();
-  //MemoryPresureTest();
+  // MemoryPresureTest();
 
   LOG(INFO) << "running...";
   base::RunLoop().Run();

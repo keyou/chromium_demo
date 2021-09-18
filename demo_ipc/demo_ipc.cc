@@ -26,10 +26,17 @@
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
 
+#if defined(OS_WIN)
+#include "demo/demo_mojo/mojom/test.mojom.h"
+#include "demo/demo_mojo/mojom/test2.mojom.h"
+#include "demo/demo_mojo/mojom/test3.mojom.h"
+#include "demo/demo_mojo/mojom/test4.mojom.h"
+#else
 #include "demo/mojom/test.mojom.h"
 #include "demo/mojom/test2.mojom.h"
 #include "demo/mojom/test3.mojom.h"
 #include "demo/mojom/test4.mojom.h"
+#endif
 
 // For bindings API
 // #include "mojo/public/cpp/bindings/binding.h"
@@ -74,7 +81,7 @@ using AssociatedReceiver = mojo::AssociatedReceiver<T>;
 template <class T>
 using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
-using namespace demo::mojom;
+// using namespace demo::mojom;
 
 class ProducerListener : public IPC::Listener {
  public:
@@ -213,10 +220,17 @@ void MojoProducer() {
   // 创建一条系统级的IPC通信通道
   // 在linux上是 socket pair, Windows 是 named pipe，该通道用于支持ＭessagePipe
   mojo::PlatformChannel channel;
+#if defined(OS_WIN)
+  LOG(INFO) << "local: "
+            << channel.local_endpoint().platform_handle().GetHandle().Get()
+            << " remote: "
+            << channel.remote_endpoint().platform_handle().GetHandle().Get();
+#else
   LOG(INFO) << "local: "
             << channel.local_endpoint().platform_handle().GetFD().get()
             << " remote: "
             << channel.remote_endpoint().platform_handle().GetFD().get();
+#endif
 
   mojo::OutgoingInvitation invitation;
   // 创建n个Ｍessage Pipe备用
@@ -289,6 +303,13 @@ void MojoConsumer() {
 
 int main(int argc, char** argv) {
   base::AtExitManager at_exit;
+
+#if defined(OS_WIN)
+  logging::LoggingSettings logging_setting;
+  logging_setting.logging_dest = logging::LOG_TO_STDERR;
+  logging::SetLogItems(true, true, false, false);
+  logging::InitLogging(logging_setting);
+#endif
 
   base::CommandLine::Init(argc, argv);
   LOG(INFO) <<"Command Line: "<< base::CommandLine::ForCurrentProcess()->GetCommandLineString();

@@ -30,6 +30,11 @@ template("cc") {
       ]
       #configs += [ "//build/config/linux:x11" ]
     }
+    if (is_win) {
+      deps += [
+        "//ui/platform_window/win:win",
+      ]
+    }
   }
 }
 

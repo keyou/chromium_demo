@@ -45,7 +45,6 @@
 // #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/base/x/x11_util.h"
 #include "ui/compositor/paint_recorder.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
@@ -61,7 +60,6 @@
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
-#include "ui/platform_window/x11/x11_window.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -71,6 +69,7 @@
 #if defined(USE_X11)
 // #include "ui/gfx/x/x11_connection.h"            // nogncheck
 #include "ui/platform_window/x11/x11_window.h"  // nogncheck
+#include "ui/base/x/x11_util.h"
 #endif
 
 #if defined(USE_OZONE)
@@ -78,7 +77,7 @@
 #endif
 
 #if defined(OS_WIN)
-#include "ui/base/cursor/cursor_loader_win.h"
+// #include "ui/base/cursor/cursor_loader_win.h"
 #include "ui/platform_window/win/win_window.h"
 #endif
 
@@ -100,8 +99,11 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     base::FilePath path;
     DCHECK(base::PathService::Get(base::BasePathKey::DIR_EXE, &path));
     path = path.AppendASCII(filename);
-
+#if defined(OS_WIN)
+    SkFILEWStream stream(path.AsUTF8Unsafe().c_str());
+#else
     SkFILEWStream stream(path.value().c_str());
+#endif
     DCHECK(
         SkEncodeImage(&stream, bitmap.pixmap(), SkEncodedImageFormat::kPNG, 0));
     DLOG(INFO) << "OnSwapBuffers: save the frame to: " << path;
