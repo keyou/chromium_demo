@@ -26,17 +26,10 @@
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
 
-#if defined(OS_WIN)
 #include "demo/demo_mojo/mojom/test.mojom.h"
 #include "demo/demo_mojo/mojom/test2.mojom.h"
 #include "demo/demo_mojo/mojom/test3.mojom.h"
 #include "demo/demo_mojo/mojom/test4.mojom.h"
-#else
-#include "demo/mojom/test.mojom.h"
-#include "demo/mojom/test2.mojom.h"
-#include "demo/mojom/test3.mojom.h"
-#include "demo/mojom/test4.mojom.h"
-#endif
 
 // For bindings API
 // #include "mojo/public/cpp/bindings/binding.h"
@@ -80,8 +73,6 @@ template <class T>
 using AssociatedReceiver = mojo::AssociatedReceiver<T>;
 template <class T>
 using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
-
-// using namespace demo::mojom;
 
 class ProducerListener : public IPC::Listener {
  public:

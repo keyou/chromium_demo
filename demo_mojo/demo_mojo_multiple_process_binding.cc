@@ -61,8 +61,6 @@ using AssociatedReceiver = mojo::AssociatedReceiver<T>;
 template <class T>
 using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
-using namespace demo::demo_mojo::mojom;
-
 #pragma region Test
 class TestImpl : public demo::demo_mojo::mojom::Test {
  public:
