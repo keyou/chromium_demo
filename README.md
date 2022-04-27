@@ -52,6 +52,7 @@ Demo list:
 1. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
 1. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
 1. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
+1. [v91] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
 
 
 Documents:
@@ -99,6 +100,10 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2022.4.27
+
+- Add demo_gin，demonstrate how to use gin to create a javascript runtime;
 
 ### 2021.9.13
 
