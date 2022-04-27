@@ -1,0 +1,31 @@
+group("demo_gin"){
+    deps = [
+        ":demo_gin"
+    ]
+}
+
+# 可执行文件
+executable("demo_gin"){
+    sources = [
+        # 主入口
+        "main.cc",
+
+        # ShellRunnerDelegate
+        "shell_runner_delegate.cc",
+        "shell_runner_delegate.h",
+
+        # 我们扩展的方法
+        "extends/console.cc",
+        "extends/console.h",
+        "extends/demo.cc",
+        "extends/demo.h",
+
+    ]
+    deps = [
+        "//base",
+        "//gin",
+        "//v8"
+    ]
+    # 如果希望Demo运行，必须要配置初始化数据
+    configs += [ "//v8:external_startup_data" ]
+}
