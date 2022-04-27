@@ -27,6 +27,7 @@ void Add(const v8::FunctionCallbackInfo<v8::Value>& info) {
 
 }  // namespace
 
+
 void Demo::Register(v8::Isolate* isolate, v8::Local<v8::ObjectTemplate> global_tmpl) {
   // 构建Demo Object模板
   v8::Local<v8::ObjectTemplate> demo_tmpl = v8::ObjectTemplate::New(isolate);
@@ -38,5 +39,6 @@ void Demo::Register(v8::Isolate* isolate, v8::Local<v8::ObjectTemplate> global_t
       v8::ConstructorBehavior::kThrow);
 
   demo_tmpl->Set(gin::StringToSymbol(isolate, "add"), add_tmpl);
+
 }
 }  // namespace demo

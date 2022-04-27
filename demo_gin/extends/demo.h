@@ -9,6 +9,7 @@ class GIN_EXPORT Demo {
  public:
   // 注册对应的方法和对象
   static void Register(v8::Isolate* isolate,
-                       v8::Local<v8::ObjectTemplate> global_tmpl);
+
+  v8::Local<v8::ObjectTemplate> global_tmpl);
 };
 }  // namespace demo

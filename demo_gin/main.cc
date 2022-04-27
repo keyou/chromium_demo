@@ -17,6 +17,7 @@
 #include "demo_gin/shell_runner_delegate.h"
 
 // 要执行的脚本
+// 可以改为读取文件形式
 const char kScript[] =
     R"script(
   // 输出Hello World
@@ -32,8 +33,6 @@ const char kScript[] =
   log('after call async');
 
   )script";
-
-
 
 namespace {
 // 执行脚本
