@@ -27,16 +27,16 @@ void Add(const v8::FunctionCallbackInfo<v8::Value>& info) {
 
 }  // namespace
 
-void Demo::Register(v8::Isolate* isolate, v8::Local<v8::ObjectTemplate> templ) {
+void Demo::Register(v8::Isolate* isolate, v8::Local<v8::ObjectTemplate> global_tmpl) {
   // 构建Demo Object模板
-  v8::Local<v8::ObjectTemplate> demo_templ = v8::ObjectTemplate::New(isolate);
-  templ->Set(gin::StringToSymbol(isolate, "demo"), demo_templ);
+  v8::Local<v8::ObjectTemplate> demo_tmpl = v8::ObjectTemplate::New(isolate);
+  global_tmpl->Set(gin::StringToSymbol(isolate, "demo"), demo_tmpl);
 
   // 构建Demo Object Function模板
-  v8::Local<v8::FunctionTemplate> add_templ = v8::FunctionTemplate::New(
+  v8::Local<v8::FunctionTemplate> add_tmpl = v8::FunctionTemplate::New(
       isolate, Add, v8::Local<v8::Value>(), v8::Local<v8::Signature>(), 0,
       v8::ConstructorBehavior::kThrow);
 
-  demo_templ->Set(gin::StringToSymbol(isolate, "add"), add_templ);
+  demo_tmpl->Set(gin::StringToSymbol(isolate, "add"), add_tmpl);
 }
 }  // namespace demo

@@ -5,7 +5,7 @@
 
 namespace demo {
 // 提供Add方法的类
-class GIN_EXPORT Demo {
+class GIN_EXPORT AsyncDemo {
  public:
   // 注册对应的方法和对象
   static void Register(v8::Isolate* isolate,

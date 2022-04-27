@@ -19,6 +19,8 @@ executable("demo_gin"){
         "extends/console.h",
         "extends/demo.cc",
         "extends/demo.h",
+        "extends/async_demo.cc",
+        "extends/async_demo.h"
 
     ]
     deps = [
