@@ -37,6 +37,7 @@ void AsyncAdd(v8::Global<v8::Promise::Resolver> resolver,
 void Add(const v8::FunctionCallbackInfo<v8::Value>& info) {
   auto* isolate = info.GetIsolate();
   auto context = isolate->GetCurrentContext();
+  // 创建 Promise Resolver对象
   auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
 
   // 获取参数
