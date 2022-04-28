@@ -3,6 +3,9 @@
 #include "gin/object_template_builder.h"
 #include "demo_gin/extends/console.h"
 #include "demo_gin/extends/demo.h"
+
+#include "demo_gin/extends/async_demo.h"
+
 namespace demo {
 
 v8::Local<v8::ObjectTemplate> DemoShellRunnerDelegate::GetGlobalTemplate(
@@ -17,6 +20,10 @@ v8::Local<v8::ObjectTemplate> DemoShellRunnerDelegate::GetGlobalTemplate(
 
   // 注册Demo
   demo::Demo::Register(isolate, global_tmpl);
+
+
+  // 注册AsyncDemo
+  demo::AsyncDemo::Register(isolate,global_tmpl);
 
   return global_tmpl;
 }
