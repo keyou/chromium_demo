@@ -24,8 +24,6 @@ void AsyncAdd(v8::Global<v8::Promise::Resolver> resolver,
   v8::HandleScope handle_scope(isolate);
   // 将Persistent 转为Local
   v8::Local<v8::Context> context = original_context.Get(isolate);
-  v8::Context::Scope context_scope(context);
-
   //  真正执行计算
   int result = a + b;
   LOG(INFO) << "Add Arg1:" << a << " And Arg2:" << b << " Result:" << result;
