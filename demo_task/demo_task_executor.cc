@@ -13,6 +13,10 @@ void Hello() {
 }
 
 int main(int argc, char** argv) {
+  logging::LoggingSettings settings;
+  settings.logging_dest = logging::LOG_TO_STDERR;
+  logging::InitLogging(settings);
+  logging::SetLogItems(true, true, true, false);
   // 在当前线程中创建消息循环。旧版本的 MessageLoop 被换成了 SingleThreadTaskExecutor
   // 详见 commit 636e705be41ed9e7f50cdb13ceb5a9af5e3f4e5c
   base::SingleThreadTaskExecutor main_thread_task_executor;

@@ -9,7 +9,10 @@ void Hello() {
 }
 
 int main(int argc, char** argv) {
-
+  logging::LoggingSettings settings;
+  settings.logging_dest = logging::LOG_TO_STDERR;
+  logging::InitLogging(settings);
+  logging::SetLogItems(true, true, true, false);
   // 初始化线程池，会创建新的线程，在新的线程中会创建消息循环 MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
 
