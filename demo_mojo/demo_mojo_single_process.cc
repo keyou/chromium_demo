@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   // 使用 C 接口接收一条消息
   {
     MojoMessageHandle message;
-    MojoResult result = MojoReadMessage(receiver_handle, nullptr, &message);
+    result = MojoReadMessage(receiver_handle, nullptr, &message);
     DCHECK_EQ(result, MOJO_RESULT_OK);
 
     void* buffer = NULL;
