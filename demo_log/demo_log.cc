@@ -3,7 +3,7 @@
 #include "base/debug/stack_trace.h"
 
 int main(int argc, char** argv) {
-  // 使用log以来它
+  // 使用log依赖它
   base::CommandLine::Init(argc, argv);
 
   int loglevel = -1;
