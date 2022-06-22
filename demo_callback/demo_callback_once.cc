@@ -31,6 +31,10 @@ class ClassUsage {
         base::BindOnce(&ClassUsage::SayHello, base::Unretained(this));
 
     std::move(callback).Run("ClassUsage");
+    //下面的代码会报错：
+    //error: static_assert failed due to requirement '!sizeof (*this)' "OnceCallback::Run() 
+    //may only be invoked on a non-const rvalue, i.e. std::move(callback).Run()."
+    //callback.Run("ClassUsage");
   }
 
  private:

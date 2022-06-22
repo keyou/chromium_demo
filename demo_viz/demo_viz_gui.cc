@@ -138,6 +138,15 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     return local_surface_id_allocator_.GetCurrentLocalSurfaceId();
   }
 
+  void Resize(const gfx::Size& size,
+                          const viz::LocalSurfaceId& local_surface_id) {
+    // |bounds_| and |local_surface_id_| are used on the client-thread in
+    // CreateFrame(). So these need to be mutated under a lock.
+    base::AutoLock lock(lock_);
+    bounds_.set_size(size);
+    local_surface_id_ = local_surface_id;
+  }
+
  private:
   void BindOnThread(
       mojo::PendingReceiver<viz::mojom::CompositorFrameSinkClient> receiver,
@@ -520,7 +529,21 @@ class Compositor : public viz::HostFrameSinkClient {
   }
 
   void Resize(gfx::Size size) {
-    // TODO:
+    compositor_thread_.task_runner()->PostTask(
+        FROM_HERE, base::BindOnce(&Compositor::ResizeOnThread,
+                                  base::Unretained(this), size));
+  }
+
+  void ResizeOnThread(const gfx::Size& size) {
+    if (size_ == size)
+      return;
+    size_ = size;
+    display_private_->Resize(size);
+
+    // Every size change for a client needs a new LocalSurfaceId.
+    local_surface_id_allocator_.GenerateId();
+    root_client_->Resize(
+        size_, local_surface_id_allocator_.GetCurrentLocalSurfaceId());
   }
 
   // Called when a CompositorFrame with a new SurfaceId activates for the first
