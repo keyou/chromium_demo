@@ -23,10 +23,10 @@ template("cc") {
       "//ui/platform_window",
     ]
 
-    if (use_x11) {
+    if (ozone_platform_x11) {
       deps += [
         "//ui/events/platform/x11",
-        "//ui/platform_window/x11",
+        "//ui/ozone",
       ]
       #configs += [ "//build/config/linux:x11" ]
     }

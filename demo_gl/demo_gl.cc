@@ -1,14 +1,10 @@
-/**
- * 由于目前手上没有 Linux 设备可供调试UI，因此这个 demo 可能不能够直接运行，可能需要添加某些参数配置或者环境初始化代码；
- */
-
 #include "base/at_exit.h"
 #include "base/callback.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/macros.h"
+// #include "base/macros.h"
 #include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
@@ -135,6 +131,15 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     // props.opacity = ui::PlatformWindowOpacity::kTranslucentWindow;
     // props.background_color = 0;
 #if defined(USE_OZONE)
+  // Make Ozone run in single-process mode.
+  ui::OzonePlatform::InitParams params;
+  params.single_process = true;
+
+  // This initialization must be done after TaskEnvironment has
+  // initialized the UI thread.
+  ui::OzonePlatform::InitializeForUI(params);
+  ui::OzonePlatform::InitializeForGPU(params);
+
     return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
         this, std::move(props));
 #elif defined(OS_WIN)
@@ -153,9 +158,9 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     DCHECK_NE(widget_, gfx::kNullAcceleratedWidget);
     TRACE_EVENT0("shell", "InitializeDemo");
     if (!g_gl_surface) {
-      gl::init::InitializeGLOneOff();
+      gl::GLDisplay* display = gl::init::InitializeGLOneOff(0);
 
-      g_gl_surface = gl::init::CreateViewGLSurface(widget_);
+      g_gl_surface = gl::init::CreateViewGLSurface(display, widget_);
 
       scoped_refptr<gl::GLShareGroup> share_group =
           base::MakeRefCounted<gl::GLShareGroup>();
@@ -180,11 +185,11 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     static unsigned int i = 0;
     glClearColor(1.f, (i++) % 10 / 10.f + 0.1f, 0, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
-    g_gl_surface->SwapBuffers(base::DoNothing());
+    g_gl_surface->SwapBuffers(base::DoNothing(), gl::FrameData());
     base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
         FROM_HERE,
         base::BindOnce(&DemoWindowHost::InitializeDemo, base::Unretained(this)),
-        base::TimeDelta::FromSeconds(1));
+        base::Seconds(1));
   }
 
   // ui::PlatformWindowDelegate:
@@ -193,12 +198,12 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   void OnWillDestroyAcceleratedWidget() override {}
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
     widget_ = widget;
-#if !defined(OS_WIN)
-    // 如果需要去除窗口边框，将true改为false
-    platform_window_->SetUseNativeFrame(true); // windows crash here
-#endif
-    if (platform_window_)
+
+    if (platform_window_) {
+      // 如果需要去除窗口边框，将true改为false
+      platform_window_->SetUseNativeFrame(true);
       InitializeDemo();
+    }
   }
 
   void OnDamageRect(const gfx::Rect& damaged_region) override {}
@@ -233,7 +238,8 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     if (close_closure_)
       std::move(close_closure_).Run();
   }
-  void OnWindowStateChanged(ui::PlatformWindowState new_state) override {}
+  void OnWindowStateChanged(ui::PlatformWindowState old_state,
+                                    ui::PlatformWindowState new_state) override {}
   void OnLostCapture() override {}
   void OnAcceleratedWidgetDestroyed() override {}
   void OnActivationChanged(bool active) override {}
@@ -246,8 +252,6 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   scoped_refptr<gl::GLSurface> g_gl_surface;
   scoped_refptr<gl::GLContext> g_gl_context;
   scoped_refptr<gpu::SharedContextState> g_context_state;
-
-  DISALLOW_COPY_AND_ASSIGN(DemoWindowHost);
 };
 
 }  // namespace demo
@@ -276,7 +280,7 @@ int main(int argc, char** argv) {
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoGL");
 
   // 在Linux上，x11和aura都是默认开启的
-#if defined(USE_X11)
+// #if defined(USE_X11)
   // This demo uses InProcessContextFactory which uses X on a separate Gpu
   // thread.
   // gfx::InitializeThreadedX11();
@@ -288,7 +292,7 @@ int main(int argc, char** argv) {
   // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
   // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
   // ui::SetDefaultX11ErrorHandlers();
-#endif
+// #endif
 
   auto event_source_ = ui::PlatformEventSource::CreateDefault();
 

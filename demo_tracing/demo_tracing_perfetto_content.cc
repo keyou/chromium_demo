@@ -1,4 +1,3 @@
-#include <base/task/post_task.h>
 #include <base/threading/thread.h>
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
@@ -97,7 +96,7 @@ int main(int argc, char** argv) {
   // 模块，所以这里初始化Browser的测试环境
   content::BrowserTaskEnvironment task_environment_;
 
-  tracing::InitTracingPostThreadPoolStartAndFeatureList();
+  tracing::InitTracingPostThreadPoolStartAndFeatureList(true);
 
   content::ContentClient content_client;
   content::ContentBrowserClient browser_client;

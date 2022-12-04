@@ -4,9 +4,7 @@
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/single_thread_task_runner.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -38,6 +36,8 @@
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "services/viz/privileged/mojom/viz_main.mojom.h"
+#include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/hit_test.h"
@@ -125,8 +125,9 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
  private:
   void InitializeOnThread() {
     shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
-    frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
+    auto init_params = viz::FrameSinkManagerImpl::InitParams(
         shared_bitmap_manager_.get());
+    frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(init_params);
     auto task_runner = base::ThreadTaskRunnerHandle::Get();
 
     // 生成 root client 的 LocalSurfaceId
@@ -145,7 +146,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
         std::make_unique<viz::DelayBasedTimeSource>(task_runner.get());
 
     time_source->SetTimebaseAndInterval(
-        base::TimeTicks(), base::TimeDelta::FromMicroseconds(
+        base::TimeTicks(), base::Microseconds(
                                base::Time::kMicrosecondsPerSecond / fps_));
     // 用于定时请求BeginFrame
     begin_frame_source_ = std::make_unique<viz::DelayBasedBeginFrameSource>(
@@ -155,9 +156,9 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
         std::make_unique<OffscreenSoftwareOutputDevice>());
     auto scheduler = std::make_unique<viz::DisplayScheduler>(
         begin_frame_source_.get(), task_runner.get(),
-        output_surface->capabilities().max_frames_pending);
+        output_surface->capabilities().pending_swap_params);
     viz::RendererSettings settings = viz::CreateRendererSettings();
-    settings.use_skia_renderer = false;
+    // settings.use_skia_renderer = false;
     auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
         shared_bitmap_manager_.get(), settings, &debug_settings_, root_frame_sink_id_,
@@ -174,7 +175,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
   }
 
   viz::CompositorFrame CreateFrame(const ::viz::BeginFrameArgs& args) {
-    constexpr SkColor colors[] = {SK_ColorRED, SK_ColorGREEN, SK_ColorYELLOW};
+    constexpr SkColor4f colors[] = {SkColors::kRed, SkColors::kGreen, SkColors::kYellow};
     viz::CompositorFrame frame;
 
     frame.metadata.begin_frame_ack = viz::BeginFrameAck(args, true);
@@ -196,17 +197,18 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
         render_pass->CreateAndAppendSharedQuadState();
     quad_state->SetAll(
         gfx::Transform(),
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*mask_filter_info=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/gfx::Rect(),
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+                    /*quad_layer_rect=*/output_rect,
+                    /*visible_layer_rect=*/output_rect,
+                    /*mask_filter_info=*/gfx::MaskFilterInfo(),
+                    /*clip_rect=*/absl::nullopt,
+                    /*are_contents_opaque=*/false, /*opacity=*/1.f,
+                    /*blend_mode=*/SkBlendMode::kSrcOver,
+                    /*sorting_context_id=*/0);
 
     viz::SolidColorDrawQuad* color_quad =
         render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
     color_quad->SetNew(quad_state, output_rect, output_rect,
-                       colors[(*frame_token_generator_) % base::size(colors)],
+                       colors[(*frame_token_generator_) % std::size(colors)],
                        false);
 
     frame.render_pass_list.push_back(std::move(render_pass));
@@ -215,7 +217,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
   }
 
   void DidReceiveCompositorFrameAck(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      std::vector<viz::ReturnedResource> resources) override {}
 
   void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
@@ -227,16 +229,17 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     }
     support_->SubmitCompositorFrame(root_local_surface_id_,
                                     CreateFrame(args),
-                                    base::Optional<viz::HitTestRegionList>(),
+                                    absl::optional<viz::HitTestRegionList>(),
                                     /*trace_time=*/0);
   }
 
   void OnBeginFramePausedChanged(bool paused) override {}
   void OnCompositorFrameTransitionDirectiveProcessed(uint32_t sequence_id) override {}
   void ReclaimResources(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      std::vector<::viz::ReturnedResource> resources) override {}
 
   // viz::DisplayClient overrides.
+  void DisplayAddChildWindowToBrowser(gpu::SurfaceHandle child_window) override {}
   void DisplayOutputSurfaceLost() override {}
   void DisplayWillDrawAndSwap(
       bool will_draw_and_swap,
@@ -319,6 +322,15 @@ int main(int argc, char** argv) {
   // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
   // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
   // ui::SetDefaultX11ErrorHandlers();
+
+  // Make Ozone run in single-process mode.
+  ui::OzonePlatform::InitParams params;
+  params.single_process = true;
+
+  // This initialization must be done after TaskEnvironment has
+  // initialized the UI thread.
+  ui::OzonePlatform::InitializeForUI(params);
+  ui::OzonePlatform::InitializeForGPU(params);
 
   // 每秒生成一张图片保存到文件中
   // 可以使用这种原理将浏览器嵌入其他程序，当然这个demo演示的并不是最优方案，只是一种可行方案

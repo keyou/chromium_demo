@@ -2,7 +2,6 @@
 #include <base/logging.h>
 #include <base/run_loop.h>
 #include <base/task/single_thread_task_executor.h>
-#include <base/task/post_task.h>
 #include <base/task/thread_pool/thread_pool_instance.h>
 
 #include <base/threading/thread.h>
@@ -25,7 +24,7 @@
 #include "demo/demo_mojo/mojom/test.mojom.h"
 #include "demo/demo_mojo/mojom/test2.mojom.h"
 // #include "mojo/public/cpp/bindings/binding.h"
-#include "mojo/public/cpp/bindings/interface_ptr.h"
+// #include "mojo/public/cpp/bindings/interface_ptr.h"
 
 class PipeReader {
  public:
@@ -155,9 +154,9 @@ void MojoProducer() {
     LOG(INFO) << "send data: " << kMessage;
     // 这里需要release
     // handle，因为WriteMessage内部会close发送的handle,也可以在ＷriteMessage的时候使用consumer.release().value()来同时释放所有权
-    ALLOW_UNUSED_LOCAL(consumer.release());
+    consumer.release();
     // 不是必须的，这里是为了调试，故意不释放,后面的同理
-    ALLOW_UNUSED_LOCAL(producer.release());
+    producer.release();
   }
   // Message Pipe transport by MessagePipe
   {
@@ -180,8 +179,8 @@ void MojoProducer() {
                               nullptr, 0, MOJO_WRITE_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "send msg server: " << kMessage;
-    ALLOW_UNUSED_LOCAL(client.release());
-    ALLOW_UNUSED_LOCAL(server.release());
+    client.release();
+    server.release();
   }
   // Shared Buffer Test
   {
@@ -203,8 +202,8 @@ void MojoProducer() {
     std::copy(kMessage.begin(), kMessage.end(),
               static_cast<char*>(mapping.get()));
     LOG(INFO) << "write buffer: " << kMessage;
-    ALLOW_UNUSED_LOCAL(buffer_clone.release());
-    ALLOW_UNUSED_LOCAL(buffer.release());
+    buffer_clone.release();
+    buffer.release();
   }
   // C++ Signal&Trap test
   {
@@ -229,7 +228,7 @@ void MojoProducer() {
               // pipe 生命周期结束，被销毁
             },
             std::move(pipe)),
-        base::TimeDelta::FromSeconds(5));
+        base::Seconds(5));
   }
 }
 
@@ -298,7 +297,7 @@ void MojoConsumer() {
     result = consumer->ReadData(buffer, &num_bytes, MOJO_READ_DATA_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "receive data: " << buffer;
-    ALLOW_UNUSED_LOCAL(consumer.release());
+    consumer.release();
   }
   // Message Pipe transport by MessagePipe
   {
@@ -317,7 +316,7 @@ void MojoConsumer() {
                                   MOJO_READ_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "receive msg client: " << (char*)&data2[0];
-    ALLOW_UNUSED_LOCAL(client.release());
+    client.release();
   }
   // Shared Buffer Test
   {
@@ -333,7 +332,7 @@ void MojoConsumer() {
         mojo::ScopedSharedBufferHandle::From(std::move(handles[0]));
     mojo::ScopedSharedBufferMapping mapping = buffer->Map(64);
     LOG(INFO) << "read buffer: " << static_cast<char*>(mapping.get());
-    ALLOW_UNUSED_LOCAL(buffer.release());
+    buffer.release();
   }
   // C++ Signal&Trap test
   {

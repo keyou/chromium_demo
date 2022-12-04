@@ -1,8 +1,10 @@
 #ifndef DEMO_IPC_MESSAGES_H_
 #define DEMO_IPC_MESSAGES_H_
 
+// #define IPC_MESSAGE_IMPL
 #include "ipc/ipc_message.h"
 #include "ipc/ipc_message_macros.h"
+#include "ipc/ipc_message_start.h"
 #include "ipc/ipc_param_traits.h"
 
 // 使用 IPCTestMsgStart 来测试，它不能随意命名，必须存在于 ipc/ipc_message_start.h 中

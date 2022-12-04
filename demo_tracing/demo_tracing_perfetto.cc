@@ -7,7 +7,6 @@
 #include "base/memory/ref_counted.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/process/process.h"
-#include "base/task/post_task.h"
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/test/task_environment.h"
@@ -194,7 +193,7 @@ int main(int argc, char** argv) {
       "test",
       "This trace can not be record without '--trace-startup=...' parameter.");
 
-  tracing::InitTracingPostThreadPoolStartAndFeatureList();
+  tracing::InitTracingPostThreadPoolStartAndFeatureList(true);
 
   // 对于我们自定义的 TracingController 并无实际作用
   auto tracing_controller_ = std::make_unique<demo::TracingController>();

@@ -6,8 +6,9 @@
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/logging.h"
+#include <base/run_loop.h>
 #include "base/task/single_thread_task_executor.h"
-#include "base/task/post_task.h"
+// #include "base/task/post_task.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/process/launch.h"
 #include "base/threading/thread.h"
@@ -33,7 +34,7 @@
 
 // For bindings API
 // #include "mojo/public/cpp/bindings/binding.h"
-#include "mojo/public/cpp/bindings/interface_ptr.h"
+// #include "mojo/public/cpp/bindings/interface_ptr.h"
 
 // For associated bindings API
 // #include "mojo/public/cpp/bindings/associated_binding.h"
@@ -52,28 +53,6 @@
 #include "ipc/message_filter.h"
 
 #include "demo_ipc_messages.h"
-
-// 在新版本中这些类被重命名,这里模拟新版本
-template <class T>
-using Remote = mojo::InterfacePtr<T>;
-template <class T>
-using PendingRemote = mojo::InterfacePtrInfo<T>;
-template <class T>
-using Receiver = mojo::Receiver<T>;
-// using Receiver = mojo::InterfaceRequest<T>;
-template <class T>
-using PendingReceiver = mojo::InterfaceRequest<T>;
-
-// 以下定义用于模拟新版本的关联接口
-template <class T>
-using AssociatedRemote = mojo::AssociatedRemote<T>;
-template <class T>
-using PendingAssociatedRemote = mojo::AssociatedInterfacePtrInfo<T>;
-template <class T>
-using AssociatedReceiver = mojo::AssociatedReceiver<T>;
-template <class T>
-using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
-
 class ProducerListener : public IPC::Listener {
  public:
   ProducerListener(){}
