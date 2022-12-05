@@ -1,15 +1,16 @@
 # Demo
 
-> 这个项目正在迁移到 chromium `91.0.4472` 版本，目前还没有完成，如果你想成功编译的话，请将当前项目切换到 `c/80.0.3987` 分支，并将 chromium 切换到 `80.0.3987.165` Tag（切换后需要执行 `glcient sync` 同步代码）。如果你对此感兴趣，欢迎随时联系我！  
+> 这个项目正在迁移到 chromium `110` 版本，目前完成了一部分，请根据你的需要选择合适的分支，并保证 chromium 也切换到对应的分支（切换后需要执行 `glcient sync` 同步代码）。如果你对此感兴趣，欢迎随时联系我！  
 > 我建了一个微信群，用来方便大家进行技术讨论，如果你感兴趣，欢迎加我微信，我会把你拉入讨论群：  
 > <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
-这个项目用来演示如何使用 chromium 中的一些基础机制，包括异步多任务，mojo，多进程等。
+这个项目用来演示如何使用 chromium 中的一些基础机制，包括异步多任务，mojo，多进程，viz，cc，gl等。
 
 > 提示：  
 > 1. 如果你是 chromium 的新手，建议按照顺序学习这些 demo。  
-> 2. 这些 demo 只在 Linux 和 Android 上进行了测试。
-> 3. 欢迎 PR/MR。
+> 1. 这些 demo 只在 Linux 和 Android 上进行了测试。
+> 1. 下面 demo 列表前面的标签表示该 demo 最高支持的 chromium 版本，比如 v110 表示支持 chromium 110，没有标签的 demo 表示只在 chromium 80 上验证过。
+> 1. 欢迎提交 PR 新增 demo 或者将这些 demo 迁移到其他 chromium 版本。
 
 Demo 列表：
 
