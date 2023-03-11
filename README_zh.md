@@ -1,13 +1,13 @@
 # Demo
 
-> 这个项目正在迁移到 chromium `110` 版本，目前完成了一部分，请根据你的需要选择合适的分支，并保证 chromium 也切换到对应的分支（切换后需要执行 `glcient sync` 同步代码）。如果你对此感兴趣，欢迎随时联系我！  
-> 我建了一个微信群，用来方便大家进行技术讨论，如果你感兴趣，欢迎加我微信，我会把你拉入讨论群：  
+> 这个项目正在迁移到 chromium `110` 版本(5481分支)，目前完成了一部分，请根据你的需要选择合适的分支，并保证 chromium 也切换到对应的分支（切换后需要执行 `glcient sync` 同步代码）。如果你对此感兴趣，欢迎随时联系我！
+> 我建了一个微信群，用来方便大家进行技术讨论，如果你感兴趣，欢迎加我微信，我会把你拉入讨论群：
 > <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
 这个项目用来演示如何使用 chromium 中的一些基础机制，包括异步多任务，mojo，多进程，viz，cc，gl等。
 
-> 提示：  
-> 1. 如果你是 chromium 的新手，建议按照顺序学习这些 demo。  
+> 提示：
+> 1. 如果你是 chromium 的新手，建议按照顺序学习这些 demo。
 > 1. 这些 demo 只在 Linux 和 Android 上进行了测试。
 > 1. 下面 demo 列表前面的标签表示该 demo 最高支持的 chromium 版本，比如 v110 表示支持 chromium 110，没有标签的 demo 表示只在 chromium 80 上验证过。
 > 1. 欢迎提交 PR 新增 demo 或者将这些 demo 迁移到其他 chromium 版本。
@@ -69,7 +69,7 @@ Demo 列表：
     root_extra_deps = ["//demo"]
     # disable warngings as errors
     treat_warnings_as_errors = false
-    
+
     # 如果要编译 android 平台的 demo 需要额外添加以下参数
     # target_os="android"
     # target_cpu="arm64" # 可以根据需要选择其它架构 x86,x64,arm,mipsel
@@ -77,7 +77,7 @@ Demo 列表：
 
 4. 执行 `ninja -C out/Default <demo列表中的名称>` 生成所需的demo（详见 [BUILD.gn](./BUILD.gn)），比如使用名称 `demo_exe` 生成 demo_exe 程序。或者使用 `demo` 生成所有的程序；
 
-> 再次强调，这些 demo 只在 Linux 和 Android 上测试通过，其他平台没有测试，欢迎提交 PR/MR 兼容其他平台。 
+> 再次强调，这些 demo 只在 Linux 和 Android 上测试通过，其他平台没有测试，欢迎提交 PR/MR 兼容其他平台。
 
 ## TODO
 
@@ -95,6 +95,10 @@ Demo 列表：
 - 添加 demo, 演示 `tab capture api` 的原理；
 
 ## 更新日志
+
+### 2023.3.11
+
+- 更新 110 版本的分支到 chromium 正式分支 5481;
 
 ### 2022.12.4
 
@@ -138,7 +142,7 @@ Demo 列表：
 
 ### 2021.7.17
 
-- 升级以下 demo 到 v91 版本：  
+- 升级以下 demo 到 v91 版本：
     - demo_exe
     - demo_tracing_perfetto
     - demo_tracing_perfetto_content
@@ -226,7 +230,7 @@ Demo 列表：
 
 ### 2020.3.21
 
-- 添加 demo_views，演示使用 `//ui/views` 开发 UI;  
+- 添加 demo_views，演示使用 `//ui/views` 开发 UI;
 
 ### 2020.3.12
 

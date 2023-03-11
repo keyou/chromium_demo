@@ -7,14 +7,14 @@
 
 ---
 
-> This project is in the process of migrating to chromium version `110`, it is partially completed, please choose the appropriate branch for your needs and make sure chromium switches to the corresponding branch as well (you will need to run `glcient sync` to sync the code after the switch). If you are interested in this, please feel free to contact me in the Discussions channel.  
-> I have built a WeChat group, used to facilitate technical discussions, if you are interested, welcome to add my WeChat, I will pull you into the discussion group. WeChat:  
+> This project is in the process of migrating to chromium version `110`(branch 5481), it is partially completed, please choose the appropriate branch for your needs and make sure chromium switches to the corresponding branch as well (you will need to run `glcient sync` to sync the code after the switch). If you are interested in this, please feel free to contact me in the Discussions channel.
+> I have built a WeChat group, used to facilitate technical discussions, if you are interested, welcome to add my WeChat, I will pull you into the discussion group. WeChat:
 > <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
 This project is used to demonstrate how to use some basic mechanisms in chromium, including asynchronous multitasking, mojo, multi-process, viz, cc, gl etc.
 
-> Tips:   
-> 1. If you are new to chromium, it is recommended to study these demos in order.  
+> Tips:
+> 1. If you are new to chromium, it is recommended to study these demos in order.
 > 1. These demos are ONLY tested on Linux and Android.
 > 1. The label in front of the demo list below indicates the highest supported chromium version of the demo, e.g. v110 means chromium 110 is supported, demos without labels mean that they are only verified on chromium 80.
 > 1. Feel free to submit new demos for PR or migrate these demos to other chromium versions
@@ -77,7 +77,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
     root_extra_deps = ["//demo"]
     # disable warngings as errors
     treat_warnings_as_errors = false
-    
+
     # If you want to compile the demo of android platform, you need to add the following parameters
     # target_os="android"
     # target_cpu="arm64" # Other architectures can be selected as needed x86, x64, arm, mipsel
@@ -103,6 +103,10 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2023.3.11
+
+- Update 110 branch to 5481;
 
 ### 2022.12.4
 
@@ -136,17 +140,17 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2021.7.29
 
-- Migrate below demos to v91：  
+- Migrate below demos to v91：
     - demo_resources
 
 ### 2021.7.22
 
-- Migrate below demos to v91：  
+- Migrate below demos to v91：
     - demo_memory
 
 ### 2021.7.17
 
-- Migrate below demos to v91：  
+- Migrate below demos to v91：
     - demo_exe
     - demo_tracing_perfetto
     - demo_tracing_perfetto_content
