@@ -8,7 +8,6 @@
 #include "base/logging.h"
 #include <base/run_loop.h>
 #include "base/task/single_thread_task_executor.h"
-// #include "base/task/post_task.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/process/launch.h"
 #include "base/threading/thread.h"
@@ -32,13 +31,6 @@
 #include "demo/demo_mojo/mojom/test3.mojom.h"
 #include "demo/demo_mojo/mojom/test4.mojom.h"
 
-// For bindings API
-// #include "mojo/public/cpp/bindings/binding.h"
-// #include "mojo/public/cpp/bindings/interface_ptr.h"
-
-// For associated bindings API
-// #include "mojo/public/cpp/bindings/associated_binding.h"
-// #include "mojo/public/cpp/bindings/associated_interface_ptr.h"
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 
 // For IPC API

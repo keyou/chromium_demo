@@ -1,6 +1,5 @@
 #import("//build/config/jumbo.gni")
 import("//build/util/process_version.gni")
-# import("//build/util/version.gni")
 import("//third_party/icu/config.gni")
 import("//tools/v8_context_snapshot/v8_context_snapshot.gni")
 import("//tools/grit/grit_rule.gni")

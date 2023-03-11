@@ -1,7 +1,6 @@
 #ifndef DEMO_IPC_MESSAGES_H_
 #define DEMO_IPC_MESSAGES_H_
 
-// #define IPC_MESSAGE_IMPL
 #include "ipc/ipc_message.h"
 #include "ipc/ipc_message_macros.h"
 #include "ipc/ipc_message_start.h"

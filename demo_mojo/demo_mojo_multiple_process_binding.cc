@@ -24,42 +24,18 @@
 #include "demo/demo_mojo/mojom/test4.mojom.h"
 
 // For bindings API
-// #include "mojo/public/cpp/bindings/binding.h"
-// #include "mojo/public/cpp/bindings/interface_ptr.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 
 // For associated bindings API
-// #include "mojo/public/cpp/bindings/associated_binding.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "mojo/public/cpp/bindings/associated_interface_ptr_info.h"
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
-
-// // 在新版本中这些类被重命名,这里模拟新版本
-// template <class T>
-// using Remote = mojo::InterfacePtr<T>;
-// template <class T>
-// using PendingRemote = mojo::InterfacePtrInfo<T>;
-// template <class T>
-// using Receiver = mojo::Receiver<T>;
-// // using Receiver = mojo::InterfaceRequest<T>;
-// template <class T>
-// using PendingReceiver = mojo::InterfaceRequest<T>;
-
-// // 以下定义用于模拟新版本的关联接口
-// template <class T>
-// using AssociatedRemote = mojo::AssociatedRemote<T>;
-// template <class T>
-// using PendingAssociatedRemote = mojo::AssociatedInterfacePtrInfo<T>;
-// template <class T>
-// using AssociatedReceiver = mojo::AssociatedReceiver<T>;
-// template <class T>
-// using PendingAssociatedReceiver = mojo::AssociatedInterfaceRequest<T>;
 
 using namespace demo::demo_mojo::mojom;
 

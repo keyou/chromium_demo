@@ -67,6 +67,8 @@ Demo 列表：
     ```python
     # add extra deps to gn root
     root_extra_deps = ["//demo"]
+    # disable warngings as errors
+    treat_warnings_as_errors = false
     
     # 如果要编译 android 平台的 demo 需要额外添加以下参数
     # target_os="android"

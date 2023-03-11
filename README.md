@@ -75,6 +75,8 @@ Public documents are in the [docs](./docs) directory, and other documents are in
     ```python
     # add extra deps to gn root
     root_extra_deps = ["//demo"]
+    # disable warngings as errors
+    treat_warnings_as_errors = false
     
     # If you want to compile the demo of android platform, you need to add the following parameters
     # target_os="android"

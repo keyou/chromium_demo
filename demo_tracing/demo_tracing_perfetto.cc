@@ -195,9 +195,6 @@ int main(int argc, char** argv) {
 
   tracing::InitTracingPostThreadPoolStartAndFeatureList(true);
 
-  // 对于我们自定义的 TracingController 并无实际作用
-  auto tracing_controller_ = std::make_unique<demo::TracingController>();
-
   bool result = false;
   {
     TRACE_EVENT0("test", "StartTracing");

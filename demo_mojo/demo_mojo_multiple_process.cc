@@ -23,8 +23,6 @@
 // For bindings API
 #include "demo/demo_mojo/mojom/test.mojom.h"
 #include "demo/demo_mojo/mojom/test2.mojom.h"
-// #include "mojo/public/cpp/bindings/binding.h"
-// #include "mojo/public/cpp/bindings/interface_ptr.h"
 
 class PipeReader {
  public:

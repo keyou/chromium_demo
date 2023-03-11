@@ -90,7 +90,8 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     DLOG(INFO) << "BeginPaint: get a canvas for paint";
     return viz::SoftwareOutputDevice::BeginPaint(damage_rect);
   }
-  void OnSwapBuffers(SwapBuffersCallback swap_ack_callback) override {
+  void OnSwapBuffers(SwapBuffersCallback swap_ack_callback,
+                     gl::FrameData data) override {
     auto image = surface_->makeImageSnapshot();
     SkBitmap bitmap;
     DCHECK(image->asLegacyBitmap(&bitmap));
@@ -107,7 +108,8 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     DCHECK(
         SkEncodeImage(&stream, bitmap.pixmap(), SkEncodedImageFormat::kPNG, 0));
     DLOG(INFO) << "OnSwapBuffers: save the frame to: " << path;
-    viz::SoftwareOutputDevice::OnSwapBuffers(std::move(swap_ack_callback));
+    viz::SoftwareOutputDevice::OnSwapBuffers(std::move(swap_ack_callback),
+                                             data);
   }
 };
 
