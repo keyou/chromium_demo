@@ -4,9 +4,9 @@
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/macros.h"
+// #include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/single_thread_task_runner.h"
+// #include "base/single_thread_task_runner.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -40,6 +40,7 @@
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
 #include "demo/common/utils.h"
+#include "include/core/SkColor.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
@@ -193,19 +194,18 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     gfx::Rect output_rect = bounds_;
 
     auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        gfx::Transform(),
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/output_rect,
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+    quad_state->SetAll(gfx::Transform(),
+                       /*layer_rect=*/output_rect,
+                       /*visible_layer_rect=*/output_rect,
+                       /*filter_info=*/gfx::MaskFilterInfo(),
+                       /*clip=*/output_rect,
+                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
 
     auto* debug_quad =
         render_pass->CreateAndAppendDrawQuad<viz::DebugBorderDrawQuad>();
     // 将 resource 添加到 tile_quad 中
-    debug_quad->SetNew(quad_state, output_rect, output_rect, SK_ColorMAGENTA,
+    debug_quad->SetNew(quad_state, output_rect, output_rect, SkColors::kMagenta,
                        20);
   }
 
@@ -220,15 +220,15 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     canvas.drawCircle(
         30, 100, 150,
         SkPaint(SkColor4f::FromColor(
-            colors[(*frame_token_generator_ / 60 + 1) % base::size(colors)])));
+            colors[(*frame_token_generator_ / 60 + 1) % std::size(colors)])));
     canvas.drawCircle(
         10, 50, 60,
         SkPaint(SkColor4f::FromColor(
-            colors[(*frame_token_generator_ / 60 + 2) % base::size(colors)])));
+            colors[(*frame_token_generator_ / 60 + 2) % std::size(colors)])));
     canvas.drawCircle(
         180, 180, 50,
         SkPaint(SkColor4f::FromColor(
-            colors[(*frame_token_generator_ / 60 + 3) % base::size(colors)])));
+            colors[(*frame_token_generator_ / 60 + 3) % std::size(colors)])));
 
     gfx::Size tile_size(200, 200);
     // 将 SkBitmap 中的数据转换为资源
@@ -240,14 +240,13 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     transform.Translate(50, 50);
 
     auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        transform,
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/output_rect,
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+    quad_state->SetAll(transform,
+                       /*layer_rect=*/output_rect,
+                       /*visible_layer_rect=*/output_rect,
+                       /*filter_info=*/gfx::MaskFilterInfo(),
+                       /*clip=*/output_rect,
+                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
 
     auto* tile_quad = render_pass->CreateAndAppendDrawQuad<viz::TileDrawQuad>();
     // 将 resource 添加到 tile_quad 中
@@ -273,15 +272,15 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     canvas.drawCircle(
         30, 100, 150,
         SkPaint(SkColor4f::FromColor(
-            colors[(*frame_token_generator_ / 60 + 2) % base::size(colors)])));
+            colors[(*frame_token_generator_ / 60 + 2) % std::size(colors)])));
     canvas.drawCircle(
         10, 50, 60,
         SkPaint(SkColor4f::FromColor(
-            colors[(*frame_token_generator_ / 60 + 3) % base::size(colors)])));
+            colors[(*frame_token_generator_ / 60 + 3) % std::size(colors)])));
     canvas.drawCircle(
         180, 180, 50,
         SkPaint(SkColor4f::FromColor(
-            colors[(*frame_token_generator_ / 60 + 1) % base::size(colors)])));
+            colors[(*frame_token_generator_ / 60 + 1) % std::size(colors)])));
 
     gfx::Size tile_size(200, 200);
     // 将 SkBitmap 中的数据转换为资源
@@ -293,14 +292,13 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     transform.Translate(350, 50);
 
     auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        transform,
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/output_rect,
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+    quad_state->SetAll(transform,
+                       /*layer_rect=*/output_rect,
+                       /*visible_layer_rect=*/output_rect,
+                       /*filter_info=*/gfx::MaskFilterInfo(),
+                       /*clip=*/output_rect,
+                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
 
     auto* texture_quad =
         render_pass->CreateAndAppendDrawQuad<viz::TextureDrawQuad>();
@@ -308,7 +306,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // 将 resource 添加到 tile_quad 中
     texture_quad->SetNew(quad_state, output_rect, output_rect, false, resource,
                          true, gfx::PointF(0.f, 0.f), gfx::PointF(1.f, 1.f),
-                         SK_ColorGRAY, vertex_opacity, false, false, false,
+                         SkColors::kGray, vertex_opacity, false, false, false,
                          gfx::ProtectedVideoType::kClear);
 
     // 将 resource 对用的资源添加到 frame.resource_list
@@ -325,14 +323,13 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     transform.Translate(350, 350);
 
     auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        transform,
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/output_rect,
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+    quad_state->SetAll(transform,
+                       /*layer_rect=*/output_rect,
+                       /*visible_layer_rect=*/output_rect,
+                       /*filter_info=*/gfx::MaskFilterInfo(),
+                       /*clip=*/output_rect,
+                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
 
     viz::SurfaceId child_surface_id(
         child_frame_sink_id_,
@@ -340,8 +337,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     auto* surface_quad =
         render_pass->CreateAndAppendDrawQuad<viz::SurfaceDrawQuad>();
     surface_quad->SetNew(quad_state, output_rect, output_rect,
-                         viz::SurfaceRange(base::nullopt, child_surface_id),
-                         SK_ColorDKGRAY, true);
+                         viz::SurfaceRange(absl::nullopt, child_surface_id),
+                         SkColors::kDkGray, true);
   }
 
   // 演示 TextureDrawQuad 的使用
@@ -355,14 +352,13 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     transform.Translate(50, 350);
 
     auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        transform,
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/output_rect,
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+    quad_state->SetAll(transform,
+                       /*layer_rect=*/output_rect,
+                       /*visible_layer_rect=*/output_rect,
+                       /*filter_info=*/gfx::MaskFilterInfo(),
+                       /*clip=*/output_rect,
+                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
 
     auto* video_hole_quad =
         render_pass->CreateAndAppendDrawQuad<viz::VideoHoleDrawQuad>();
@@ -377,34 +373,35 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   // PictureDrawQuad 当前不支持 mojo 的序列化，因此这里无法演示
   void AppendPictureDrawQuad(viz::CompositorFrame& frame,
                              viz::CompositorRenderPass* render_pass) {
-    return;
-#if !defined(OS_WIN)
-    gfx::Rect output_rect = bounds_;
-    output_rect.Inset(10, 10, 10, 10);
+    // return;
+    // #if !defined(OS_WIN)
+    //     gfx::Rect output_rect = bounds_;
+    //     output_rect.Inset(10);
 
-    auto display_list = base::MakeRefCounted<cc::DisplayItemList>();
-    display_list->StartPaint();
-    display_list->push<cc::DrawColorOp>(SK_ColorCYAN, SkBlendMode::kSrc);
-    display_list->EndPaintOfUnpaired(output_rect);
-    display_list->Finalize();
+    //     auto display_list = base::MakeRefCounted<cc::DisplayItemList>();
+    //     display_list->StartPaint();
+    //     display_list->push<cc::DrawColorOp>(SK_ColorCYAN, SkBlendMode::kSrc);
+    //     display_list->EndPaintOfUnpaired(output_rect);
+    //     display_list->Finalize();
 
-    viz::SharedQuadState* quad_state =
-        render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        gfx::Transform(),
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/gfx::Rect(),
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+    //     viz::SharedQuadState* quad_state =
+    //         render_pass->CreateAndAppendSharedQuadState();
+    //     quad_state->SetAll(gfx::Transform(),
+    //                        /*layer_rect=*/output_rect,
+    //                        /*visible_layer_rect=*/output_rect,
+    //                        /*filter_info=*/gfx::MaskFilterInfo(),
+    //                        /*clip=*/output_rect,
+    //                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
+    //                        /*blend=*/SkBlendMode::kSrcOver,
+    //                        /*sorting_context=*/0);
 
-    auto* picture_quad =
-        render_pass->CreateAndAppendDrawQuad<viz::PictureDrawQuad>();
-    picture_quad->SetNew(quad_state, output_rect, output_rect, true,
-                         gfx::RectF(output_rect), output_rect.size(), false,
-                         viz::RGBA_8888, output_rect, 1.f, {}, display_list);
-#endif
+    //     auto* picture_quad =
+    //         render_pass->CreateAndAppendDrawQuad<viz::PictureDrawQuad>();
+    //     picture_quad->SetNew(quad_state, output_rect, output_rect, true,
+    //                          gfx::RectF(output_rect), output_rect.size(),
+    //                          false, viz::RGBA_8888, output_rect, 1.f, {},
+    //                          display_list);
+    // #endif
   }
 
   // 演示 SolidColorDrawQuad 的使用
@@ -415,21 +412,22 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // content-area of the client.
     viz::SharedQuadState* quad_state =
         render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        gfx::Transform(),
-        /*quad_layer_rect=*/output_rect,
-        /*visible_quad_layer_rect=*/output_rect,
-        /*rounded_corner_bounds=*/gfx::MaskFilterInfo(),
-        /*clip_rect=*/gfx::Rect(),
-        /*is_clipped=*/false, /*are_contents_opaque=*/false, /*opacity=*/1.f,
-        /*blend_mode=*/SkBlendMode::kSrcOver, /*sorting_context_id=*/0);
+    quad_state->SetAll(gfx::Transform(),
+                       /*layer_rect=*/output_rect,
+                       /*visible_layer_rect=*/output_rect,
+                       /*filter_info=*/gfx::MaskFilterInfo(),
+                       /*clip=*/output_rect,
+                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
 
     // 单一颜色
     viz::SolidColorDrawQuad* color_quad =
         render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
     color_quad->SetNew(
         quad_state, output_rect, output_rect,
-        colors[(*frame_token_generator_ / 60) % base::size(colors)], false);
+        SkColor4f::FromColor(
+            colors[(*frame_token_generator_ / 60) % std::size(colors)]),
+        false);
   }
 
   // 使用共享内存来传递资源到 viz
@@ -455,11 +453,11 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     return client_resource_provider_->ImportResource(
         viz::TransferableResource::MakeSoftware(shared_bitmap_id, size,
                                                 viz::RGBA_8888),
-        viz::SingleReleaseCallback::Create(base::DoNothing()));
+        base::DoNothing());
   }
 
   void DidReceiveCompositorFrameAck(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      std::vector<::viz::ReturnedResource> resources) override {}
 
   void OnCompositorFrameTransitionDirectiveProcessed(uint32_t sequence_id) override {}
 
@@ -470,14 +468,14 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     base::AutoLock lock(lock_);
     GetCompositorFrameSinkPtr()->SubmitCompositorFrame(
         local_surface_id_, CreateFrame(args),
-        base::Optional<viz::HitTestRegionList>(),
-        /*trace_time=*/0);
+        absl::optional<viz::HitTestRegionList>(),
+        /*submit_time=*/0);
   }
 
   void OnBeginFramePausedChanged(bool paused) override {}
 
   void ReclaimResources(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      std::vector<::viz::ReturnedResource> resources) override {}
 
   viz::mojom::CompositorFrameSink* GetCompositorFrameSinkPtr() {
     if (frame_sink_associated_remote_.is_bound())
@@ -642,7 +640,7 @@ class GpuService {
     params->frame_sink_manager = std::move(receiver);
     params->frame_sink_manager_client = std::move(client);
     runner_ = std::make_unique<viz::VizCompositorThreadRunnerImpl>();
-    runner_->CreateFrameSinkManager(std::move(params));
+    runner_->CreateFrameSinkManager(std::move(params), nullptr);
   }
 
  private:
@@ -670,6 +668,15 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
       const gfx::Rect& bounds) {
     ui::PlatformWindowInitProperties props(bounds);
 #if defined(USE_OZONE)
+    // Make Ozone run in single-process mode.
+    ui::OzonePlatform::InitParams params;
+    params.single_process = true;
+
+    // This initialization must be done after TaskEnvironment has
+    // initialized the UI thread.
+    ui::OzonePlatform::InitializeForUI(params);
+    ui::OzonePlatform::InitializeForGPU(params);
+
     return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
         this, std::move(props));
 #elif defined(OS_WIN)
@@ -703,7 +710,7 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
     // Next, create the host and the service, and pass them the right ends of
     // the message-pipes.
     host_ = std::make_unique<Compositor>(
-        widget_, platform_window_->GetBounds().size(),
+        widget_, platform_window_->GetBoundsInPixels().size(),
         std::move(frame_sink_manager_client_receiver),
         std::move(frame_sink_manager));
 
@@ -714,7 +721,7 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
 
   // ui::PlatformWindowDelegate:
   void OnBoundsChanged(const BoundsChange& change) override {
-    host_->Resize(change.bounds.size());
+    host_->Resize(platform_window_->GetBoundsInPixels().size());
   }
 
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
@@ -736,7 +743,8 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
     if (close_closure_)
       std::move(close_closure_).Run();
   }
-  void OnWindowStateChanged(ui::PlatformWindowState new_state) override {}
+  void OnWindowStateChanged(ui::PlatformWindowState old_state,
+                            ui::PlatformWindowState new_state) override {}
   void OnLostCapture() override {}
   void OnAcceleratedWidgetDestroyed() override {}
   void OnActivationChanged(bool active) override {}
@@ -748,8 +756,6 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
   std::unique_ptr<ui::PlatformWindow> platform_window_;
   gfx::AcceleratedWidget widget_;
   base::OnceClosure close_closure_;
-
-  DISALLOW_COPY_AND_ASSIGN(DemoVizWindow);
 };
 
 }  // namespace demo

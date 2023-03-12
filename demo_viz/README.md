@@ -1,5 +1,7 @@
 # demo_viz
 
+演示 viz 相关接口的使用，需要注意的是，所有 demo 都没有处理潜在的资源释放，仅供参考。
+
 ## demo_viz_offscreen
 
 demo_viz_offscreen 演示了直接使用 viz 内部的接口来进行离屏渲染。
@@ -7,7 +9,7 @@ demo_viz_offscreen 演示了直接使用 viz 内部的接口来进行离屏渲�
 ## demo_viz_gui
 
 demo_viz_gui 演示了使用 viz 提供的 mojo 接口进行 GUI 软件渲染。
-这些 mojo 接口内部包装了 demo_viz_offscreen 所演示的技术。
+这些 mojo 接口内部包装了 demo_viz_offscreen 所演示的技术并添加了多种 DrawQuad 的使用演示。
 该 demo 还增加了 client raster 以及多 FrameSink 的演示。
 
 ## demo_viz_gui_gpu

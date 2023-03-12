@@ -31,7 +31,7 @@ Demo 列表：
 1. [v110] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
 1. [v110] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
 1. [v110] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
-1. `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
+1. [v110] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
 1. [v110] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 1. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
 1. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
@@ -95,6 +95,10 @@ Demo 列表：
 - 添加 demo, 演示 `tab capture api` 的原理；
 
 ## 更新日志
+
+### 2023.3.12
+
+- 升级 demo_viz_gui 到 110 版本；
 
 ### 2023.3.11
 

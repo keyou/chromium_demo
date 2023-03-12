@@ -38,7 +38,7 @@ Demo list:
 1. [v110] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
 1. [v110] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
 1. [v110] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
-1. `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
+1. [v110] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
 1. [v110] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 1. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
 1. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
@@ -103,6 +103,10 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2023.3.12
+
+- Migrate demo_viz_gui to v110;
 
 ### 2023.3.11
 
