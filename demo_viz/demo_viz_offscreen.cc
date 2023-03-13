@@ -42,7 +42,6 @@
 #include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-// #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/compositor/paint_recorder.h"
@@ -66,17 +65,11 @@
 #include "ui/wm/core/wm_state.h"
 #endif
 
-#if defined(USE_X11)
-// #include "ui/gfx/x/x11_connection.h"            // nogncheck
-#include "ui/platform_window/x11/x11_window.h"  // nogncheck
-#include "ui/base/x/x11_util.h"
-#endif
-
-#if defined(USE_OZONE)
+#if BUILDFLAG(IS_OZONE)
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 // #include "ui/base/cursor/cursor_loader_win.h"
 #include "ui/platform_window/win/win_window.h"
 #endif
@@ -197,15 +190,14 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     // content-area of the client.
     viz::SharedQuadState* quad_state =
         render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(
-        gfx::Transform(),
-                    /*quad_layer_rect=*/output_rect,
-                    /*visible_layer_rect=*/output_rect,
-                    /*mask_filter_info=*/gfx::MaskFilterInfo(),
-                    /*clip_rect=*/absl::nullopt,
-                    /*are_contents_opaque=*/false, /*opacity=*/1.f,
-                    /*blend_mode=*/SkBlendMode::kSrcOver,
-                    /*sorting_context_id=*/0);
+    quad_state->SetAll(gfx::Transform(),
+                       /*layer_rect=*/output_rect,
+                       /*visible_layer_rect=*/output_rect,
+                       /*filter_info=*/gfx::MaskFilterInfo(),
+                       /*clip=*/absl::nullopt,
+                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
+                       /*blend=*/SkBlendMode::kSrcOver,
+                       /*sorting_context=*/0);
 
     viz::SolidColorDrawQuad* color_quad =
         render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
@@ -229,10 +221,9 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     if (support_->last_activated_local_surface_id() != root_local_surface_id_) {
       display_->SetLocalSurfaceId(root_local_surface_id_, 1.0f);
     }
-    support_->SubmitCompositorFrame(root_local_surface_id_,
-                                    CreateFrame(args),
+    support_->SubmitCompositorFrame(root_local_surface_id_, CreateFrame(args),
                                     absl::optional<viz::HitTestRegionList>(),
-                                    /*trace_time=*/0);
+                                    /*submit_time=*/0);
   }
 
   void OnBeginFramePausedChanged(bool paused) override {}
@@ -304,33 +295,13 @@ int main(int argc, char** argv) {
       mojo_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
-  // 加载相应平台的GL库及GL绑定
-  // gl::init::InitializeGLOneOff();
-
-  // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
-  base::i18n::InitializeICU();
-
   ui::RegisterPathProvider();
 
-  // This app isn't a test and shouldn't timeout.
-  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
-
   base::RunLoop run_loop;
-
-  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
-  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
-  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
-  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
-  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
-  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  // ui::SetDefaultX11ErrorHandlers();
 
   // Make Ozone run in single-process mode.
   ui::OzonePlatform::InitParams params;
   params.single_process = true;
-
-  // This initialization must be done after TaskEnvironment has
-  // initialized the UI thread.
   ui::OzonePlatform::InitializeForUI(params);
   ui::OzonePlatform::InitializeForGPU(params);
 
