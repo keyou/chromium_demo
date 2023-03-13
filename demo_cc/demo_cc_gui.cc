@@ -1,3 +1,4 @@
+#include <memory>
 #include "base/at_exit.h"
 #include "base/base_paths.h"
 #include "base/callback.h"
@@ -6,9 +7,7 @@
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/macros.h"
 #include "base/memory/ptr_util.h"
-// #include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -37,23 +36,26 @@
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
 #include "components/viz/service/display/display.h"
-#include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display/overlay_processor_stub.h"
+#include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/display_embedder/software_output_surface.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
+#include "include/core/SkColor.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "services/viz/privileged/mojom/viz_main.mojom.h"
+#include "third_party/blink/public/mojom/direct_sockets/direct_sockets.mojom-blink-forward.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
 // #include "ui/base/material_design/material_design_controller.h"
+#include "components/viz/service/display_embedder/software_output_device_ozone.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/compositor/paint_recorder.h"
@@ -68,6 +70,9 @@
 #include "ui/gfx/skia_util.h"
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/init/gl_factory.h"
+#include "ui/ozone/public/platform_window_surface.h"
+#include "ui/ozone/public/surface_factory_ozone.h"
+#include "ui/ozone/public/surface_ozone_canvas.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
@@ -104,7 +109,7 @@ class Layer : public cc::ContentLayerClient {
 
     content_cc_layer_->SetTransformOrigin(gfx::Point3F());
     content_cc_layer_->SetContentsOpaque(true);
-    content_cc_layer_->SetSafeOpaqueBackgroundColor(SK_ColorWHITE);
+    content_cc_layer_->SetSafeOpaqueBackgroundColor(SkColors::kWhite);
     content_cc_layer_->SetIsDrawable(true);
     content_cc_layer_->SetHitTestable(true);
     content_cc_layer_->SetElementId(cc::ElementId(content_cc_layer_->id()));
@@ -129,10 +134,11 @@ class Layer : public cc::ContentLayerClient {
     LOG(INFO) << "PaintableRegion: paint layer";
     constexpr SkColor colors[] = {SK_ColorRED, SK_ColorGREEN, SK_ColorYELLOW};
     static int i = 0;
-    SkColor color = colors[i++ % base::size(colors)];
+    SkColor color = colors[i++ % std::size(colors)];
     auto display_list = base::MakeRefCounted<cc::DisplayItemList>();
     display_list->StartPaint();
-    display_list->push<cc::DrawColorOp>(color, SkBlendMode::kSrc);
+    display_list->push<cc::DrawColorOp>(SkColor4f::FromColor(color),
+                                        SkBlendMode::kSrc);
     display_list->EndPaintOfUnpaired(bounds_);
     display_list->Finalize();
     base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
@@ -145,7 +151,7 @@ class Layer : public cc::ContentLayerClient {
               layer->SetNeedsDisplay();
             },
             content_cc_layer_, color, i),
-        base::TimeDelta::FromSeconds(1));
+        base::Seconds(1));
     return display_list;
   }
   bool FillsBoundsCompletely() const override { return true; }
@@ -196,28 +202,43 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
         std::make_unique<viz::DelayBasedTimeSource>(task_runner.get());
 
     time_source->SetTimebaseAndInterval(
-        base::TimeTicks(), base::TimeDelta::FromMicroseconds(
-                               base::Time::kMicrosecondsPerSecond / fps_));
+        base::TimeTicks(),
+        base::Microseconds(base::Time::kMicrosecondsPerSecond / fps_));
     // 用于定时请求BeginFrame
     begin_frame_source_ = std::make_unique<viz::DelayBasedBeginFrameSource>(
         std::move(time_source), viz::BeginFrameSource::kNotRestartableId);
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
     back_ = std::make_unique<viz::OutputDeviceBacking>();
     auto output_surface = std::make_unique<viz::SoftwareOutputSurface>(
         std::make_unique<viz::SoftwareOutputDeviceWinDirect>(widget_, back_.get()));
+#elif BUILDFLAG(IS_OZONE)
+    ui::SurfaceFactoryOzone* factory =
+        ui::OzonePlatform::GetInstance()->GetSurfaceFactoryOzone();
+    std::unique_ptr<ui::PlatformWindowSurface> platform_window_surface =
+        factory->CreatePlatformWindowSurface(widget_);
+    std::unique_ptr<ui::SurfaceOzoneCanvas> surface_ozone =
+        factory->CreateCanvasForWidget(widget_);
+    CHECK(surface_ozone);
+    auto output_device = std::make_unique<viz::SoftwareOutputDeviceOzone>(
+        std::move(platform_window_surface), std::move(surface_ozone));
+    auto output_surface =
+        std::make_unique<viz::SoftwareOutputSurface>(std::move(output_device));
 #else
-    auto output_surface = std::make_unique<viz::SoftwareOutputSurface>(
-        std::make_unique<viz::SoftwareOutputDeviceX11>(widget_, nullptr));
+    NOTREACHED();
+    return nullptr;
 #endif
+
     auto scheduler = std::make_unique<viz::DisplayScheduler>(
         begin_frame_source_.get(), task_runner.get(),
-        output_surface->capabilities().max_frames_pending);
+        viz::PendingSwapParams(
+            output_surface->capabilities().pending_swap_params));
     viz::RendererSettings settings = viz::CreateRendererSettings();
-    settings.use_skia_renderer = false;
+    // settings.use_skia_renderer = false;
     auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
-        frame_sink_manager_->shared_bitmap_manager(), settings, &debug_settings_,
-        root_frame_sink_id_, nullptr, std::move(output_surface), std::move(overlay_processor), 
+        frame_sink_manager_->shared_bitmap_manager(), settings,
+        &debug_settings_, root_frame_sink_id_, nullptr,
+        std::move(output_surface), std::move(overlay_processor),
         std::move(scheduler), task_runner);
     display_->Initialize(this, frame_sink_manager_->surface_manager());
     frame_sink_manager_->RegisterFrameSinkId(root_frame_sink_id_, false);
@@ -250,14 +271,13 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   }
   // 接收由 cc 提交的 CF
   void SubmitCompositorFrame(viz::CompositorFrame frame,
-                             bool hit_test_data_changed,
-                             bool show_hit_test_borders) override {
-    support_->SubmitCompositorFrame(root_local_surface_id_,
-                                    std::move(frame),
-                                    base::Optional<viz::HitTestRegionList>(),
+                             bool hit_test_data_changed) override {
+    support_->SubmitCompositorFrame(root_local_surface_id_, std::move(frame),
+                                    absl::optional<viz::HitTestRegionList>(),
                                     /*trace_time=*/0);
   }
-  void DidNotProduceFrame(const viz::BeginFrameAck& ack) override {
+  void DidNotProduceFrame(const viz::BeginFrameAck& ack,
+                          cc::FrameSkippedReason reason) override {
     support_->DidNotProduceFrame(ack);
   }
   void DidAllocateSharedBitmap(base::ReadOnlySharedMemoryRegion region,
@@ -272,18 +292,18 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
 
   // viz::mojom::CompositorFrameSinkClient overrides.
   void DidReceiveCompositorFrameAck(
-      const std::vector<::viz::ReturnedResource>& resources) override {
+      std::vector<::viz::ReturnedResource> resources) override {
     // Submitting a CompositorFrame can synchronously draw and dispatch a frame
     // ack. PostTask to ensure the client is notified on a new stack frame.
     compositor_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(
             &DemoLayerTreeFrameSink::DidReceiveCompositorFrameAckInternal,
-            weak_factory_.GetWeakPtr(), resources));
+            weak_factory_.GetWeakPtr(), std::move(resources)));
   }
   void DidReceiveCompositorFrameAckInternal(
-      const std::vector<viz::ReturnedResource>& resources) {
-    client_->ReclaimResources(resources);
+      std::vector<viz::ReturnedResource> resources) {
+    client_->ReclaimResources(std::move(resources));
     // 用于告诉cc::Scheduler上一帧已经处理完了
     client_->DidReceiveCompositorFrameAck();
   }
@@ -314,7 +334,7 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   }
   void OnBeginFramePausedChanged(bool paused) override {}
   void ReclaimResources(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      std::vector<::viz::ReturnedResource> resources) override {}
   void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) override {}
 
@@ -327,6 +347,8 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   void DisplayDidReceiveCALayerParams(
       const gfx::CALayerParams& ca_layer_params) override {}
   void DisplayDidCompleteSwapWithSize(const gfx::Size& pixel_size) override {}
+  void DisplayAddChildWindowToBrowser(
+      gpu::SurfaceHandle child_window) override {}
   void SetPreferredFrameInterval(base::TimeDelta interval) override {}
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const viz::FrameSinkId& id,
@@ -365,7 +387,7 @@ class Compositor
       public cc::LayerTreeHostSingleThreadClient,
       public viz::HostFrameSinkClient {
  public:
-  Compositor(gfx::AcceleratedWidget widget) : widget_(widget) {
+  explicit Compositor(gfx::AcceleratedWidget widget) : widget_(widget) {
     auto task_runner = base::ThreadTaskRunnerHandle::Get();
     cc::LayerTreeSettings settings;
     settings.initial_debug_state.show_fps_counter = true;
@@ -392,7 +414,7 @@ class Compositor
     host_->SetNeedsCommit();
   }
 
-  ~Compositor() override {}
+  ~Compositor() override = default;
 
  private:
   // 画面大小为 300x200
@@ -415,7 +437,14 @@ class Compositor
   void WillBeginMainFrame() override {}
   void DidBeginMainFrame() override {}
   void OnDeferMainFrameUpdatesChanged(bool) override {}
-  void OnDeferCommitsChanged(bool) override {}
+  void OnDeferCommitsChanged(
+      bool defer_status,
+      cc::PaintHoldingReason reason,
+      absl::optional<cc::PaintHoldingCommitTrigger> trigger) override {}
+  // Notification that rendering has been paused or resumed.
+  void OnPauseRenderingChanged(bool) override {}
+  // Notification that a compositing update has been requested.
+  void OnCommitRequested() override {}
   void WillUpdateLayers() override {}
   void DidUpdateLayers() override {}
   void BeginMainFrame(const viz::BeginFrameArgs& args) override {}
@@ -437,7 +466,7 @@ class Compositor
 
     shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
     frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
-        shared_bitmap_manager_.get());
+        viz::FrameSinkManagerImpl::InitParams(shared_bitmap_manager_.get()));
 
     // 生成 root client 的 LocalSurfaceId
     root_local_surface_id_allocator_.GenerateId();
@@ -456,8 +485,9 @@ class Compositor
   }
   void DidInitializeLayerTreeFrameSink() override {}
   void DidFailToInitializeLayerTreeFrameSink() override {}
-  void WillCommit() override {}
-  void DidCommit(base::TimeTicks commit_start_time) override {}
+  void WillCommit(const cc::CommitState&) override {}
+  void DidCommit(base::TimeTicks commit_start_time,
+                 base::TimeTicks commit_finish_time) override {}
   void DidCommitAndDrawFrame() override {}
   void DidReceiveCompositorFrameAck() override {}
   void DidCompletePageScaleAnimation() override {}
@@ -518,6 +548,13 @@ class DemoCcWindow : public ui::PlatformWindowDelegate {
       const gfx::Rect& bounds) {
     ui::PlatformWindowInitProperties props(bounds);
 #if defined(USE_OZONE)
+    // Make Ozone run in single-process mode.
+    ui::OzonePlatform::InitParams params;
+    params.single_process = true;
+
+    ui::OzonePlatform::InitializeForUI(params);
+    ui::OzonePlatform::InitializeForGPU(params);
+
     return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
         this, std::move(props));
 #elif defined(OS_WIN)
@@ -560,7 +597,8 @@ class DemoCcWindow : public ui::PlatformWindowDelegate {
     if (close_closure_)
       std::move(close_closure_).Run();
   }
-  void OnWindowStateChanged(ui::PlatformWindowState new_state) override {}
+  void OnWindowStateChanged(ui::PlatformWindowState old_state,
+                            ui::PlatformWindowState new_state) override {}
   void OnLostCapture() override {}
   void OnAcceleratedWidgetDestroyed() override {}
   void OnActivationChanged(bool active) override {}
@@ -571,8 +609,6 @@ class DemoCcWindow : public ui::PlatformWindowDelegate {
   std::unique_ptr<ui::PlatformWindow> platform_window_;
   gfx::AcceleratedWidget widget_;
   base::OnceClosure close_closure_;
-
-  DISALLOW_COPY_AND_ASSIGN(DemoCcWindow);
 };
 
 void FlushTrace() {
@@ -645,25 +681,8 @@ int main(int argc, char** argv) {
       mojo_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
-  // 在Linux上，x11和aura都是默认开启的
-#if defined(USE_X11)
-  // This demo uses InProcessContextFactory which uses X on a separate Gpu
-  // thread.
-  gfx::InitializeThreadedX11();
-
-  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
-  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
-  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
-  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
-  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
-  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  ui::SetDefaultX11ErrorHandlers();
-#endif
-
-  auto event_source_ = ui::PlatformEventSource::CreateDefault();
-
   // 加载相应平台的GL库及GL绑定
-  gl::init::InitializeGLOneOff();
+  // gl::init::InitializeGLOneOff(/*system_device_id=*/0);
 
   // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
   base::i18n::InitializeICU();
@@ -679,8 +698,7 @@ int main(int argc, char** argv) {
   window.Create(gfx::Rect(800, 600));
 
   main_task_executor.task_runner()->PostDelayedTask(
-      FROM_HERE, base::BindOnce(&demo::FlushTrace),
-      base::TimeDelta::FromSeconds(12));
+      FROM_HERE, base::BindOnce(&demo::FlushTrace), base::Seconds(12));
 
   LOG(INFO) << "running...";
   run_loop.Run();
