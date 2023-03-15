@@ -22,6 +22,7 @@ group("demo") {
       "demo_views",
       # "demo_android",
       "demo_shell",
+      "demo_gin",
     ]
   }
 
@@ -68,9 +69,10 @@ group("demo") {
       "demo_views",
       # "demo_android",
       # "demo_shell",
+      # "demo_gin",
     ]
   }
-  
+
   if(is_mac) {
     deps = [
       ":demo_exe",

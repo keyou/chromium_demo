@@ -197,7 +197,7 @@ class OffscreenLayerTreeFrameSink
     Initialize();
   }
 
-  ~OffscreenLayerTreeFrameSink() override {}
+  ~OffscreenLayerTreeFrameSink() override = default;
 
  private:
   void Initialize() {

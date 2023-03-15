@@ -1,7 +1,7 @@
 import("//mojo/public/tools/bindings/mojom.gni")
 
 group("demo_mojo_v8") {
-    print("demo_mojo_v8: Please read the README file in 'demo_mojo_v8/' directory!")
+    # Please read the README file in 'demo_mojo_v8/' directory!
 }
 
 # 应用于渲染进程
@@ -53,7 +53,7 @@ source_set("browser"){
 }
 # mojom
 mojom("mojom") {
-  sources = [ 
+  sources = [
       "mojom/demo.mojom",
   ]
 }

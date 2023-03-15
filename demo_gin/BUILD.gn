@@ -1,14 +1,10 @@
-group("demo_gin"){
-    deps = [
-        ":demo_gin"
-    ]
-}
-
 # 可执行文件
 executable("demo_gin"){
+    testonly = true
+
     sources = [
         # 主入口
-        "main.cc",
+        "demo_gin.cc",
 
         # ShellRunnerDelegate
         "shell_runner_delegate.cc",
@@ -24,6 +20,9 @@ executable("demo_gin"){
         "extends/async_demo.h"
 
 
+    ]
+    include_dirs = [
+      "//demo",
     ]
     deps = [
         "//base",

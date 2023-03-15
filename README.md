@@ -53,7 +53,7 @@ Demo list:
 1. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
 1. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
 1. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
-1. [v91] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
+1. [v110] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
 
 
 Documents:
@@ -107,6 +107,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 ### 2023.3.15
 
 - Migrate demo_cc_offscreen to v110;
+- Migrate demo_gin to v110;
 
 ### 2023.3.12
 

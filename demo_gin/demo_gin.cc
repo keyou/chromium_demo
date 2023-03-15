@@ -1,7 +1,3 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 #include "base/at_exit.h"
 #include "base/bind.h"
 #include "base/command_line.h"
@@ -10,11 +6,11 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread_task_runner_handle.h"
+#include "demo_gin/shell_runner_delegate.h"
 #include "gin/array_buffer.h"
 #include "gin/public/isolate_holder.h"
 #include "gin/shell_runner.h"
 #include "gin/v8_initializer.h"
-#include "demo_gin/shell_runner_delegate.h"
 
 // 要执行的脚本
 // 可以改为读取文件形式
@@ -53,7 +49,7 @@ int main(int argc, char** argv) {
   base::SingleThreadTaskExecutor main_thread_task_executor;
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("gin");
 
-  // Load V8快照默认资源 这个是GN里配置的哪个
+  // Load V8快照默认资源 这个是 GN 里配置的哪个
   gin::V8Initializer::LoadV8Snapshot();
 
   {
