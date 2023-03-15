@@ -274,7 +274,7 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
                              bool hit_test_data_changed) override {
     support_->SubmitCompositorFrame(root_local_surface_id_, std::move(frame),
                                     absl::optional<viz::HitTestRegionList>(),
-                                    /*trace_time=*/0);
+                                    /*submit_time=*/0);
   }
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           cc::FrameSkippedReason reason) override {

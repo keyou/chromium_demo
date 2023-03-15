@@ -4,14 +4,12 @@
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/macros.h"
 #include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
 #include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
-#include "base/single_thread_task_runner.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/test/task_environment.h"
@@ -41,6 +39,8 @@
 #include "components/viz/service/display_embedder/software_output_surface.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkEncodedImageFormat.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
@@ -50,7 +50,6 @@
 #include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-// #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/compositor/paint_recorder.h"
@@ -65,6 +64,9 @@
 #include "ui/gfx/skia_util.h"
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/init/gl_factory.h"
+#include "ui/ozone/public/platform_window_surface.h"
+#include "ui/ozone/public/surface_factory_ozone.h"
+#include "ui/ozone/public/surface_ozone_canvas.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
@@ -72,12 +74,6 @@
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
 #include "ui/wm/core/wm_state.h"
-#endif
-
-#if defined(USE_X11)
-#include "ui/base/x/x11_util.h"
-#include "ui/gfx/x/connection.h"                // nogncheck
-#include "ui/platform_window/x11/x11_window.h"  // nogncheck
 #endif
 
 #if defined(USE_OZONE)
@@ -99,7 +95,7 @@ class Layer : public cc::ContentLayerClient {
 
     content_layer_->SetTransformOrigin(gfx::Point3F());
     content_layer_->SetContentsOpaque(true);
-    content_layer_->SetSafeOpaqueBackgroundColor(SK_ColorWHITE);
+    content_layer_->SetSafeOpaqueBackgroundColor(SkColors::kWhite);
     content_layer_->SetIsDrawable(true);
     content_layer_->SetHitTestable(true);
     content_layer_->SetElementId(cc::ElementId(content_layer_->id()));
@@ -124,10 +120,11 @@ class Layer : public cc::ContentLayerClient {
     LOG(INFO) << "PaintableRegion: paint layer";
     constexpr SkColor colors[] = {SK_ColorRED, SK_ColorGREEN, SK_ColorYELLOW};
     static int i = 0;
-    SkColor color = colors[i++ % base::size(colors)];
+    SkColor color = colors[i++ % std::size(colors)];
     auto display_list = base::MakeRefCounted<cc::DisplayItemList>();
     display_list->StartPaint();
-    display_list->push<cc::DrawColorOp>(color, SkBlendMode::kSrc);
+    display_list->push<cc::DrawColorOp>(SkColor4f::FromColor(color),
+                                        SkBlendMode::kSrc);
     display_list->EndPaintOfUnpaired(bounds_);
     display_list->Finalize();
     base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
@@ -140,7 +137,7 @@ class Layer : public cc::ContentLayerClient {
               layer->SetNeedsDisplay();
             },
             content_layer_, color, i),
-        base::TimeDelta::FromSeconds(1));
+        base::Seconds(1));
     return display_list;
   }
   bool FillsBoundsCompletely() const override { return true; }
@@ -158,7 +155,8 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     LOG(INFO) << "BeginPaint: get a canvas for paint";
     return viz::SoftwareOutputDevice::BeginPaint(damage_rect);
   }
-  void OnSwapBuffers(SwapBuffersCallback swap_ack_callback) override {
+  void OnSwapBuffers(SwapBuffersCallback swap_ack_callback,
+                     gl::FrameData data) override {
     auto image = surface_->makeImageSnapshot();
     SkBitmap bitmap;
     DCHECK(image->asLegacyBitmap(&bitmap));
@@ -172,7 +170,8 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     DCHECK(
         SkEncodeImage(&stream, bitmap.pixmap(), SkEncodedImageFormat::kPNG, 0));
     LOG(INFO) << "OnSwapBuffers: save the frame to: " << path;
-    viz::SoftwareOutputDevice::OnSwapBuffers(std::move(swap_ack_callback));
+    viz::SoftwareOutputDevice::OnSwapBuffers(std::move(swap_ack_callback),
+                                             data);
   }
 };
 
@@ -215,18 +214,19 @@ class OffscreenLayerTreeFrameSink
         std::make_unique<viz::DelayBasedTimeSource>(task_runner.get());
 
     time_source->SetTimebaseAndInterval(
-        base::TimeTicks(), base::TimeDelta::FromMicroseconds(
-                               base::Time::kMicrosecondsPerSecond / fps_));
+        base::TimeTicks(),
+        base::Microseconds(base::Time::kMicrosecondsPerSecond / fps_));
     // 用于定时请求BeginFrame
     begin_frame_source_ = std::make_unique<viz::DelayBasedBeginFrameSource>(
         std::move(time_source), viz::BeginFrameSource::kNotRestartableId);
+
     auto output_surface = std::make_unique<viz::SoftwareOutputSurface>(
         std::make_unique<OffscreenSoftwareOutputDevice>());
     auto scheduler = std::make_unique<viz::DisplayScheduler>(
         begin_frame_source_.get(), task_runner.get(),
-        output_surface->capabilities().max_frames_pending);
-    viz::RendererSettings settings = viz::CreateRendererSettings();
-    settings.use_skia_renderer = false;
+        output_surface->capabilities().pending_swap_params);
+    viz::RendererSettings settings{};
+
     auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
         frame_sink_manager_->shared_bitmap_manager(), settings,
@@ -264,13 +264,13 @@ class OffscreenLayerTreeFrameSink
   }
   // 接收由 cc 提交的 CF
   void SubmitCompositorFrame(viz::CompositorFrame frame,
-                             bool hit_test_data_changed,
-                             bool show_hit_test_borders) override {
+                             bool hit_test_data_changed) override {
     support_->SubmitCompositorFrame(root_local_surface_id_, std::move(frame),
-                                    base::Optional<viz::HitTestRegionList>(),
-                                    /*trace_time=*/0);
+                                    absl::optional<viz::HitTestRegionList>(),
+                                    /*submit_time=*/0);
   }
-  void DidNotProduceFrame(const viz::BeginFrameAck& ack) override {
+  void DidNotProduceFrame(const viz::BeginFrameAck& ack,
+                          cc::FrameSkippedReason reason) override {
     support_->DidNotProduceFrame(ack);
   }
   void DidAllocateSharedBitmap(base::ReadOnlySharedMemoryRegion region,
@@ -285,18 +285,18 @@ class OffscreenLayerTreeFrameSink
 
   // viz::mojom::CompositorFrameSinkClient overrides.
   void DidReceiveCompositorFrameAck(
-      const std::vector<::viz::ReturnedResource>& resources) override {
+      std::vector<::viz::ReturnedResource> resources) override {
     // Submitting a CompositorFrame can synchronously draw and dispatch a frame
     // ack. PostTask to ensure the client is notified on a new stack frame.
     compositor_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(
             &OffscreenLayerTreeFrameSink::DidReceiveCompositorFrameAckInternal,
-            weak_factory_.GetWeakPtr(), resources));
+            weak_factory_.GetWeakPtr(), std::move(resources)));
   }
   void DidReceiveCompositorFrameAckInternal(
-      const std::vector<viz::ReturnedResource>& resources) {
-    client_->ReclaimResources(resources);
+      std::vector<viz::ReturnedResource> resources) {
+    client_->ReclaimResources(std::move(resources));
     // 用于告诉cc::Scheduler上一帧已经处理完了
     client_->DidReceiveCompositorFrameAck();
   }
@@ -316,7 +316,7 @@ class OffscreenLayerTreeFrameSink
   }
   void OnBeginFramePausedChanged(bool paused) override {}
   void ReclaimResources(
-      const std::vector<::viz::ReturnedResource>& resources) override {}
+      std::vector<::viz::ReturnedResource> resources) override {}
   void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) override {}
 
@@ -329,6 +329,8 @@ class OffscreenLayerTreeFrameSink
   void DisplayDidReceiveCALayerParams(
       const gfx::CALayerParams& ca_layer_params) override {}
   void DisplayDidCompleteSwapWithSize(const gfx::Size& pixel_size) override {}
+  void DisplayAddChildWindowToBrowser(
+      gpu::SurfaceHandle child_window) override {}
   void SetPreferredFrameInterval(base::TimeDelta interval) override {}
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const viz::FrameSinkId& id,
@@ -389,7 +391,7 @@ class Compositor
     host_->SetNeedsCommit();
   }
 
-  ~Compositor() override {}
+  ~Compositor() override = default;
 
  private:
   // 画面大小为 300x200
@@ -411,7 +413,14 @@ class Compositor
   void WillBeginMainFrame() override {}
   void DidBeginMainFrame() override {}
   void OnDeferMainFrameUpdatesChanged(bool) override {}
-  void OnDeferCommitsChanged(bool) override {}
+  void OnDeferCommitsChanged(
+      bool defer_status,
+      cc::PaintHoldingReason reason,
+      absl::optional<cc::PaintHoldingCommitTrigger> trigger) override {}
+  // Notification that rendering has been paused or resumed.
+  void OnPauseRenderingChanged(bool) override {}
+  // Notification that a compositing update has been requested.
+  void OnCommitRequested() override {}
   void WillUpdateLayers() override {}
   void DidUpdateLayers() override {}
   void BeginMainFrame(const viz::BeginFrameArgs& args) override {}
@@ -433,7 +442,7 @@ class Compositor
 
     shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
     frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
-        shared_bitmap_manager_.get());
+        viz::FrameSinkManagerImpl::InitParams(shared_bitmap_manager_.get()));
 
     // 生成 root client 的 LocalSurfaceId
     root_local_surface_id_allocator_.GenerateId();
@@ -452,14 +461,19 @@ class Compositor
   }
   void DidInitializeLayerTreeFrameSink() override {}
   void DidFailToInitializeLayerTreeFrameSink() override {}
-  void WillCommit() override {}
-  void DidCommit(base::TimeTicks commit_start_time) override {}
+  void WillCommit(const cc::CommitState&) override {}
+  void DidCommit(base::TimeTicks commit_start_time,
+                 base::TimeTicks commit_finish_time) override {}
   void DidCommitAndDrawFrame() override {}
   void DidReceiveCompositorFrameAck() override {}
   void DidCompletePageScaleAnimation() override {}
   void DidPresentCompositorFrame(
       uint32_t frame_token,
-      const gfx::PresentationFeedback& feedback) override {}
+      const gfx::PresentationFeedback& feedback) override {
+    TRACE_EVENT_MARK_WITH_TIMESTAMP1("cc,benchmark", "FramePresented",
+                                     feedback.timestamp, "environment",
+                                     "browser");
+  }
   void RecordStartOfFrameMetrics() override {}
   void RecordEndOfFrameMetrics(
       base::TimeTicks frame_begin_time,
@@ -527,26 +541,9 @@ int main(int argc, char** argv) {
       mojo_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
-  // 加载相应平台的GL库及GL绑定
-  // gl::init::InitializeGLOneOff();
-
-  // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
-  base::i18n::InitializeICU();
-
   ui::RegisterPathProvider();
 
-  // This app isn't a test and shouldn't timeout.
-  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
-
   base::RunLoop run_loop;
-
-  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
-  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
-  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
-  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
-  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
-  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  // ui::SetDefaultX11ErrorHandlers();
 
   // 每秒生成一张图片保存到文件中
   // 可以使用这种原理将浏览器嵌入其他程序，当然这个demo演示的并不是最优方案，只是一种可行方案
