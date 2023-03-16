@@ -45,7 +45,7 @@ Demo list:
 1. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
 1. `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
 1. [v110] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
-1. [v91] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
+1. [v110] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
 1. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
 1. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
 1. `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
@@ -103,6 +103,10 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2023.3.16
+
+- Migrate demo_views to v110;
 
 ### 2023.3.15
 
