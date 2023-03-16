@@ -1,17 +1,20 @@
+/**
+ * NOTE: 更多关于 views 的 demo 建议参考官方 ui/views/examples.
+ */
+
+#include <memory>
 #include "base/at_exit.h"
 #include "base/callback.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/macros.h"
 #include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
 #include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
-#include "base/single_thread_task_runner.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/test/task_environment.h"
@@ -54,12 +57,17 @@
 #include "ui/views/examples/example_base.h"
 #include "ui/views/examples/examples_window.h"
 #include "ui/views/layout/fill_layout.h"
-#include "ui/views/layout/grid_layout.h"
+#include "ui/views/layout/layout_manager_base.h"
+#include "ui/views/layout/layout_provider.h"
 #include "ui/views/test/desktop_test_views_delegate.h"
 #include "ui/views/view.h"
 #include "ui/views/widget/desktop_aura/desktop_screen.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/widget/widget_delegate.h"
+
+#if defined(USE_OZONE)
+#include "ui/ozone/public/ozone_platform.h"
+#endif
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
@@ -78,40 +86,37 @@
 // Maintain the UI controls and web view for content shell
 class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
  public:
-  DemoViewsWidgetDelegateView(base::OnceClosure on_close)
-      : on_close_(std::move(on_close)) {
+  explicit DemoViewsWidgetDelegateView(base::OnceClosure on_close)
+      : on_close_(std::move(on_close)),
+        layout_provider_(std::make_unique<views::LayoutProvider>()) {
     InitShellWindow();
   }
 
  private:
   void InitShellWindow() {
     DLOG(INFO) << "InitShellWindow";
-    this->SetBackground(views::CreateSolidBackground(SK_ColorGRAY));
+    SetBackground(views::CreateSolidBackground(SK_ColorGRAY));
     // 设置布局管理器，为了简单这里不使用布局管理器
     // this->SetLayoutManager(std::make_unique<views::FillLayout>());
-
     // 添加一个使用 Material Design 的按钮
     button_ = std::make_unique<views::MdTextButton>(
         base::BindRepeating(&DemoViewsWidgetDelegateView::ButtonPressed,
                             base::Unretained(this)),
-        base::ASCIIToUTF16("MaterialButton"));
+        u"MaterialButton");
     button_->SetBounds(0, 0, 100, 50);
     this->AddChildView(button_.release());
   }
 
   void ButtonPressed(const ui::Event& event) {
     DLOG(INFO) << "ButtonPressed()";
-    // 使用无障碍接口来修改按钮文
-    button_->GetViewAccessibility().AnnounceText(base::ASCIIToUTF16("Pressed"));
   }
 
   // Overridden from WidgetDelegateView
-  bool CanResize() const override { return true; }
   bool CanMaximize() const override { return true; }
   bool CanMinimize() const override { return true; }
   std::u16string GetWindowTitle() const override {
     DLOG(INFO) << "GetWindowTitle()";
-    return base::ASCIIToUTF16("Demo Widget");
+    return u"Demo Widget";
   }
   void WindowClosing() override {
     if (on_close_)
@@ -128,8 +133,7 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
 
   std::unique_ptr<views::Button> button_;
   base::OnceClosure on_close_;
-
-  DISALLOW_COPY_AND_ASSIGN(DemoViewsWidgetDelegateView);
+  std::unique_ptr<views::LayoutProvider> layout_provider_;
 };
 
 class SolidBackground : public views::Background {
@@ -141,9 +145,6 @@ class SolidBackground : public views::Background {
     // canvas is already clipped for us.
     canvas->DrawColor(get_color());
   }
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(SolidBackground);
 };
 
 class InkView : public views::View {
@@ -199,28 +200,27 @@ int main(int argc, char** argv) {
   // 初始化mojo
   mojo::core::Init();
 
-  // 在Linux上，x11和aura都是默认开启的
-#if defined(USE_X11)
-  // This demo uses InProcessContextFactory which uses X on a separate Gpu
-  // thread.
-  // gfx::InitializeThreadedX11();
-#endif
-
+  {
+    // Make Ozone run in single-process mode.
+    ui::OzonePlatform::InitParams params;
+    params.single_process = true;
+    ui::OzonePlatform::InitializeForGPU(params);
+  }
   // 加载相应平台的GL库及GL绑定
-  gl::init::InitializeGLOneOff();
+  gl::init::InitializeGLOneOff(0);
   LOG(INFO) << "GetGLImplementation: " << gl::GetGLImplementation();
 
   // The ContextFactory must exist before any Compositors are created.
   viz::HostFrameSinkManager host_frame_sink_manager;
   viz::ServerSharedBitmapManager shared_bitmap_manager;
-  viz::FrameSinkManagerImpl frame_sink_manager(&shared_bitmap_manager);
+  viz::FrameSinkManagerImpl frame_sink_manager(
+      (viz::FrameSinkManagerImpl::InitParams(&shared_bitmap_manager)));
   host_frame_sink_manager.SetLocalManager(&frame_sink_manager);
   frame_sink_manager.SetLocalClient(&host_frame_sink_manager);
-  // 第三个参数需要设为false才能看到界面
-  // 很多chromium中的demo都没有设置，导致无法看到界面
+  // 第三个参数需要设为 true 才能看到界面
   auto context_factory = std::make_unique<ui::InProcessContextFactory>(
-      &host_frame_sink_manager, &frame_sink_manager, false);
-  context_factory->set_use_test_surface(false);
+      &host_frame_sink_manager, &frame_sink_manager, true);
+  // context_factory->set_use_test_surface(false);
 
   // 初始化ICU(i18n),也就是icudtl.dat，views依赖ICU
   base::i18n::InitializeICU();
@@ -239,32 +239,17 @@ int main(int argc, char** argv) {
   wm::WMState wm_state;
   std::unique_ptr<aura::Env> env = aura::Env::CreateInstance();
   aura::Env::GetInstance()->set_context_factory(context_factory.get());
-  // aura::Env::GetInstance()->set_context_factory_private(context_factory.get());
 #endif
 
 #if BUILDFLAG(ENABLE_DESKTOP_AURA)
   views::DesktopTestViewsDelegate views_delegate;
-  views::InstallDesktopScreenIfNecessary();
+  std::unique_ptr<display::Screen> desktop_screen =
+      views::CreateDesktopScreen();
 #endif
-
   // 初始化输入法相关接口
   ui::InitializeInputMethodForTesting();
 
-  // 初始化 Material Design 风格，使用MD控件时才需要初始化
-  // ui::MaterialDesignController::Initialize();
-
-  // This app isn't a test and shouldn't timeout.
-  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
-
   base::RunLoop run_loop;
-
-  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
-  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
-  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
-  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
-  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
-  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  // ui::SetDefaultX11ErrorHandlers();
 
   views::Widget* window_widget_ = new views::Widget;
   views::Widget::InitParams params;
