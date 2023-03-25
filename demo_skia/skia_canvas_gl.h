@@ -14,10 +14,11 @@
 
 #include "demo/demo_skia/skia_canvas.h"
 
-#include "third_party/skia/include/gpu/GrContext.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
-#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 #include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
+#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace demo_jni {
 
@@ -26,7 +27,7 @@ class SkiaCanvasGL : public SkiaCanvas {
   SkiaCanvasGL(gfx::AcceleratedWidget widget,int width,int height);
   void Resize(int width, int height) override;
 
-  ~SkiaCanvasGL() override; 
+  ~SkiaCanvasGL() override;
 
  private:
   void InitializeOnRenderThread() override;
@@ -41,7 +42,7 @@ class SkiaCanvasGL : public SkiaCanvas {
   EGLint sampleCount_;
   GLenum color_format_;
   sk_sp<const GrGLInterface> grGLInterface_;
-  sk_sp<GrContext> grContext_;
+  sk_sp<GrDirectContext> grContext_;
   bool use_ddl_ = false;
   std::unique_ptr<SkDeferredDisplayListRecorder> recorder_;
 };

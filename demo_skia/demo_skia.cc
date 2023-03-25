@@ -4,9 +4,7 @@
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/macros.h"
 #include "base/memory/ptr_util.h"
-#include "base/message_loop/message_loop.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
 #include "base/power_monitor/power_monitor.h"
@@ -35,9 +33,9 @@
 #include "services/viz/privileged/mojom/viz_main.mojom.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
-#include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
+#include "ui/base/x/visual_picker_glx.h"
 #include "ui/base/x/x11_util.h"
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
@@ -48,12 +46,12 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/skia_util.h"
+#include "ui/gfx/x/xproto.h"
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/init/gl_factory.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
-#include "ui/platform_window/x11/x11_window.h"
 
 #include "demo/demo_skia/skia_canvas_gl.h"
 #include "demo/demo_skia/skia_canvas_software.h"
@@ -94,20 +92,10 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   ~DemoWindowHost() override = default;
 
   void Create(const gfx::Rect& bounds) {
-    int system_visual_id = 0;
-    int transparent_visual_id = 0;
     if (base::CommandLine::ForCurrentProcess()->HasSwitch("gl")) {
-      gl::init::InitializeGLOneOff();
-      DLOG(INFO) << "Initialize VisualPicker.";
-      gl::GLVisualPickerGLX* visual_picker =
-          gl::GLVisualPickerGLX::GetInstance();
-      system_visual_id = visual_picker->system_visual().visualid;
-      transparent_visual_id = visual_picker->rgba_visual().visualid;
       is_software_ = false;
     }
-    ui::XVisualManager::GetInstance()->OnGPUInfoChanged(
-        is_software_, system_visual_id, transparent_visual_id);
-    
+
     platform_window_ = CreatePlatformWindow(bounds);
     platform_window_->Show();
 
@@ -121,17 +109,11 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     ui::PlatformWindowInitProperties props(bounds);
     props.type = ui::PlatformWindowType::kWindow;
     props.opacity = ui::PlatformWindowOpacity::kTranslucentWindow;
-    props.background_color = 0;
 #if defined(USE_OZONE)
     return ui::OzonePlatform::GetInstance()->CreatePlatformWindow(
         this, std::move(props));
 #elif defined(OS_WIN)
     return std::make_unique<ui::WinWindow>(this, props.bounds);
-#elif defined(USE_X11)
-    // props.x_visual_id = GetTransparentVisualId();
-    auto x11_window = std::make_unique<ui::X11Window>(this);
-    x11_window->Initialize(std::move(props));
-    return x11_window;
 #else
     NOTIMPLEMENTED();
     return nullptr;
@@ -140,16 +122,15 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 
   void InitializeDemo() {
     DCHECK_NE(widget_, gfx::kNullAcceleratedWidget);
+    auto bounds = platform_window_->GetBoundsInPixels();
     if(is_software_) {
       LOG(INFO) << "Create SkiaCanvas: Software";
       skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasSoftware>(
-          widget_, platform_window_->GetBounds().width(),
-          platform_window_->GetBounds().height());
+          widget_, bounds.width(), bounds.height());
     } else {
       LOG(INFO) << "Create SkiaCanvas: GLES2";
       skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasGL>(
-          widget_, platform_window_->GetBounds().width(),
-          platform_window_->GetBounds().height());
+          widget_, bounds.width(), bounds.height());
     }
   }
 #if defined(USE_X11)
@@ -161,14 +142,14 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       DLOG(INFO) << "TransparentVID: " << visualinfo.visualid;
       return visualinfo.visualid;
     }
-    
+
     // 或者使用下面这种方法
     int visuals_len = 0;
     XVisualInfo visual_template;
     visual_template.screen = DefaultScreen(display);
     gfx::XScopedPtr<XVisualInfo[]> visual_list(XGetVisualInfo(
         display, VisualScreenMask, &visual_template, &visuals_len));
-    
+
     for (int i = 0; i < visuals_len; ++i) {
       const XVisualInfo& info = visual_list[i];
       if (info.depth == 32 && info.visual->red_mask == 0xff0000 &&
@@ -184,8 +165,10 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
 #endif
 
   // ui::PlatformWindowDelegate:
-  void OnBoundsChanged(const gfx::Rect& new_bounds) override {
+  void OnBoundsChanged(
+      const ui::PlatformWindowDelegate::BoundsChange& bounds) override {
     if (skia_canvas_) {
+      auto new_bounds = platform_window_->GetBoundsInPixels().size();
       skia_canvas_->Resize(new_bounds.width(), new_bounds.height());
       #if defined(USE_X11)
       ((ui::X11Window*)platform_window_.get())->NotifySwapAfterResize();
@@ -196,10 +179,11 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   void OnAcceleratedWidgetAvailable(gfx::AcceleratedWidget widget) override {
     widget_ = widget;
     // 如果需要去除窗口边框，将true改为false
-    ui::SetUseOSWindowFrame(widget_, true);
+    // ui::SetUseOSWindowFrame(widget_, true);
     if (platform_window_)
       InitializeDemo();
   }
+  void OnWillDestroyAcceleratedWidget() override {}
 
   void OnDamageRect(const gfx::Rect& damaged_region) override {}
   void DispatchEvent(ui::Event* event) override {
@@ -234,7 +218,8 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     if (close_closure_)
       std::move(close_closure_).Run();
   }
-  void OnWindowStateChanged(ui::PlatformWindowState new_state) override {}
+  void OnWindowStateChanged(ui::PlatformWindowState old_state,
+                            ui::PlatformWindowState new_state) override {}
   void OnLostCapture() override {}
   void OnAcceleratedWidgetDestroyed() override {}
   void OnActivationChanged(bool active) override {}
@@ -245,8 +230,6 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   base::OnceClosure close_closure_;
   std::unique_ptr<demo_jni::SkiaCanvas> skia_canvas_;
   bool is_software_ = true;
-
-  DISALLOW_COPY_AND_ASSIGN(DemoWindowHost);
 };
 
 }  // namespace demo
@@ -268,20 +251,13 @@ int main(int argc, char** argv) {
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoSkia");
 
-  // 在Linux上，x11和aura都是默认开启的
-#if defined(USE_X11)
-  // This demo uses InProcessContextFactory which uses X on a separate Gpu
-  // thread.
-  gfx::InitializeThreadedX11();
-
-  // 设置X11的异常处理回调，如果不设置在很多设备上会频繁出现崩溃。
-  // 比如 ui::XWindow::Close() 和~SGIVideoSyncProviderThreadShim 的析构中
-  // 都调用了 XDestroyWindow() ，并且是在不同的线程中调用的，当这两个窗口有
-  // 父子关系的时候，如果先调用了父窗口的销毁再调用子窗口的销毁则会导致BadWindow
-  // 错误，默认的Xlib异常处理会打印错误日志然后强制结束程序。
-  // 这些错误大多是并发导致的代码执行顺序问题，所以修改起来没有那么容易。
-  ui::SetDefaultX11ErrorHandlers();
-#endif
+  {
+    // Make Ozone run in single-process mode.
+    ui::OzonePlatform::InitParams params;
+    params.single_process = true;
+    ui::OzonePlatform::InitializeForUI(params);
+    ui::OzonePlatform::InitializeForGPU(params);
+  }
 
   auto event_source_ = ui::PlatformEventSource::CreateDefault();
 
@@ -291,7 +267,7 @@ int main(int argc, char** argv) {
   ui::RegisterPathProvider();
 
   // This app isn't a test and shouldn't timeout.
-  base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
+  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
 
   base::RunLoop run_loop;
 

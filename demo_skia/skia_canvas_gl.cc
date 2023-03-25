@@ -11,10 +11,13 @@
 #include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPath.h"
+#include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "ui/gl/gl_version_info.h"
+#include "ui/gl/init/create_gr_gl_interface.h"
 
 #ifndef GL_RGBA8
 #define GL_RGBA8 0x8058
@@ -25,13 +28,24 @@ namespace demo_jni {
 namespace {
 class GLShaderErrorHandler : public GrContextOptions::ShaderErrorHandler {
  public:
-  void compileError(const char* shader, const char* errors) {
+  void compileError(const char* shader, const char* errors) override {
     LOG(ERROR) << "Skia shader compilation error\n"
                << "------------------------\n"
                << shader << "\nErrors:\n"
                << errors;
   }
 };
+
+// hook glShaderSource，打印 skia 用到的 shader
+// 也可以通过修改以下文件中的 gPrintSKSL 或者 gPrintGLSL 来输出 shader
+// third_party/skia/src/gpu/ganesh/gl/builders/GrGLShaderStringBuilder.cpp
+void ShaderSourceHook(GLuint shader,
+                      GLsizei count,
+                      const GLchar* const* src,
+                      const GLint* length) {
+  DLOG(INFO) << "shader source: " << *src;
+  glShaderSource(shader, count, src, length);
+}
 
 // 作为 skia 的 GL 后端，使用 EGL 来获取 GL functions.
 // 由于 chromium 包装的 skia 库没有将 skia 对 EGL 的支持包装进去，
@@ -41,6 +55,9 @@ class GLShaderErrorHandler : public GrContextOptions::ShaderErrorHandler {
 // 这里的代码从 skia 仓库中的 GrGLMakeNativeInterface_egl.cpp 复制而来
 static GrGLFuncPtr egl_get_gl_proc(void* ctx, const char name[]) {
   SkASSERT(nullptr == ctx);
+  if (0 == strcmp("glShaderSource", name)) {
+    return (GrGLFuncPtr)ShaderSourceHook;
+  }
 // https://www.khronos.org/registry/EGL/extensions/KHR/EGL_KHR_get_all_proc_addresses.txt
 // eglGetProcAddress() is not guaranteed to support the querying of
 // non-extension EGL functions.
@@ -335,7 +352,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
     delete[] configs;
     return;
   }
-  
+
   // for (GLint c = 0; c < config_count; ++c) {
   //   EGLConfig config = configs[c];
   //   PrintEGLConfig(display_, config);
@@ -385,7 +402,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
 
   DLOG(INFO) << "Color Format: "
              << ((color_format_ == GL_RGBA8) ? "GL_RGBA8" : "GL_RGB565");
-  
+
   for (int i = 0; i < numConfigs; i++) {
     surfaceConfig = surfaceConfigs[i];
     DLOG(INFO) << "ChooseConfig: " << i;
@@ -418,7 +435,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
 
   eglGetConfigAttrib(display_, surfaceConfig, EGL_STENCIL_SIZE, &stencilBits_);
   eglGetConfigAttrib(display_, surfaceConfig, EGL_SAMPLES, &sampleCount_);
-  sampleCount_ = SkTMax(sampleCount_, 1);
+  sampleCount_ = std::max(sampleCount_, 1);
 
   // 关闭 VSYNC ，否则会由于帧率的抖动导致平均帧率降低。
   // VSYNC 会阻塞 SkSurface::flush，从而使每帧的耗时接近16.6ms,帧率最多60fps
@@ -428,7 +445,8 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
   grGLInterface_ = GrGLMakeNativeInterface();
   DCHECK(grGLInterface_);
 
-  grContext_ = GrContext::MakeGL(grGLInterface_, CreateGrContextOptions());
+  grContext_ =
+      GrDirectContext::MakeGL(grGLInterface_, CreateGrContextOptions());
   DCHECK(grContext_);
   SkiaCanvas::InitializeOnRenderThread();
 }
@@ -466,11 +484,13 @@ SkCanvas* SkiaCanvasGL::BeginPaint() {
 
   GrBackendRenderTarget backendRT(width_, height_, sampleCount_, stencilBits_,
                                   fb_info);
-  SkSurfaceProps props(SkSurfaceProps::kLegacyFontHost_InitType);
+  SkSurfaceProps props(SkSurfaceProps::kUseDistanceFieldFonts_Flag,
+                       SkPixelGeometry::kRGB_H_SkPixelGeometry);
   skSurface_ = SkSurface::MakeFromBackendRenderTarget(
       grContext_.get(), backendRT, kBottomLeft_GrSurfaceOrigin,
       color_format_ == GL_RGBA8 ? kRGBA_8888_SkColorType : kRGB_565_SkColorType,
       nullptr, &props);
+  SkCanvas* canvas;
   if (use_ddl_) {
     SkSurfaceCharacterization characterization;
     bool result = skSurface_->characterize(&characterization);
@@ -479,16 +499,17 @@ SkCanvas* SkiaCanvasGL::BeginPaint() {
     recorder_ =
         std::make_unique<SkDeferredDisplayListRecorder>(characterization);
 
-    return recorder_->getCanvas();
+    canvas = recorder_->getCanvas();
   }
-  return skSurface_->getCanvas();
+  canvas = skSurface_->getCanvas();
+  return canvas;
 }
 
 void SkiaCanvasGL::OnPaint(SkCanvas* canvas) {
   if (use_ddl_) {
     // 必须在list销毁前flush
     auto list = recorder_->detach();
-    DCHECK(skSurface_->draw(list.get()));
+    DCHECK(skSurface_->draw(list));
     skSurface_->flush();
   } else
     skSurface_->flush();

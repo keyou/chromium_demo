@@ -6,8 +6,6 @@
 #include "base/files/file_path.h"
 #include "base/lazy_instance.h"
 #include "base/memory/ref_counted_memory.h"
-#include "base/message_loop/message_loop.h"
-#include "base/task/post_task.h"
 #include "base/threading/thread_task_runner_handle.h"
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
@@ -134,9 +132,8 @@ void SkiaCanvas::OnTouchOnRenderThread(int action, float x, float y) {
     if (action == 1) {
       SetNeedsRedraw(false);
       ShowFrameRateOnRenderThread();
-      render_task_runner_->PostDelayedTask(FROM_HERE,
-                                           base::BindOnce(FlushTrace),
-                                           base::TimeDelta::FromSeconds(1));
+      render_task_runner_->PostDelayedTask(
+          FROM_HERE, base::BindOnce(FlushTrace), base::Seconds(1));
     }
   }
 }
@@ -165,7 +162,7 @@ void SkiaCanvas::OnRenderOnRenderThread() {
   is_drawing_ = true;
   // 如果要测试 VSYNC 可以不添加延时
   render_task_runner_->PostDelayedTask(FROM_HERE, render_closure_,
-                                       base::TimeDelta::FromMilliseconds(16));
+                                       base::Milliseconds(16));
 
   auto now = base::TimeTicks::Now();
   if (frame_count_>0) {

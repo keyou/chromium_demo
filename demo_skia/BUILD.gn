@@ -3,7 +3,7 @@ import("//build/config/ui.gni")
 
 executable("demo_skia") {
   testonly = true
-  
+
   sources = [
     "demo_skia.cc",
     "skia_canvas.cc",
@@ -38,7 +38,8 @@ executable("demo_skia") {
   if (ozone_platform_x11) {
     deps += [
       "//ui/events/platform/x11",
-        "//ui/ozone",
+      "//ui/ozone",
+      "//ui/base/x",
     ]
     #configs += [ "//build/config/linux:x11" ]
   }
