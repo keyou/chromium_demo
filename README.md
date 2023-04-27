@@ -75,7 +75,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
     ```python
     # add extra deps to gn root
     root_extra_deps = ["//demo"]
-    # disable warngings as errors
+    # disable warnings as errors
     treat_warnings_as_errors = false
 
     # If you want to compile the demo of android platform, you need to add the following parameters
@@ -83,7 +83,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
     # target_cpu="arm64" # Other architectures can be selected as needed x86, x64, arm, mipsel
     ```
 
-4. Run `ninja -C out/Default <name in demo list>` to generate the required demo (see [BUILD.gn](. /BUILD.gn)), for example using the name `demo_exe` to generate the demo_exe program. Or use `demo` to generate all programs.
+4. Run `ninja -C out/Default <name in demo list>` to generate the required demo (see [BUILD.gn](./BUILD.gn)), for example using the name `demo_exe` to generate the demo_exe program. Or use `demo` to generate all programs.
 
 > REPEAT: These demos are ONLY tested on Linux and Android.
 
