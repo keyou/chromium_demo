@@ -48,7 +48,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/19623228?v=4",
       "profile": "https://qzq.at",
       "contributions": [
-        "code"
+        "code",
+        "doc"
       ]
     }
   ],
@@ -57,5 +58,6 @@
   "projectOwner": "keyou",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "skipCi": true
+  "skipCi": true,
+  "commitConvention": "angular"
 }
