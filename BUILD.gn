@@ -1,108 +1,72 @@
 
+is_desktop = is_linux || is_mac || is_win
+
 group("demo") {
   testonly = true
 
-  if(is_linux) {
-    deps = [
-      ":demo_exe",
-      "demo_log",
+  deps = [
+    ":demo_exe",
+    "demo_log",
+    "demo_callback",
+    "demo_task",
+  ]
+
+  if(is_desktop) {
+    deps += [
       "demo_tracing",
-      "demo_task",
-      "demo_callback",
-      "demo_mojo",
       "demo_ipc",
-      "demo_mojo_v8",
       "demo_memory",
-      "demo_resources",
-      "demo_gl",
-      "demo_viz",
+      "demo_mojo",
+    ]
+  }
+
+  if (is_linux) {
+    deps += [
       "demo_cc",
-      "demo_x11",
+      "demo_gin",
+      "demo_gl",
+      "demo_mojo_v8",
+      "demo_resources",
+      "demo_shell",
       "demo_skia",
       "demo_views",
-      # "demo_android",
-      "demo_shell",
-      "demo_gin",
+      "demo_viz",
+      "demo_x11",
     ]
   }
 
-    if(is_android) {
-    deps = [
-      ":demo_exe",
-      "demo_log",
-      # "demo_tracing",
-      "demo_task",
-      "demo_callback",
-      # "demo_mojo",
-      # "demo_ipc",
-      # "demo_mojo_v8",
-      # "demo_memory",
-      # "demo_resources",
-      # "demo_gl",
-      # "demo_viz",
-      # "demo_cc",
-      # "demo_x11",
-      # "demo_skia",
-      # "demo_views",
+  if (is_android) {
+    deps += [
       "demo_android",
-      # "demo_shell",
+      "demo_shell",
     ]
   }
 
-  if(is_win) {
-    deps = [
-      ":demo_exe",
-      "demo_log",
-      "demo_tracing",
-      "demo_task",
-      "demo_callback",
-      "demo_mojo",
-      "demo_ipc",
-      "demo_mojo_v8",
-      "demo_memory",
+  if (is_win) {
+    deps += [
+      "demo_cc",
+
       # "demo_resources",
       "demo_gl",
-      "demo_viz",
-      "demo_cc",
+      "demo_mojo_v8",
+
       # "demo_x11", windows不支持x11
       # "demo_skia", windows不支持x11的软件渲染
       "demo_views",
-      # "demo_android",
-      # "demo_shell",
-      # "demo_gin",
+      "demo_viz",
     ]
   }
 
-  if(is_mac) {
-    deps = [
-      ":demo_exe",
-      "demo_log",
-      "demo_tracing",
-      "demo_task",
-      "demo_callback",
-      "demo_mojo",
-      "demo_ipc",
-      # "demo_mojo_v8",
-      "demo_memory",
+  if (is_mac) {
+    deps += [
       "demo_resources",
-      # "demo_gl",
-      # "demo_viz",
-      # "demo_cc",
-      # "demo_x11",
-      # "demo_skia",
-      # "demo_views",
-      # "demo_android",
-      # "demo_shell",
+      "demo_linktest",
     ]
   }
 }
 
 executable("demo_exe") {
-  sources = [
-    "demo.cc",
-  ]
+  sources = [ "demo.cc" ]
 
-  deps = [
-    "//base",
-  ]
+  deps = [ "//base" ]
 }

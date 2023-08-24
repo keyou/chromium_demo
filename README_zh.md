@@ -8,9 +8,10 @@
 
 > 提示：
 > 1. 如果你是 chromium 的新手，建议按照顺序学习这些 demo。
-> 1. 这些 demo 只在 Linux 和 Android 上进行了测试。
+> 1. 这些 demo 只在 Linux 和 Android 上进行了测试。每个平台支持的 demo 列表见 BUILD.gn。
 > 1. 下面 demo 列表前面的标签表示该 demo 最高支持的 chromium 版本，比如 v110 表示支持 chromium 110，没有标签的 demo 表示只在 chromium 80 上验证过。
 > 1. 欢迎提交 PR 新增 demo 或者将这些 demo 迁移到其他 chromium 版本。
+> 1. 由于精力有限，该项目每年更新一次内核（大约间隔 10 个版本）。
 
 Demo 列表：
 
@@ -20,6 +21,7 @@ Demo 列表：
 1. [v110] `demo_task_thread_pool`: 演示使用线程池 ThreadPool 位于demo_task下;
 1. [v110] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor 位于demo_task下;
 1. [v110] `demo_callback_(once|repeating)`: 演示 Bind&Callback 相关内容；
+1. [v110] `demo_linktest`: 演示错误的使用 gn 导致链接错误；
 1. [v110] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
 1. [v110] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
 1. [v110] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
@@ -95,6 +97,10 @@ Demo 列表：
 - 添加 demo, 演示 `tab capture api` 的原理；
 
 ## 更新日志
+
+### 2023.8.24
+
+- 添加 demo_linktest，演示错误的使用 gn 导致链接错误；
 
 ### 2023.3.25
 
@@ -280,3 +286,30 @@ Demo 列表：
 - demo_services: 演示使用基于 mojo 的 servcies 及多进程架构；
 - demo_ipc: 演示使用基于 mojo 的 IPC 接口；
 - demo_memory: 演示使用 SharedMemory；
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ManonLoki"><img src="https://avatars.githubusercontent.com/u/10202538?v=4?s=100" width="100px;" alt="ManonLoki"/><br /><sub><b>ManonLoki</b></sub></a><br /><a href="#ideas-ManonLoki" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/keyou/chromium_demo/commits?author=ManonLoki" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/lgjh123"><img src="https://avatars.githubusercontent.com/u/33198766?v=4?s=100" width="100px;" alt="ligaojin"/><br /><sub><b>ligaojin</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=lgjh123" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Drecc"><img src="https://avatars.githubusercontent.com/u/12831867?v=4?s=100" width="100px;" alt="Drecc"/><br /><sub><b>Drecc</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=Drecc" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/hc-tec"><img src="https://avatars.githubusercontent.com/u/59106739?v=4?s=100" width="100px;" alt="hc-tec"/><br /><sub><b>hc-tec</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=hc-tec" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://qzq.at"><img src="https://avatars.githubusercontent.com/u/19623228?v=4?s=100" width="100px;" alt="QZQ"/><br /><sub><b>QZQ</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=SamuelQZQ" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/mikucy"><img src="https://avatars.githubusercontent.com/u/23072202?v=4?s=100" width="100px;" alt="Midori"/><br /><sub><b>Midori</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=mikucy" title="Code">💻</a> <a href="https://github.com/keyou/chromium_demo/commits?author=mikucy" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

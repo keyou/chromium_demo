@@ -15,9 +15,10 @@ This project is used to demonstrate how to use some basic mechanisms in chromium
 
 > Tips:
 > 1. If you are new to chromium, it is recommended to study these demos in order.
-> 1. These demos are ONLY tested on Linux and Android.
+> 1. These demos are ONLY tested on Linux and Android. The list of supported demos for each platform can be found in the BUILD.gn file.
 > 1. The label in front of the demo list below indicates the highest supported chromium version of the demo, e.g. v110 means chromium 110 is supported, demos without labels mean that they are only verified on chromium 80.
-> 1. Feel free to submit new demos for PR or migrate these demos to other chromium versions
+> 1. Feel free to submit new demos for PR or migrate these demos to other chromium versions.
+> 1. Due to limited resources, the project updates its kernel once a year, approximately every 10 versions.
 
 Demo list:
 
@@ -27,6 +28,7 @@ Demo list:
 1. [v110] `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
 1. [v110] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
 1. [v110] `demo_callback`: Demo Bind&Callback related content；
+1. [v110] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
 1. [v110] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
 1. [v110] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
 1. [v110] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
@@ -103,6 +105,10 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 - Add a demo to demonstrate the principle of `tab capture api`;
 
 ## Changelog
+
+### 2023.8.24
+
+- Add demo_linktest, demonstrates incorrect use of gn causing link errors;
 
 ### 2023.3.25
 

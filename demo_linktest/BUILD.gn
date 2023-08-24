@@ -1,0 +1,87 @@
+# 修改该值然后重新编译来观察编译结果是否符合预期。
+# 0: release,debug 都不会出错；
+# 1: release 出错，debug 不出错；
+# 2: release 不出错，debug 出错；
+should_error = 0
+if (should_error == 0) {
+  # release,debug 都不会报错。
+
+  # debug: demo_linktest = demo_linktest/main.o + b.so
+  # release: demo_linktest = lintest/main.o + b.a + a/a.o
+  executable("demo_linktest") {
+    sources = [
+      # "a.cc",
+      "main.cc",  # demo_linktest/main.o
+    ]
+
+    deps = [
+      ":b",  # debug: b.so; release: b.a + a/a.o
+    ]
+  }
+
+  # debug: b.so = b/b.o + a/a.o，产出 b.so
+  # release: b.a = b/b.o，产出 b.a + a/a.o
+  component("b") {
+    sources = [
+      # "a.cc",
+      "b.cc",  # b/b.o
+    ]
+    deps = [ ":a" ]  # a/a.o
+  }
+} else if (should_error == 1) {
+  # 在 release 下编译该目标报错，但是在 debug 下不会报错。
+
+  # debug: demo_linktest = demo_linktest/main.o + demo_linktest/a.o + b.so
+  # release: demo_linktest = lintest/main.o + demo_linktest/a.o + b.a + a/a.o，两个 a.o，报错！！！
+  executable("demo_linktest") {
+    sources = [
+      "a.cc",  # demo_linktest/a.o
+      "main.cc",  # demo_linktest/main.o
+    ]
+
+    deps = [
+      ":b",  # debug: b.so; release: b.a + a/a.o
+    ]
+  }
+
+  # debug: b.so = b/b.o + a/a.o，产出 b.so
+  # release: b.a = b/b.o，产出 b.a + a/a.o
+  component("b") {
+    sources = [
+      # "a.cc",
+      "b.cc",  # b/b.o
+    ]
+    deps = [ ":a" ]  # a/a.o
+  }
+} else {
+  # 在 debug 下编译该目标报错，但是在 release 下不会报错。
+
+  # debug: demo_linktest = main.o + a/a.o + b.so
+  # release: demo_linktest = main.o + a/a.o + b.a
+  executable("demo_linktest") {
+    sources = [
+      # "a.cc",
+      "main.cc",  # main.o
+    ]
+
+    deps = [
+      ":a",  # a/a.o
+      ":b",  # debug: b.so; release: b.a + a/a.o
+    ]
+  }
+
+  # debug: b.so = b/a.o + b/b.o + a/a.o，两个 a.o，报错！！！
+  # release: b.a = b/a.o + b/b.o，产出 b.a + a/a.o
+  component("b") {
+    sources = [
+      "a.cc",  # b/a.o
+      "b.cc",  # b/b.o
+    ]
+    deps = [ ":a" ]  # a/a.o
+  }
+}
+
+# 不管在 debug 还是 release 都产出 a/a.o
+source_set("a") {
+  sources = [ "a.cc" ]  # a/a.o
+}
