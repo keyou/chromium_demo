@@ -1,6 +1,6 @@
 # Demo
 
-> 这个项目正在迁移到 chromium `110` 版本(5481分支)，目前完成了一部分，请根据你的需要选择合适的分支，并保证 chromium 也切换到对应的分支（切换后需要执行 `glcient sync` 同步代码）。如果你对此感兴趣，欢迎随时联系我！
+> 这个项目正在迁移到 chromium `120` 版本(6099分支)，请根据你的需要选择合适的分支，并保证 chromium 也切换到对应的分支（切换后需要执行 `glcient sync` 同步代码）。如果你对此感兴趣，欢迎随时联系我！
 > 我建了一个微信群，用来方便大家进行技术讨论，如果你感兴趣，欢迎加我微信，我会把你拉入讨论群：
 > <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
@@ -9,46 +9,46 @@
 > 提示：
 > 1. 如果你是 chromium 的新手，建议按照顺序学习这些 demo。
 > 1. 这些 demo 只在 Linux 和 Android 上进行了测试。每个平台支持的 demo 列表见 BUILD.gn。
-> 1. 下面 demo 列表前面的标签表示该 demo 最高支持的 chromium 版本，比如 v110 表示支持 chromium 110，没有标签的 demo 表示只在 chromium 80 上验证过。
+> 1. 下面 demo 列表前面的标签表示该 demo 最高支持的 chromium 版本，比如 `M120` 表示最高支持 chromium 120，没有标签的 demo 表示只在 chromium 80 上验证过。
 > 1. 欢迎提交 PR 新增 demo 或者将这些 demo 迁移到其他 chromium 版本。
 > 1. 由于精力有限，该项目每年更新一次内核（大约间隔 10 个版本）。
 
 Demo 列表：
 
-1. [v110] `demo_exe`: 最简单的 demo，演示 gn 及创建自己的 exe；
-1. [v110] `demo_log`: 演示使用日志库；
-1. [v110] `demo_tracing_console`: 演示使用 Trace 输出到控制台；
-1. [v110] `demo_task_thread_pool`: 演示使用线程池 ThreadPool 位于demo_task下;
-1. [v110] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor 位于demo_task下;
-1. [v110] `demo_callback_(once|repeating)`: 演示 Bind&Callback 相关内容；
-1. [v110] `demo_linktest`: 演示错误的使用 gn 导致链接错误；
-1. [v110] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
-1. [v110] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
-1. [v110] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
-1. [v91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
-1. [v110] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
-1. [v91] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
-1. [v110] `demo_memory`: 演示使用 SharedMemory；
-1. [v110] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
-1. [v110] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
-1. [v110] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-1. [v110] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
-1. [v110] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
-1. [v110] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
+1. [M120] `demo_exe`: 最简单的 demo，演示 gn 及创建自己的 exe；
+1. [M120] `demo_log`: 演示使用日志库；
+1. [M120] `demo_tracing_console`: 演示使用 Trace 输出到控制台；
+1. [M120] `demo_task_thread_pool`: 演示使用线程池 ThreadPool 位于demo_task下;
+1. [M120] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor 位于demo_task下;
+1. [M120] `demo_callback_(once|repeating)`: 演示 Bind&Callback 相关内容；
+1. [M120] `demo_linktest`: 演示错误的使用 gn 导致链接错误；
+1. [M120] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
+1. [M120] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
+1. [M120] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
+1. [M91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
+1. [M120] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
+1. [M91] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
+1. [M120] `demo_memory`: 演示使用 SharedMemory；
+1. [M120] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
+1. [M120] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
+1. [M120] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
+1. [M120] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
+1. [M120] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
+1. [M120] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 1. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
 1. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
 1. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
 1. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
-1. [v110] `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
-1. [v110] `demo_views`: 演示使用 `//ui/views` 创建 UI；
+1. [M120] `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
+1. [M120] `demo_views`: 演示使用 `//ui/views` 创建 UI；
 1. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
 1. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
-1. [v110] `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
+1. [M120] `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
 1. `demo_x11`: 演示使用 X11 创建透明窗口；
 1. `demo_x11_glx`: 演示在透明窗口中使用 glx;
 1. `demo_x11_egl`: 演示在透明窗口中使用 egl；
 1. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
-1. [v110] `demo_gin`: 演示使用 gin, 创建一个精简JS运行时；
+1. [M120] `demo_gin`: 演示使用 gin, 创建一个精简JS运行时；
 
 文档：
 
@@ -56,8 +56,8 @@ Demo 列表：
 
 ## 用法
 
-1. 进入 chromium 的 `src` 目录，并切换到支持的分支，比如 80 版本的 `80.0.3987.165` 或者 91 版本的 `91.0.4472.144`（最后一位版本号不影响）。并执行 `gclient sync` 同步代码；
-2. 执行以下命令将该仓库 clone 到 `src/demo` 目录下，并切换到对应分支，比如 80 版本的 `c/80.0.3987` 或者 91 版本的 `c/91.0.4472`；
+1. 进入 chromium 的 `src` 目录，并切换到支持的分支，比如 120 版本的 `120.0.6099.40` 或者 91 版本的 `91.0.4472.144`（最后一位版本号不影响）。并执行 `gclient sync` 同步代码；
+2. 执行以下命令将该仓库 clone 到 `src/demo` 目录下，并切换到对应分支，比如 80 版本的 `c/120.0.6099` 或者 91 版本的 `c/91.0.4472`；
 
     ```sh
     git clone <当前仓库的地址> demo
@@ -98,6 +98,10 @@ Demo 列表：
 
 ## 更新日志
 
+### 2023.11.26
+
+- 升级部分 demo 到 chromium 120；
+
 ### 2023.8.24
 
 - 添加 demo_linktest，演示错误的使用 gn 导致链接错误；
@@ -137,35 +141,35 @@ Demo 列表：
 
 ### 2021.9.6
 
-- 升级 demo_views 到 v91 版本；
-- 升级 demo_cc_offscreen 到 v91 版本；
+- 升级 demo_views 到 M91 版本；
+- 升级 demo_cc_offscreen 到 M91 版本；
 
 ### 2021.9.4
 
-- 升级 demo_viz_offscreen 到 v91 版本；
+- 升级 demo_viz_offscreen 到 M91 版本；
 
 ### 2021.9.3
 
-- 升级 demo_ipc 到 v91 版本；
-- 升级 demo_services 到 v91 版本；
+- 升级 demo_ipc 到 M91 版本；
+- 升级 demo_services 到 M91 版本；
 
 ### 2021.8.15
 
-- 升级 demo_gl 到 v91 版本；
+- 升级 demo_gl 到 M91 版本；
 
 ### 2021.7.29
 
-- 升级以下 demo 到 v91 版本：
+- 升级以下 demo 到 M91 版本：
     - demo_resources
 
 ### 2021.7.22
 
-- 升级以下 demo 到 v91 版本：
+- 升级以下 demo 到 M91 版本：
     - demo_memory
 
 ### 2021.7.17
 
-- 升级以下 demo 到 v91 版本：
+- 升级以下 demo 到 M91 版本：
     - demo_exe
     - demo_tracing_perfetto
     - demo_tracing_perfetto_content

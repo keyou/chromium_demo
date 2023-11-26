@@ -7,7 +7,7 @@
 
 ---
 
-> This project is in the process of migrating to chromium version `110`(branch 5481), it is partially completed, please choose the appropriate branch for your needs and make sure chromium switches to the corresponding branch as well (you will need to run `glcient sync` to sync the code after the switch). If you are interested in this, please feel free to contact me in the Discussions channel.
+> This project is in the process of migrating to chromium version `120`(branch 6099), please choose the appropriate branch for your needs and make sure chromium switches to the corresponding branch as well (you will need to run `glcient sync` to sync the code after the switch). If you are interested in this, please feel free to contact me in the Discussions channel.
 > I have built a WeChat group, used to facilitate technical discussions, if you are interested, welcome to add my WeChat, I will pull you into the discussion group. WeChat:
 > <img src="https://user-images.githubusercontent.com/1212025/126026381-b153090c-f53f-4aa8-8204-d830d8fe0a6d.jpeg" width="200">
 
@@ -16,46 +16,46 @@ This project is used to demonstrate how to use some basic mechanisms in chromium
 > Tips:
 > 1. If you are new to chromium, it is recommended to study these demos in order.
 > 1. These demos are ONLY tested on Linux and Android. The list of supported demos for each platform can be found in the BUILD.gn file.
-> 1. The label in front of the demo list below indicates the highest supported chromium version of the demo, e.g. v110 means chromium 110 is supported, demos without labels mean that they are only verified on chromium 80.
+> 1. The label in front of the demo list below indicates the highest supported chromium version of the demo, e.g. `M120` means chromium 120 is supported, demos without labels mean that they are only verified on chromium 80.
 > 1. Feel free to submit new demos for PR or migrate these demos to other chromium versions.
 > 1. Due to limited resources, the project updates its kernel once a year, approximately every 10 versions.
 
 Demo list:
 
-1. [v110] `demo_exe`: The simplest demo to demonstrate gn and create your own exe;
-1. [v110] `demo_log`: Demo log library;
-1. [v110] `demo_tracing_console`: Demonstrate using Trace to output to the console;
-1. [v110] `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
-1. [v110] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
-1. [v110] `demo_callback`: Demo Bind&Callback related content；
-1. [v110] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
-1. [v110] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
-1. [v110] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
-1. [v110] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
-1. [v91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
-1. [v110] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
-1. [v91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
-1. [v110] `demo_memory`: Demonstrate the use of SharedMemory;
-1. [v110] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
-1. [v110] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
-1. [v110] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
-1. [v110] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
-1. [v110] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
-1. [v110] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
+1. [M120] `demo_exe`: The simplest demo to demonstrate gn and create your own exe;
+1. [M120] `demo_log`: Demo log library;
+1. [M120] `demo_tracing_console`: Demonstrate using Trace to output to the console;
+1. [M120] `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
+1. [M120] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
+1. [M120] `demo_callback`: Demo Bind&Callback related content；
+1. [M120] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
+1. [M120] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
+1. [M120] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
+1. [M120] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
+1. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
+1. [M120] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
+1. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
+1. [M120] `demo_memory`: Demonstrate the use of SharedMemory;
+1. [M120] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
+1. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
+1. [M120] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
+1. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
+1. [M120] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
+1. [M120] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 1. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
 1. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
 1. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
 1. `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
-1. [v110] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
-1. [v110] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
+1. [M120] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
+1. [M120] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
 1. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
 1. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
-1. [v110] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
+1. [M120] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
 1. `demo_x11`: Demonstrate using X11 to create transparent windows;
 1. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
 1. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
 1. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
-1. [v110] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
+1. [M120] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
 
 
 Documents:
@@ -64,8 +64,8 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ## Usage
 
-1. Go to the `src` directory of chromium and switch to a supported branch, such as `80.0.3987.165` for version 80 or `91.0.4472.144` for version 91 (the last version number does not matter). And run `gclient sync` to synchronize the code.
-2. Run the following command to clone this repository to the `src/demo` directory and switch to the corresponding branch, e.g. `c/80.0.3987` for version 80 or `c/91.0.4472` for version 91.
+1. Go to the `src` directory of chromium and switch to a supported branch, such as `120.0.6099.40` for version 120 or `91.0.4472.144` for version 91 (the last version number does not matter). And run `gclient sync` to synchronize the code.
+2. Run the following command to clone this repository to the `src/demo` directory and switch to the corresponding branch, e.g. `c/120.0.6099` for version 120 or `c/91.0.4472` for version 91.
 
     ```sh
     git clone <address of current repository> demo
@@ -106,26 +106,30 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ## Changelog
 
+### 2023.11.26
+
+- Migrate demos to chromium 120;
+
 ### 2023.8.24
 
 - Add demo_linktest, demonstrates incorrect use of gn causing link errors;
 
 ### 2023.3.25
 
-- Migrate demo_skia to v110;
+- Migrate demo_skia to M110;
 
 ### 2023.3.16
 
-- Migrate demo_views to v110;
+- Migrate demo_views to M110;
 
 ### 2023.3.15
 
-- Migrate demo_cc_offscreen to v110;
-- Migrate demo_gin to v110;
+- Migrate demo_cc_offscreen to M110;
+- Migrate demo_gin to M110;
 
 ### 2023.3.12
 
-- Migrate demo_viz_gui to v110;
+- Migrate demo_viz_gui to M110;
 
 ### 2023.3.11
 
@@ -133,7 +137,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2022.12.4
 
-- Migrate some demo to v110;
+- Migrate some demo to M110;
 
 ### 2022.4.27
 
@@ -145,35 +149,35 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2021.9.6
 
-- Migrate demo_views to v91；
-- Migrate demo_cc_offscreen to v91；
+- Migrate demo_views to M91；
+- Migrate demo_cc_offscreen to M91；
 
 ### 2021.9.4
 
-- Migrate demo_viz_offscreen to v91；
+- Migrate demo_viz_offscreen to M91；
 
 ### 2021.9.3
 
-- Migrate demo_ipc to v91;
-- Migrate demo_services to v91;
+- Migrate demo_ipc to M91;
+- Migrate demo_services to M91;
 
 ### 2021.8.15
 
-- Migrate demo_gl to v91;
+- Migrate demo_gl to M91;
 
 ### 2021.7.29
 
-- Migrate below demos to v91：
+- Migrate below demos to M91：
     - demo_resources
 
 ### 2021.7.22
 
-- Migrate below demos to v91：
+- Migrate below demos to M91：
     - demo_memory
 
 ### 2021.7.17
 
-- Migrate below demos to v91：
+- Migrate below demos to M91：
     - demo_exe
     - demo_tracing_perfetto
     - demo_tracing_perfetto_content
