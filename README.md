@@ -33,9 +33,9 @@ Demo list:
 1. [M120] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
 1. [M120] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
 1. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
-1. [M110] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
+1. [M120] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
 1. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
-1. [M110] `demo_memory`: Demonstrate the use of SharedMemory;
+1. [M120] `demo_memory`: Demonstrate the use of SharedMemory;
 1. [M120] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
 1. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
 1. [M110] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
@@ -108,7 +108,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2023.12.23
 
-- Migrate the flowing demo to chromium M120： `demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*`.
+- Migrate the flowing demo to chromium M120： `demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*,demo_ipc,demo_memory`.
 
 ### 2023.8.24
 

@@ -1,42 +1,27 @@
 /**
- * 目前 chromium 中的 IPC 机制底层都使用mojo来实现。只有在NaCL中使用以前的IPC通道的机制。
- * 
+ * 目前 chromium 中的 IPC
+ * 机制底层都使用mojo来实现。只有在NaCL中使用以前的IPC通道的机制。
+ *
  */
 
+#include <base/run_loop.h>
 #include "base/at_exit.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/logging.h"
-#include <base/run_loop.h>
+#include "base/process/launch.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/process/launch.h"
 #include "base/threading/thread.h"
 
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
 #include "mojo/public/cpp/system/invitation.h"
-
-#include "mojo/public/c/system/buffer.h"
-#include "mojo/public/c/system/data_pipe.h"
-#include "mojo/public/c/system/message_pipe.h"
-#include "mojo/public/cpp/system/buffer.h"
-#include "mojo/public/cpp/system/data_pipe.h"
 #include "mojo/public/cpp/system/message_pipe.h"
-#include "mojo/public/cpp/system/simple_watcher.h"
-#include "mojo/public/cpp/system/wait.h"
-
-#include "demo/demo_mojo/mojom/test.mojom.h"
-#include "demo/demo_mojo/mojom/test2.mojom.h"
-#include "demo/demo_mojo/mojom/test3.mojom.h"
-#include "demo/demo_mojo/mojom/test4.mojom.h"
-
-#include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 
 // For IPC API
-#include "ipc/ipc.mojom.h"
 #include "ipc/ipc_channel.h"
-#include "ipc/ipc_channel_mojo.h"
 #include "ipc/ipc_logging.h"
 #include "ipc/ipc_message_macros.h"
 // 不能使用这个类，因为它没有标记为导出，链接的时候会报错
@@ -45,14 +30,14 @@
 #include "ipc/message_filter.h"
 
 #include "demo_ipc_messages.h"
+
 class ProducerListener : public IPC::Listener {
  public:
-  ProducerListener(){}
+  ProducerListener() = default;
 
   ~ProducerListener() override = default;
 
  private:
-  
   void OnChannelConnected(int32_t peer_pid) override {
     LOG(INFO) << "Producer OnChannelConnected: peer_pid= "<<peer_pid;
   }
@@ -73,7 +58,7 @@ class ProducerListener : public IPC::Listener {
 
 class ConsumerListener : public IPC::Listener {
  public:
-  ConsumerListener(){}
+  ConsumerListener() = default;
 
   ~ConsumerListener() override = default;
 
@@ -111,24 +96,25 @@ private:
 // 这不是使用IPC::Channel所必需的，这里是模拟chromium中的使用，用来演示MessageFilter
 class ConsumerChannel : public IPC::Listener, public IPC::Sender {
 public:
-  ConsumerChannel(scoped_refptr<base::SingleThreadTaskRunner> task_runner) 
-    : task_runner_(task_runner){}
+ explicit ConsumerChannel(
+     scoped_refptr<base::SingleThreadTaskRunner> task_runner)
+     : task_runner_(task_runner) {}
 
-  bool Init(IPC::ChannelHandle handle) {
-    channel_ = IPC::Channel::CreateClient(handle,this,task_runner_);
-    LOG(INFO) << "Consumer Connect";
-    bool result = channel_->Connect();
-    if(result) {
-      listener_ = std::make_unique<ConsumerListener>();
-      auto* filter = new ConsumerFilter();
-      // 注册一个 routing_id 为 1 的消息监听器，所有id为1的消息都会被该监听器接收
-      // 在实际项目中要保证在一条通道上，该id要唯一
-      filter->AddRoute(1,listener_.get());
-      AddFilter(filter);
-    }
+ bool Init(IPC::ChannelHandle handle) {
+   channel_ = IPC::Channel::CreateClient(handle, this, task_runner_);
+   LOG(INFO) << "Consumer Connect";
+   bool result = channel_->Connect();
+   if (result) {
+     listener_ = std::make_unique<ConsumerListener>();
+     auto* filter = new ConsumerFilter();
+     // 注册一个 routing_id 为 1 的消息监听器，所有id为1的消息都会被该监听器接收
+     // 在实际项目中要保证在一条通道上，该id要唯一
+     filter->AddRoute(1, listener_.get());
+     AddFilter(filter);
+   }
 
-    return result;
-  }
+   return result;
+ }
 
   void AddFilter(IPC::MessageFilter* filter) {
     filters_.push_back(filter);
@@ -212,7 +198,7 @@ void MojoProducer() {
       channel.TakeLocalEndpoint(),
       base::BindRepeating(
           [](const std::string& error) { LOG(ERROR) << error; }));
-  
+
   // 创建主线程消息循环
   base::SingleThreadTaskExecutor main_task_executor;
 
@@ -252,7 +238,7 @@ void MojoConsumer() {
   ConsumerChannel channel(main_task_executor.task_runner());
   bool result = channel.Init(pipe.release());
   DCHECK(result);
-  
+
   if(result) {
     LOG(INFO) << "Consumer Send: IPCTestMsg_Hi Consumer";
     channel.Send(new IPCTestMsg_Hi("Consumer"));
@@ -265,6 +251,10 @@ void MojoConsumer() {
 
 int main(int argc, char** argv) {
   base::AtExitManager at_exit;
+  base::CommandLine::Init(argc, argv);
+
+  // 初始化 FeatureList，mojo::core::InitFeatures() 依赖它
+  base::FeatureList::SetInstance(std::make_unique<base::FeatureList>());
 
 #if defined(OS_WIN)
   logging::LoggingSettings logging_setting;
@@ -273,22 +263,40 @@ int main(int argc, char** argv) {
   logging::InitLogging(logging_setting);
 #endif
 
-  base::CommandLine::Init(argc, argv);
-  LOG(INFO) <<"Command Line: "<< base::CommandLine::ForCurrentProcess()->GetCommandLineString();
-  
+  LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
+
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("Demo");
-  
-  // Init会创建一个sokcetpair和一条pipe，共4个fd
-  mojo::core::Init();
-  base::Thread ipc_thread("ipc!");
-  ipc_thread.StartWithOptions(
+
+  // 创建主线程消息循环
+  // base::SingleThreadTaskExecutor main_task_executor;
+  // base::RunLoop run_loop;
+
+  base::Thread io_thread("io_thread");
+  io_thread.StartWithOptions(
       base::Thread::Options(base::MessagePumpType::IO, 0));
 
-  // 初始化mojo的后台线程，用来异步收发消息存储到缓存
+  // 初始化 mojo 的 IO 线程，用来异步收发消息。
   mojo::core::ScopedIPCSupport ipc_support(
-      ipc_thread.task_runner(),
+      io_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
+
+  mojo::core::Configuration mojo_config;
+  mojo_config.disable_ipcz = false;
+  if (argc < 2) {
+    // 如果启用了 ipcz，则必须将发起 invitation 的进程的 is_broker_process 设为
+    // true。
+    mojo_config.is_broker_process = true;
+  }
+
+  // 可选，初始化 mojo features。如果想要使用该初始化需要提前初始化
+  // base::FeatureList，这里为了不引入更多复杂度，不初始化 mojo features。
+  mojo::core::InitFeatures();
+
+  // mojo 初始化
+  // Init 会创建一个 sokcetpair 和一条 pipe，共 4 个 fd。
+  // M120 已经在大部分平台上启用了 mojo 的新后端 ipcz。
+  mojo::core::Init(mojo_config);
 
   if (argc < 2) {
     logging::SetLogPrefix("producer");
@@ -298,7 +306,7 @@ int main(int argc, char** argv) {
     MojoConsumer();
   }
 
-  ipc_thread.Stop();
+  io_thread.Stop();
   base::ThreadPoolInstance::Get()->Shutdown();
   return 0;
 }
