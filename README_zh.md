@@ -100,7 +100,7 @@ Demo 列表：
 
 ### 2023.12.23
 
-- 升级以下 demo 到 chromium 120： demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*。
+- 升级以下 demo 到 chromium 120： `demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*`。
 
 ### 2023.8.24
 

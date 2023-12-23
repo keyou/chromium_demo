@@ -108,7 +108,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2023.12.23
 
-- Migrate the flowing demo to chromium M120： demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*.
+- Migrate the flowing demo to chromium M120： `demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*`.
 
 ### 2023.8.24
 
