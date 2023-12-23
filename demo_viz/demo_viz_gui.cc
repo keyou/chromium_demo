@@ -1,43 +1,25 @@
 #include "base/at_exit.h"
-#include "base/callback.h"
 #include "base/command_line.h"
-#include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-// #include "base/macros.h"
-#include "base/memory/ptr_util.h"
-// #include "base/single_thread_task_runner.h"
 #include "base/message_loop/message_pump_type.h"
-#include "base/path_service.h"
-#include "base/power_monitor/power_monitor.h"
-#include "base/power_monitor/power_monitor_device_source.h"
-#include "base/rand_util.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/test/task_environment.h"
-#include "base/test/test_discardable_memory_allocator.h"
-#include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
-#include "base/trace_event/trace_buffer.h"
-#include "build/build_config.h"
-#include "build/buildflag.h"
 #include "components/viz/client/client_resource_provider.h"
 #include "components/viz/common/quads/debug_border_draw_quad.h"
-#include "components/viz/common/quads/picture_draw_quad.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/common/quads/surface_draw_quad.h"
 #include "components/viz/common/quads/texture_draw_quad.h"
 #include "components/viz/common/quads/tile_draw_quad.h"
 #include "components/viz/common/quads/video_hole_draw_quad.h"
 #include "components/viz/common/resources/bitmap_allocation.h"
-#include "components/viz/common/resources/resource_format.h"
-#include "components/viz/demo/host/demo_host.h"
+#include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "components/viz/demo/service/demo_service.h"
+#include "components/viz/host/host_display_client.h"
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
-#include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
-#include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
 #include "demo/common/utils.h"
 #include "include/core/SkColor.h"
@@ -45,30 +27,22 @@
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
-#include "ui/base/hit_test.h"
-#include "ui/base/ime/init/input_method_initializer.h"
-// #include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/compositor/paint_recorder.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/canvas.h"
-#include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/skia_util.h"
-#include "ui/gl/gl_switches.h"
-#include "ui/gl/init/gl_factory.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
-#include "ui/wm/core/wm_state.h"
 #endif
 
 #if defined(USE_X11)
@@ -158,7 +132,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   }
 
   viz::CompositorFrame CreateFrame(const ::viz::BeginFrameArgs& args) {
-    TRACE_EVENT0("viz", "LayerTreeFrameSink::CreateFrame")
+    TRACE_EVENT0("viz", "LayerTreeFrameSink::CreateFrame");
 
     viz::CompositorFrame frame;
     frame.metadata.begin_frame_ack = viz::BeginFrameAck(args, true);
@@ -200,7 +174,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*filter_info=*/gfx::MaskFilterInfo(),
                        /*clip=*/output_rect,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     auto* debug_quad =
         render_pass->CreateAndAppendDrawQuad<viz::DebugBorderDrawQuad>();
@@ -246,7 +221,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*filter_info=*/gfx::MaskFilterInfo(),
                        /*clip=*/output_rect,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     auto* tile_quad = render_pass->CreateAndAppendDrawQuad<viz::TileDrawQuad>();
     // 将 resource 添加到 tile_quad 中
@@ -298,7 +274,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*filter_info=*/gfx::MaskFilterInfo(),
                        /*clip=*/output_rect,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     auto* texture_quad =
         render_pass->CreateAndAppendDrawQuad<viz::TextureDrawQuad>();
@@ -329,7 +306,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*filter_info=*/gfx::MaskFilterInfo(),
                        /*clip=*/output_rect,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     viz::SurfaceId child_surface_id(
         child_frame_sink_id_,
@@ -358,7 +336,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*filter_info=*/gfx::MaskFilterInfo(),
                        /*clip=*/output_rect,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     auto* video_hole_quad =
         render_pass->CreateAndAppendDrawQuad<viz::VideoHoleDrawQuad>();
@@ -418,7 +397,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*filter_info=*/gfx::MaskFilterInfo(),
                        /*clip=*/output_rect,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0);
+                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     // 单一颜色
     viz::SolidColorDrawQuad* color_quad =
@@ -436,7 +416,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     viz::SharedBitmapId shared_bitmap_id = viz::SharedBitmap::GenerateId();
     // 创建共享内存
     base::MappedReadOnlyRegion shm =
-        viz::bitmap_allocation::AllocateSharedBitmap(size, viz::RGBA_8888);
+        viz::bitmap_allocation::AllocateSharedBitmap(
+            size, viz::SinglePlaneFormat::kRGBA_8888);
     base::WritableSharedMemoryMapping mapping = std::move(shm.mapping);
 
     SkImageInfo info = SkImageInfo::MakeN32Premul(size.width(), size.height());
@@ -451,20 +432,22 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     // 后续会使用 ClientResourceProvider::PrepareSendToParent
     // 将已经存入的资源添加 到 CF 中。
     return client_resource_provider_->ImportResource(
-        viz::TransferableResource::MakeSoftware(shared_bitmap_id, size,
-                                                viz::RGBA_8888),
+        viz::TransferableResource::MakeSoftware(
+            shared_bitmap_id, size, viz::SinglePlaneFormat::kRGBA_8888),
         base::DoNothing());
   }
 
   void DidReceiveCompositorFrameAck(
       std::vector<::viz::ReturnedResource> resources) override {}
 
-  void OnCompositorFrameTransitionDirectiveProcessed(uint32_t sequence_id) override {}
+  void OnCompositorFrameTransitionDirectiveProcessed(
+      uint32_t sequence_id) override {}
 
   void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
-      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
-      override {
+      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details,
+      bool frame_ack,
+      std::vector<::viz::ReturnedResource> resources) override {
     base::AutoLock lock(lock_);
     GetCompositorFrameSinkPtr()->SubmitCompositorFrame(
         local_surface_id_, CreateFrame(args),
@@ -652,7 +635,7 @@ class GpuService {
 // compositor.
 class DemoVizWindow : public ui::PlatformWindowDelegate {
  public:
-  DemoVizWindow(base::OnceClosure close_closure)
+  explicit DemoVizWindow(base::OnceClosure close_closure)
       : close_closure_(std::move(close_closure)) {}
   ~DemoVizWindow() override = default;
 
@@ -829,9 +812,9 @@ int main(int argc, char** argv) {
   run_loop.Run();
 
   {
-    base::RunLoop run_loop;
-    demo::FlushTrace(run_loop.QuitClosure());
-    run_loop.Run();
+    base::RunLoop run_loop_to_flush_trace;
+    demo::FlushTrace(run_loop_to_flush_trace.QuitClosure());
+    run_loop_to_flush_trace.Run();
   }
 
   return 0;

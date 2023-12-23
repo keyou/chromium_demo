@@ -1,68 +1,47 @@
 #include "base/at_exit.h"
-#include "base/callback.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
-#include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
-#include "base/power_monitor/power_monitor.h"
-#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/test/task_environment.h"
-#include "base/test/test_discardable_memory_allocator.h"
-#include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
-#include "build/build_config.h"
-#include "build/buildflag.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
-#include "components/viz/demo/host/demo_host.h"
+#include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "components/viz/demo/service/demo_service.h"
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
 #include "components/viz/service/display/display.h"
+#include "components/viz/service/display/display_client.h"
 #include "components/viz/service/display/overlay_processor_stub.h"
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/display_embedder/software_output_surface.h"
+#include "components/viz/service/frame_sinks/compositor_frame_sink_support.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
-#include "mojo/public/cpp/bindings/pending_receiver.h"
-#include "mojo/public/cpp/bindings/pending_remote.h"
-#include "services/viz/privileged/mojom/viz_main.mojom.h"
+#include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "third_party/skia/include/core/SkColor.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
-#include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkStream.h"
-#include "ui/base/hit_test.h"
-#include "ui/base/ime/init/input_method_initializer.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/compositor/paint_recorder.h"
-#include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
-#include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/canvas.h"
-#include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/skia_util.h"
-#include "ui/gl/gl_switches.h"
-#include "ui/gl/init/gl_factory.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
-#include "ui/platform_window/platform_window_init_properties.h"
 
 #if defined(USE_AURA)
-#include "ui/aura/env.h"
-#include "ui/wm/core/wm_state.h"
 #endif
 
 #if BUILDFLAG(IS_OZONE)
@@ -84,7 +63,7 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     return viz::SoftwareOutputDevice::BeginPaint(damage_rect);
   }
   void OnSwapBuffers(SwapBuffersCallback swap_ack_callback,
-                     gl::FrameData data) override {
+                     gfx::FrameData data) override {
     auto image = surface_->makeImageSnapshot();
     SkBitmap bitmap;
     DCHECK(image->asLegacyBitmap(&bitmap));
@@ -98,8 +77,7 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
 #else
     SkFILEWStream stream(path.value().c_str());
 #endif
-    DCHECK(
-        SkEncodeImage(&stream, bitmap.pixmap(), SkEncodedImageFormat::kPNG, 0));
+    DCHECK(SkPngEncoder::Encode(&stream, bitmap.pixmap(), {}));
     DLOG(INFO) << "OnSwapBuffers: save the frame to: " << path;
     viz::SoftwareOutputDevice::OnSwapBuffers(std::move(swap_ack_callback),
                                              data);
@@ -123,7 +101,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     auto init_params = viz::FrameSinkManagerImpl::InitParams(
         shared_bitmap_manager_.get());
     frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(init_params);
-    auto task_runner = base::ThreadTaskRunnerHandle::Get();
+    auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     // 生成 root client 的 LocalSurfaceId
     root_local_surface_id_allocator_.GenerateId();
@@ -197,7 +175,8 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
                        /*clip=*/absl::nullopt,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
                        /*blend=*/SkBlendMode::kSrcOver,
-                       /*sorting_context=*/0);
+                       /*sorting_context=*/0,
+                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     viz::SolidColorDrawQuad* color_quad =
         render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
@@ -215,8 +194,9 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
 
   void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
-      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details)
-      override {
+      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details,
+      bool frame_ack,
+      std::vector<::viz::ReturnedResource> resources) override {
     DLOG(INFO) << "OnBeginFrame: submit a new frame";
     if (support_->last_activated_local_surface_id() != root_local_surface_id_) {
       display_->SetLocalSurfaceId(root_local_surface_id_, 1.0f);

@@ -40,8 +40,8 @@ Demo list:
 1. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
 1. [M120] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
 1. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
-1. [M110] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
-1. [M110] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
+1. [M120] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
+1. [M120] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 1. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
 1. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
 1. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;

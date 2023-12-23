@@ -33,8 +33,8 @@ Demo 列表：
 1. [M120] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
 1. [M120] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
 1. [M120] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
-1. [M110] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
-1. [M110] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
+1. [M120] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
+1. [M120] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 1. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
 1. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
 1. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
