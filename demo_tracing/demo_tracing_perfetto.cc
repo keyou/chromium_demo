@@ -1,30 +1,19 @@
+#include <memory>
+
 #include "base/at_exit.h"
-#include "base/callback_forward.h"
 #include "base/command_line.h"
-#include "base/debug/stack_trace.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
-#include "base/memory/ref_counted.h"
+#include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
-#include "base/process/process.h"
-#include "base/task/task_traits.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/test/task_environment.h"
-#include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
-#include "base/timer/timer.h"
-#include "base/threading/platform_thread.h"
-#include "base/trace_event/common/trace_event_common.h"
-#include "base/trace_event/trace_event.h"
 #include "components/tracing/common/trace_startup_config.h"
-#include "components/tracing/common/trace_to_console.h"
-#include "components/tracing/common/tracing_switches.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/system/data_pipe_drainer.h"
-#include "services/tracing/perfetto/consumer_host.h"
 #include "services/tracing/public/cpp/perfetto/perfetto_config.h"
 #include "services/tracing/public/cpp/trace_startup.h"
 #include "services/tracing/public/cpp/traced_process.h"
@@ -43,7 +32,7 @@ class TracingController : public mojo::DataPipeDrainer::Client,
     return &controller;
   }
 
-  TracingController() {}
+  TracingController() = default;
 
   bool StartTracing(base::trace_event::TraceConfig trace_config,
                     base::OnceClosure start_callback) {
@@ -91,7 +80,8 @@ class TracingController : public mojo::DataPipeDrainer::Client,
       return true;
     }
 
-    drainer_.reset(new mojo::DataPipeDrainer(this, std::move(consumer_handle)));
+    drainer_ = std::make_unique<mojo::DataPipeDrainer>(
+        this, std::move(consumer_handle));
 
     tracing_session_host_->DisableTracingAndEmitJson(
         "", std::move(producer_handle), false, std::move(stop_callback));

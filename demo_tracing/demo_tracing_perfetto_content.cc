@@ -1,34 +1,18 @@
-#include <base/threading/thread.h>
-#include <mojo/core/embedder/embedder.h>
-#include <mojo/core/embedder/scoped_ipc_support.h>
-
 #include "base/at_exit.h"
-#include "base/callback_forward.h"
 #include "base/command_line.h"
-#include "base/debug/stack_trace.h"
 #include "base/feature_list.h"
-#include "base/files/file_util.h"
+#include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/memory/ref_counted.h"
 #include "base/path_service.h"
-#include "base/task/single_thread_task_executor.h"
-#include "base/task/task_traits.h"
 #include "base/test/test_timeouts.h"
-#include "base/timer/timer.h"
-#include "base/trace_event/common/trace_event_common.h"
-#include "base/trace_event/trace_event.h"
-#include "components/tracing/common/trace_startup_config.h"
-#include "components/tracing/common/trace_to_console.h"
-#include "components/tracing/common/tracing_switches.h"
-#include "content/browser/browser_thread_impl.h"
+#include "base/threading/thread.h"
 #include "content/browser/tracing/tracing_controller_impl.h"
-#include "content/common/content_export.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/tracing_controller.h"
 #include "content/public/common/content_client.h"
 #include "content/public/test/browser_task_environment.h"
-#include "mojo/public/cpp/bindings/receiver.h"
-#include "mojo/public/cpp/bindings/remote.h"
+#include "mojo/core/embedder/embedder.h"
+#include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/system/data_pipe_drainer.h"
 #include "services/tracing/public/cpp/trace_startup.h"
 #include "services/tracing/public/cpp/tracing_features.h"
@@ -69,6 +53,7 @@ void TraceCount(int times) {
 int main(int argc, char** argv) {
   base::AtExitManager at_exit;
   base::CommandLine::Init(argc, argv);
+  base::i18n::InitializeICU();
 
   // Trace 的 perfetto 后端依赖 mojo
   mojo::core::Init();
@@ -87,7 +72,7 @@ int main(int argc, char** argv) {
   // 在 Chromium 中 Startup 的Trace需要特殊处理，因为 TracingService 启动的比较晚
   tracing::EnableStartupTracingIfNeeded();
 
-  TRACE_EVENT0("toplevel,startup,test", "This trace can not be record.");
+  TRACE_EVENT0("test", "This trace can not be record.");
 
   // 测试环境的超时参数初始化
   TestTimeouts::Initialize();

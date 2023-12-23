@@ -29,8 +29,8 @@ Demo 列表：
 1. [M110] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 1. [M91] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
 1. [M110] `demo_memory`: 演示使用 SharedMemory；
-1. [M110] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
-1. [M110] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
+1. [M120] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
+1. [M120] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
 1. [M110] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
 1. [M110] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
 1. [M110] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
@@ -100,7 +100,7 @@ Demo 列表：
 
 ### 2023.12.23
 
-- 升级以下 demo 到 chromium 120： demo_exe,demo_log,demo_tracing_console,demo_task_thread_pool,demo_task_executor,demo_callback_*,demo_linktest。
+- 升级以下 demo 到 chromium 120： demo_exe,demo_log,demo_tracing_console,demo_task_thread_pool,demo_task_executor,demo_callback_*,demo_linktest,demo_tracing_perfetto,demo_tracing_perfetto_content。
 
 ### 2023.8.24
 
