@@ -1,23 +1,14 @@
 #include "base/at_exit.h"
-#include "base/callback.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
-#include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
-#include "base/power_monitor/power_monitor.h"
-#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/test/task_environment.h"
-#include "base/test/test_discardable_memory_allocator.h"
-#include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
-#include "build/build_config.h"
-#include "build/buildflag.h"
 #include "cc/animation/animation_host.h"
 #include "cc/layers/content_layer_client.h"
 #include "cc/layers/layer.h"
@@ -26,12 +17,11 @@
 #include "cc/trees/layer_tree_frame_sink.h"
 #include "cc/trees/layer_tree_frame_sink_client.h"
 #include "cc/trees/layer_tree_host.h"
-#include "components/viz/common/quads/solid_color_draw_quad.h"
-#include "components/viz/demo/host/demo_host.h"
+#include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "components/viz/demo/service/demo_service.h"
 #include "components/viz/host/host_frame_sink_manager.h"
-#include "components/viz/host/renderer_settings_creation.h"
 #include "components/viz/service/display/display.h"
+#include "components/viz/service/display/display_client.h"
 #include "components/viz/service/display/overlay_processor_stub.h"
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
@@ -40,44 +30,25 @@
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
 #include "include/core/SkColor.h"
-#include "include/core/SkEncodedImageFormat.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
-#include "mojo/public/cpp/bindings/pending_receiver.h"
-#include "mojo/public/cpp/bindings/pending_remote.h"
-#include "services/viz/privileged/mojom/viz_main.mojom.h"
-#include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkStream.h"
-#include "ui/base/hit_test.h"
-#include "ui/base/ime/init/input_method_initializer.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/compositor/paint_recorder.h"
-#include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/display/screen.h"
-#include "ui/events/event.h"
-#include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/canvas.h"
-#include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/skia_util.h"
-#include "ui/gl/gl_switches.h"
-#include "ui/gl/init/gl_factory.h"
-#include "ui/ozone/public/platform_window_surface.h"
-#include "ui/ozone/public/surface_factory_ozone.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
-#include "ui/platform_window/platform_window_init_properties.h"
 
 #if defined(USE_AURA)
-#include "ui/aura/env.h"
-#include "ui/wm/core/wm_state.h"
 #endif
 
 #if defined(USE_OZONE)
-#include "ui/ozone/public/ozone_platform.h"
 #endif
 
 #if defined(OS_WIN)
@@ -127,7 +98,7 @@ class Layer : public cc::ContentLayerClient {
                                         SkBlendMode::kSrc);
     display_list->EndPaintOfUnpaired(bounds_);
     display_list->Finalize();
-    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
         FROM_HERE,
         base::BindOnce(
             [](scoped_refptr<cc::PictureLayer> layer, SkColor color, int i) {
@@ -156,7 +127,7 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     return viz::SoftwareOutputDevice::BeginPaint(damage_rect);
   }
   void OnSwapBuffers(SwapBuffersCallback swap_ack_callback,
-                     gl::FrameData data) override {
+                     gfx::FrameData data) override {
     auto image = surface_->makeImageSnapshot();
     SkBitmap bitmap;
     DCHECK(image->asLegacyBitmap(&bitmap));
@@ -167,8 +138,7 @@ class OffscreenSoftwareOutputDevice : public viz::SoftwareOutputDevice {
     path = path.AppendASCII(filename);
 
     SkFILEWStream stream(path.AsUTF8Unsafe().c_str());
-    DCHECK(
-        SkEncodeImage(&stream, bitmap.pixmap(), SkEncodedImageFormat::kPNG, 0));
+    DCHECK(SkPngEncoder::Encode(&stream, bitmap.pixmap(), {}));
     LOG(INFO) << "OnSwapBuffers: save the frame to: " << path;
     viz::SoftwareOutputDevice::OnSwapBuffers(std::move(swap_ack_callback),
                                              data);
@@ -190,6 +160,7 @@ class OffscreenLayerTreeFrameSink
       : cc::LayerTreeFrameSink(nullptr,
                                nullptr,
                                std::move(task_runner),
+                               nullptr,
                                nullptr),
         root_frame_sink_id_(frame_sink_id),
         root_local_surface_id_(local_surface_id),
@@ -201,7 +172,7 @@ class OffscreenLayerTreeFrameSink
 
  private:
   void Initialize() {
-    auto task_runner = base::ThreadTaskRunnerHandle::Get();
+    auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     // 创建 support 用于将提交的CF存入Surface
     constexpr bool is_root = true;
@@ -300,9 +271,11 @@ class OffscreenLayerTreeFrameSink
     // 用于告诉cc::Scheduler上一帧已经处理完了
     client_->DidReceiveCompositorFrameAck();
   }
-  void OnBeginFrame(const ::viz::BeginFrameArgs& args,
-                    const base::flat_map<uint32_t, ::viz::FrameTimingDetails>&
-                        details) override {
+  void OnBeginFrame(
+      const ::viz::BeginFrameArgs& args,
+      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details,
+      bool frame_ack,
+      std::vector<::viz::ReturnedResource> resources) override {
     LOG(INFO) << "OnBeginFrame: submit a new frame";
     if (support_->last_activated_local_surface_id() != root_local_surface_id_) {
       display_->SetLocalSurfaceId(root_local_surface_id_, 1.0f);
@@ -365,7 +338,7 @@ class Compositor
       public viz::HostFrameSinkClient {
  public:
   Compositor() {
-    auto task_runner = base::ThreadTaskRunnerHandle::Get();
+    auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
     cc::LayerTreeSettings settings;
     settings.initial_debug_state.show_fps_counter = true;
 
@@ -417,8 +390,6 @@ class Compositor
       bool defer_status,
       cc::PaintHoldingReason reason,
       absl::optional<cc::PaintHoldingCommitTrigger> trigger) override {}
-  // Notification that rendering has been paused or resumed.
-  void OnPauseRenderingChanged(bool) override {}
   // Notification that a compositing update has been requested.
   void OnCommitRequested() override {}
   void WillUpdateLayers() override {}
@@ -438,7 +409,7 @@ class Compositor
   // void SendScrollEndEventFromImplSide(
   //     cc::ElementId scroll_latched_element_id) override {}
   void RequestNewLayerTreeFrameSink() override {
-    auto task_runner = base::ThreadTaskRunnerHandle::Get();
+    auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
     frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
@@ -525,12 +496,6 @@ int main(int argc, char** argv) {
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoViews");
-
-  // 手动创建TraceConfig
-  auto trace_config = base::trace_event::TraceConfig("cc", "trace-to-console");
-  // 2. 启动Trace
-  base::trace_event::TraceLog::GetInstance()->SetEnabled(
-      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
 
   // 初始化mojo
   mojo::core::Init();
