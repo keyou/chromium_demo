@@ -73,3 +73,5 @@ cscope.po.out
 # Ignore Mac Files
 .DS_Store
 
+.json
+

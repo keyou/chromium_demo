@@ -1,6 +1,5 @@
 #include "base/logging.h"
 #include "base/task/thread_pool.h"
-#include "base/task/thread_pool/thread_pool_impl.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 
 void Hello() {

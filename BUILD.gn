@@ -32,6 +32,7 @@ group("demo") {
       "demo_views",
       "demo_viz",
       "demo_x11",
+      "demo_linktest",
     ]
   }
 

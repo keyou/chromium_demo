@@ -29,33 +29,33 @@ Demo list:
 1. [M120] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
 1. [M120] `demo_callback`: Demo Bind&Callback related content；
 1. [M120] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
-1. [M120] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
-1. [M120] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
-1. [M120] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
+1. [M110] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
+1. [M110] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
+1. [M110] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
 1. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
-1. [M120] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
+1. [M110] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
 1. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
-1. [M120] `demo_memory`: Demonstrate the use of SharedMemory;
-1. [M120] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
-1. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
-1. [M120] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
-1. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
-1. [M120] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
-1. [M120] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
+1. [M110] `demo_memory`: Demonstrate the use of SharedMemory;
+1. [M110] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
+1. [M110] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
+1. [M110] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
+1. [M110] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
+1. [M110] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
+1. [M110] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 1. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
 1. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
 1. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
 1. `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
-1. [M120] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
-1. [M120] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
+1. [M110] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
+1. [M110] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
 1. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
 1. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
-1. [M120] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
+1. [M110] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
 1. `demo_x11`: Demonstrate using X11 to create transparent windows;
 1. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
 1. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
 1. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
-1. [M120] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
+1. [M110] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
 
 
 Documents:
@@ -106,9 +106,9 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ## Changelog
 
-### 2023.11.26
+### 2023.12.23
 
-- Migrate demos to chromium 120;
+- Migrate the flowing demo to chromium M120： demo_exe,demo_log,demo_tracing_console,demo_task_thread_pool,demo_task_executor,demo_callback_*,demo_linktest.
 
 ### 2023.8.24
 

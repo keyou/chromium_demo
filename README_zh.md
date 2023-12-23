@@ -22,33 +22,33 @@ Demo 列表：
 1. [M120] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor 位于demo_task下;
 1. [M120] `demo_callback_(once|repeating)`: 演示 Bind&Callback 相关内容；
 1. [M120] `demo_linktest`: 演示错误的使用 gn 导致链接错误；
-1. [M120] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
-1. [M120] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
-1. [M120] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
+1. [M110] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
+1. [M110] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
+1. [M110] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
 1. [M91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
-1. [M120] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
+1. [M110] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 1. [M91] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
-1. [M120] `demo_memory`: 演示使用 SharedMemory；
-1. [M120] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
-1. [M120] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
-1. [M120] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-1. [M120] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
-1. [M120] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
-1. [M120] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
+1. [M110] `demo_memory`: 演示使用 SharedMemory；
+1. [M110] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
+1. [M110] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
+1. [M110] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
+1. [M110] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
+1. [M110] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
+1. [M110] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 1. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
 1. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
 1. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
 1. `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
-1. [M120] `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
-1. [M120] `demo_views`: 演示使用 `//ui/views` 创建 UI；
+1. [M110] `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
+1. [M110] `demo_views`: 演示使用 `//ui/views` 创建 UI；
 1. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
 1. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
-1. [M120] `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
+1. [M110] `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
 1. `demo_x11`: 演示使用 X11 创建透明窗口；
 1. `demo_x11_glx`: 演示在透明窗口中使用 glx;
 1. `demo_x11_egl`: 演示在透明窗口中使用 egl；
 1. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
-1. [M120] `demo_gin`: 演示使用 gin, 创建一个精简JS运行时；
+1. [M110] `demo_gin`: 演示使用 gin, 创建一个精简JS运行时；
 
 文档：
 
@@ -98,9 +98,9 @@ Demo 列表：
 
 ## 更新日志
 
-### 2023.11.26
+### 2023.12.23
 
-- 升级部分 demo 到 chromium 120；
+- 升级以下 demo 到 chromium 120： demo_exe,demo_log,demo_tracing_console,demo_task_thread_pool,demo_task_executor,demo_callback_*,demo_linktest。
 
 ### 2023.8.24
 
