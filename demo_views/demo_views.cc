@@ -4,37 +4,27 @@
 
 #include <memory>
 #include "base/at_exit.h"
-#include "base/callback.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/path_service.h"
-#include "base/power_monitor/power_monitor.h"
-#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/test/task_environment.h"
-#include "base/test/test_discardable_memory_allocator.h"
-#include "base/test/test_timeouts.h"
 #include "build/build_config.h"
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "mojo/core/embedder/embedder.h"
-#include "ui/aura/client/default_capture_client.h"
 #include "ui/aura/client/window_parenting_client.h"
 #include "ui/aura/env.h"
-#include "ui/aura/test/test_focus_client.h"
 #include "ui/aura/test/test_screen.h"
 #include "ui/aura/window.h"
 #include "ui/aura/window_delegate.h"
 #include "ui/aura/window_tree_host.h"
 #include "ui/aura/window_tree_host_observer.h"
-#include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
@@ -45,18 +35,15 @@
 #include "ui/gfx/canvas.h"
 #include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
-#include "ui/gfx/skia_util.h"
-#include "ui/gl/gl_switches.h"
+#include "ui/gl/gpu_preference.h"
 #include "ui/gl/init/gl_factory.h"
 #include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/background.h"
 #include "ui/views/buildflags.h"
 #include "ui/views/controls/button/button.h"
-#include "ui/views/controls/button/label_button.h"
 #include "ui/views/controls/button/md_text_button.h"
 #include "ui/views/examples/example_base.h"
 #include "ui/views/examples/examples_window.h"
-#include "ui/views/layout/fill_layout.h"
 #include "ui/views/layout/layout_manager_base.h"
 #include "ui/views/layout/layout_provider.h"
 #include "ui/views/test/desktop_test_views_delegate.h"
@@ -207,7 +194,7 @@ int main(int argc, char** argv) {
     ui::OzonePlatform::InitializeForGPU(params);
   }
   // 加载相应平台的GL库及GL绑定
-  gl::init::InitializeGLOneOff(0);
+  gl::init::InitializeGLOneOff(gl::GpuPreference::kDefault);
   LOG(INFO) << "GetGLImplementation: " << gl::GetGLImplementation();
 
   // The ContextFactory must exist before any Compositors are created.
