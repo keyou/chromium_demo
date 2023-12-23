@@ -1,32 +1,33 @@
-#include <base/command_line.h>
-#include <base/logging.h>
-#include <base/run_loop.h>
-#include <base/task/single_thread_task_executor.h>
-#include <base/task/thread_pool/thread_pool_instance.h>
 
-#include <base/threading/thread.h>
-#include <mojo/core/embedder/embedder.h>
-#include <mojo/core/embedder/scoped_ipc_support.h>
+#include <unistd.h>
+#include <memory>
+
+#include "base/command_line.h"
+#include "base/feature_list.h"
+#include "base/logging.h"
+#include "base/message_loop/message_pump_type.h"
 #include "base/process/launch.h"
+#include "base/run_loop.h"
+#include "base/task/single_thread_task_executor.h"
+#include "base/task/single_thread_task_runner.h"
+#include "base/threading/thread.h"
+#include "base/time/time.h"
+#include "mojo/core/embedder/configuration.h"
+#include "mojo/core/embedder/embedder.h"
+#include "mojo/core/embedder/scoped_ipc_support.h"
+#include "mojo/public/c/system/data_pipe.h"
+#include "mojo/public/c/system/message_pipe.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
+#include "mojo/public/cpp/system/buffer.h"
+#include "mojo/public/cpp/system/data_pipe.h"
 #include "mojo/public/cpp/system/invitation.h"
-
-#include <mojo/public/c/system/buffer.h>
-#include <mojo/public/c/system/data_pipe.h>
-#include <mojo/public/c/system/message_pipe.h>
-#include <mojo/public/cpp/system/buffer.h>
-#include <mojo/public/cpp/system/data_pipe.h>
-#include <mojo/public/cpp/system/message_pipe.h>
-#include <mojo/public/cpp/system/simple_watcher.h>
-#include <mojo/public/cpp/system/wait.h>
-
-// For bindings API
-#include "demo/demo_mojo/mojom/test.mojom.h"
-#include "demo/demo_mojo/mojom/test2.mojom.h"
+#include "mojo/public/cpp/system/message_pipe.h"
+#include "mojo/public/cpp/system/simple_watcher.h"
+#include "mojo/public/cpp/system/wait.h"
 
 class PipeReader {
  public:
-  PipeReader(mojo::ScopedMessagePipeHandle pipe)
+  explicit PipeReader(mojo::ScopedMessagePipeHandle pipe)
       : pipe_(std::move(pipe)),
         watcher_(FROM_HERE, mojo::SimpleWatcher::ArmingPolicy::AUTOMATIC) {
     // NOTE: base::Unretained is safe because the callback can never be run
@@ -82,14 +83,15 @@ void MojoProducer() {
       invitation.AttachMessagePipe("my raw pipe");
   LOG(INFO) << "pipe: " << pipe->value();
 
-  base::LaunchOptions options;
+  base::LaunchOptions launch_options;
   base::CommandLine command_line(
       base::CommandLine::ForCurrentProcess()->GetProgram());
   // 将PlatformChannel中的RemoteEndpoint的fd作为参数传递给子进程
   // 在posix中，fd会被复制到新的随机的fd，fd号改变
   // 在windows中，fd被复制后会直接进行传递，fd号不变
-  channel.PrepareToPassRemoteEndpoint(&options, &command_line);
-  base::Process child_process = base::LaunchProcess(command_line, options);
+  channel.PrepareToPassRemoteEndpoint(&launch_options, &command_line);
+  base::Process child_process =
+      base::LaunchProcess(command_line, launch_options);
   channel.RemoteProcessLaunchAttempted();
 
   mojo::OutgoingInvitation::Send(
@@ -126,7 +128,7 @@ void MojoProducer() {
     memcpy(buffer, kMessage, sizeof(kMessage));
     result = MojoWriteMessage(pipe->value(), message, nullptr);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "send: " << (char*)buffer;
+    LOG(INFO) << "send: " << kMessage;
   }
   // Data Pipe transport by MessagePipe
   {
@@ -150,11 +152,12 @@ void MojoProducer() {
     result = producer->WriteData(kMessage, &length, MOJO_WRITE_DATA_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "send data: " << kMessage;
-    // 这里需要release
-    // handle，因为WriteMessage内部会close发送的handle,也可以在ＷriteMessage的时候使用consumer.release().value()来同时释放所有权
-    consumer.release();
+    // 这里需要 release handle ，因为 WriteMessage 内部会 close 发送的 handle
+    // ,也可以在 ＷriteMessage 的时候使用 consumer.release().value()
+    // 来同时释放所有权
+    std::ignore = consumer.release();
     // 不是必须的，这里是为了调试，故意不释放,后面的同理
-    producer.release();
+    std::ignore = producer.release();
   }
   // Message Pipe transport by MessagePipe
   {
@@ -177,8 +180,8 @@ void MojoProducer() {
                               nullptr, 0, MOJO_WRITE_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "send msg server: " << kMessage;
-    client.release();
-    server.release();
+    std::ignore = client.release();
+    std::ignore = server.release();
   }
   // Shared Buffer Test
   {
@@ -200,20 +203,19 @@ void MojoProducer() {
     std::copy(kMessage.begin(), kMessage.end(),
               static_cast<char*>(mapping.get()));
     LOG(INFO) << "write buffer: " << kMessage;
-    buffer_clone.release();
-    buffer.release();
+    std::ignore = buffer_clone.release();
+    std::ignore = buffer.release();
   }
   // C++ Signal&Trap test
   {
     const char kMessage[] = "SimplerWatcher";
-    MojoResult result =
-        mojo::WriteMessageRaw(pipe.get(), kMessage, sizeof(kMessage), nullptr,
-                              0, MOJO_WRITE_MESSAGE_FLAG_NONE);
+    result = mojo::WriteMessageRaw(pipe.get(), kMessage, sizeof(kMessage),
+                                   nullptr, 0, MOJO_WRITE_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "send: " << kMessage;
 
     // 延迟5s再次发送消息
-    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
         FROM_HERE,
         base::BindOnce(
             [](mojo::ScopedMessagePipeHandle pipe) {
@@ -264,7 +266,7 @@ void MojoConsumer() {
   // C platform API, message pipe read test
   {
     MojoMessageHandle message;
-    MojoResult result = MojoReadMessage(pipe->value(), nullptr, &message);
+    result = MojoReadMessage(pipe->value(), nullptr, &message);
     DCHECK_EQ(result, MOJO_RESULT_OK);
 
     void* buffer = nullptr;
@@ -295,7 +297,7 @@ void MojoConsumer() {
     result = consumer->ReadData(buffer, &num_bytes, MOJO_READ_DATA_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "receive data: " << buffer;
-    consumer.release();
+    std::ignore = consumer.release();
   }
   // Message Pipe transport by MessagePipe
   {
@@ -314,7 +316,7 @@ void MojoConsumer() {
                                   MOJO_READ_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "receive msg client: " << (char*)&data2[0];
-    client.release();
+    std::ignore = client.release();
   }
   // Shared Buffer Test
   {
@@ -330,12 +332,12 @@ void MojoConsumer() {
         mojo::ScopedSharedBufferHandle::From(std::move(handles[0]));
     mojo::ScopedSharedBufferMapping mapping = buffer->Map(64);
     LOG(INFO) << "read buffer: " << static_cast<char*>(mapping.get());
-    buffer.release();
+    std::ignore = buffer.release();
   }
   // C++ Signal&Trap test
   {
     // 为了测试，故意泄漏
-    new PipeReader(std::move(pipe));
+    std::ignore = new PipeReader(std::move(pipe));
   }
 }
 
@@ -350,20 +352,39 @@ int main(int argc, char** argv) {
 #endif
 
   LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
+
+  // 初始化 FeatureList，mojo::core::InitFeatures() 依赖它
+  base::FeatureList::SetInstance(std::make_unique<base::FeatureList>());
+
   // 创建主线程消息循环
   base::SingleThreadTaskExecutor main_task_executor;
   base::RunLoop run_loop;
 
-  // Init会创建一个sokcetpair和一条pipe，共4个fd
-  mojo::core::Init();
-  base::Thread ipc_thread("ipc!");
-  ipc_thread.StartWithOptions(
+  base::Thread io_thread("io_thread");
+  io_thread.StartWithOptions(
       base::Thread::Options(base::MessagePumpType::IO, 0));
 
-  // 初始化mojo的后台线程，用来异步收发消息存储到缓存
+  // 初始化 mojo 的 IO 线程，用来异步收发消息。
   mojo::core::ScopedIPCSupport ipc_support(
-      ipc_thread.task_runner(),
+      io_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
+
+  mojo::core::Configuration mojo_config;
+  mojo_config.disable_ipcz = false;
+  if (argc < 2) {
+    // 如果启用了 ipcz，则必须将发起 invitation 的进程的 is_broker_process 设为
+    // true。
+    mojo_config.is_broker_process = true;
+  }
+
+  // 可选，初始化 mojo features。如果想要使用该初始化需要提前初始化
+  // base::FeatureList，这里为了不引入更多复杂度，不初始化 mojo features。
+  mojo::core::InitFeatures();
+
+  // mojo 初始化
+  // Init 会创建一个 sokcetpair 和一条 pipe，共 4 个 fd。
+  // M120 已经在大部分平台上启用了 mojo 的新后端 ipcz。
+  mojo::core::Init(mojo_config);
 
   if (argc < 2) {
     logging::SetLogPrefix("producer");

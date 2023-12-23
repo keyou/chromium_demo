@@ -1,19 +1,15 @@
-#include <base/logging.h>
 #include "base/command_line.h"
+#include "base/logging.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
-#include <base/threading/thread.h>
-#include <mojo/core/embedder/embedder.h>
-#include <mojo/core/embedder/scoped_ipc_support.h>
-
-#include "mojo/public/c/system/buffer.h"
+#include "base/threading/thread.h"
+#include "mojo/core/embedder/embedder.h"
+#include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/c/system/data_pipe.h"
 #include "mojo/public/c/system/message_pipe.h"
 #include "mojo/public/cpp/system/buffer.h"
 #include "mojo/public/cpp/system/data_pipe.h"
 #include "mojo/public/cpp/system/message_pipe.h"
-#include "mojo/public/cpp/system/simple_watcher.h"
-#include "mojo/public/cpp/system/wait.h"
 
 int main(int argc, char** argv) {
   // 初始化CommandLine，DataPipe 依赖它
@@ -147,6 +143,6 @@ int main(int argc, char** argv) {
   // 创建消息循环
   base::SingleThreadTaskExecutor main_thread_task_executor;
   base::RunLoop run_loop;
-  run_loop.Run();
+  run_loop.RunUntilIdle();
   return 0;
 }

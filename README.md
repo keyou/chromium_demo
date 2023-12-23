@@ -29,9 +29,9 @@ Demo list:
 1. [M120] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
 1. [M120] `demo_callback`: Demo Bind&Callback related content；
 1. [M120] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
-1. [M110] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
-1. [M110] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
-1. [M110] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
+1. [M120] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
+1. [M120] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
+1. [M120] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
 1. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
 1. [M110] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
 1. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
@@ -108,7 +108,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2023.12.23
 
-- Migrate the flowing demo to chromium M120： demo_exe,demo_log,demo_tracing_console,demo_task_thread_pool,demo_task_executor,demo_callback_*,demo_linktest,demo_tracing_perfetto,demo_tracing_perfetto_content.
+- Migrate the flowing demo to chromium M120： demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*.
 
 ### 2023.8.24
 

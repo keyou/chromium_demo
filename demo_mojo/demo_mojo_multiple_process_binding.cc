@@ -1,22 +1,17 @@
+#include <tuple>
+
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/logging.h"
+#include "base/process/launch.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
-#include "base/process/launch.h"
-#include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
-#include "mojo/public/c/system/buffer.h"
-#include "mojo/public/c/system/data_pipe.h"
-#include "mojo/public/c/system/message_pipe.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
-#include "mojo/public/cpp/system/buffer.h"
-#include "mojo/public/cpp/system/data_pipe.h"
 #include "mojo/public/cpp/system/invitation.h"
 #include "mojo/public/cpp/system/message_pipe.h"
-#include "mojo/public/cpp/system/simple_watcher.h"
-#include "mojo/public/cpp/system/wait.h"
 
 #include "demo/demo_mojo/mojom/test.mojom.h"
 #include "demo/demo_mojo/mojom/test2.mojom.h"
@@ -34,7 +29,6 @@
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
-#include "mojo/public/cpp/bindings/associated_interface_ptr_info.h"
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 
 using namespace demo::demo_mojo::mojom;
@@ -225,19 +219,15 @@ void MojoProducer() {
 #endif
 
   mojo::OutgoingInvitation invitation;
-  // 创建n个Ｍessage Pipe备用
+  // 创建 n 个 Ｍessage Pipe 备用，如果启用 ipcz 则最多只能在 invitation 中传递
+  // kMaxAttachments(7) 个 pipe, 且只能有一个使用字符串命名，它会被解析为 0
   mojo::ScopedMessagePipeHandle pipe =
       invitation.AttachMessagePipe("my raw pipe");
-  mojo::ScopedMessagePipeHandle pipe21 =
-      invitation.AttachMessagePipe("my test21 pipe");
-  mojo::ScopedMessagePipeHandle pipe22 =
-      invitation.AttachMessagePipe("my test22 pipe");
-  mojo::ScopedMessagePipeHandle pipe31 =
-      invitation.AttachMessagePipe("my test31 pipe");
-  mojo::ScopedMessagePipeHandle pipe32 =
-      invitation.AttachMessagePipe("my test32 pipe");
-  mojo::ScopedMessagePipeHandle pipe4 =
-      invitation.AttachMessagePipe("my test4 pipe");
+  mojo::ScopedMessagePipeHandle pipe1 = invitation.AttachMessagePipe(1);
+  mojo::ScopedMessagePipeHandle pipe2 = invitation.AttachMessagePipe(2);
+  mojo::ScopedMessagePipeHandle pipe3 = invitation.AttachMessagePipe(3);
+  mojo::ScopedMessagePipeHandle pipe4 = invitation.AttachMessagePipe(4);
+  mojo::ScopedMessagePipeHandle pipe5 = invitation.AttachMessagePipe(5);
   LOG(INFO) << "pipe: " << pipe->value();
 
   base::LaunchOptions options;
@@ -276,14 +266,14 @@ void MojoProducer() {
   {
     mojo::Remote<Test2> test2;
     // 演示使用Bind而不是Remote的构造函数,因为新版的示例大多都是这种方式,两种方式效果一样
-    test2.Bind(mojo::PendingRemote<Test2>(std::move(pipe21), 0));
-    test2->SendMessagePipeHandle(std::move(pipe22));
+    test2.Bind(mojo::PendingRemote<Test2>(std::move(pipe1), 0));
+    test2->SendMessagePipeHandle(std::move(pipe2));
     LOG(INFO) << "Test2 call: SendMessagePipeHandle";
   }
   // 使用mojo接口发送其他mojo接口
   {
-    // 使用 pipe31 来调用Test3接口
-    mojo::Remote<Test3> test3(mojo::PendingRemote<Test3>(std::move(pipe31), 0));
+    // 使用 pipe3 来调用Test3接口
+    mojo::Remote<Test3> test3(mojo::PendingRemote<Test3>(std::move(pipe3), 0));
 
     // 创建新的MessagePipe用于Api接口的调用
     mojo::MessagePipe api_pipe;
@@ -306,10 +296,10 @@ void MojoProducer() {
   // 关联接口(Associated
   // Interfaces),关联接口只需要使用一个pipe即可,用来避免多个pipe导致的多接口间调用顺序无法保证的问题
   {
-    // 使用 pipe32 来调用Test32接口
-    // 为了避免pipe32被销毁后Api2Impl无法响应对方的调用,这里使用new
-    auto* test32_ptr =
-        new mojo::Remote<Test32>(mojo::PendingRemote<Test32>(std::move(pipe32), 0));
+    // 使用 pipe4 来调用Test32接口
+    // 为了避免pipe4被销毁后Api2Impl无法响应对方的调用,这里使用new
+    auto* test32_ptr = new mojo::Remote<Test32>(
+        mojo::PendingRemote<Test32>(std::move(pipe4), 0));
     auto& test32 = *test32_ptr;
 
     // 创建新的Endpoint用于Api接口的调用
@@ -336,7 +326,7 @@ void MojoProducer() {
   // 封装出通用的 InterfaceBroker 以便支撑任何新的接口
   {
     mojo::Remote<InterfaceBroker> broker(
-        mojo::PendingRemote<InterfaceBroker>(std::move(pipe4), 0));
+        mojo::PendingRemote<InterfaceBroker>(std::move(pipe5), 0));
 
     mojo::MessagePipe interface1_pipe;
     mojo::Remote<Interface1> interface1(
@@ -361,16 +351,11 @@ void MojoConsumer() {
           *base::CommandLine::ForCurrentProcess()));
   mojo::ScopedMessagePipeHandle pipe =
       invitation.ExtractMessagePipe("my raw pipe");
-  mojo::ScopedMessagePipeHandle pipe21 =
-      invitation.ExtractMessagePipe("my test21 pipe");
-  mojo::ScopedMessagePipeHandle pipe22 =
-      invitation.ExtractMessagePipe("my test22 pipe");
-  mojo::ScopedMessagePipeHandle pipe31 =
-      invitation.ExtractMessagePipe("my test31 pipe");
-  mojo::ScopedMessagePipeHandle pipe32 =
-      invitation.ExtractMessagePipe("my test32 pipe");
-  mojo::ScopedMessagePipeHandle pipe4 =
-      invitation.ExtractMessagePipe("my test4 pipe");
+  mojo::ScopedMessagePipeHandle pipe1 = invitation.ExtractMessagePipe(1);
+  mojo::ScopedMessagePipeHandle pipe2 = invitation.ExtractMessagePipe(2);
+  mojo::ScopedMessagePipeHandle pipe3 = invitation.ExtractMessagePipe(3);
+  mojo::ScopedMessagePipeHandle pipe4 = invitation.ExtractMessagePipe(4);
+  mojo::ScopedMessagePipeHandle pipe5 = invitation.ExtractMessagePipe(5);
   LOG(INFO) << "pipe: " << pipe->value();
 
   // C++ binding API test
@@ -381,17 +366,19 @@ void MojoConsumer() {
     // using TestRequest = mojo::InterfaceRequest<demo::mojom::Test>;
     auto* test = new TestImpl;
     // 为了测试，故意泄漏，避免pipe被close
-    auto* binding = new mojo::Receiver<demo::demo_mojo::mojom::Test>(test, mojo::PendingReceiver<demo::demo_mojo::mojom::Test>(std::move(pipe)));
+    std::ignore = new mojo::Receiver<demo::demo_mojo::mojom::Test>(
+        test,
+        mojo::PendingReceiver<demo::demo_mojo::mojom::Test>(std::move(pipe)));
   }
   {
     // 演示将Receiver放到实现类中
-    new Test2Impl(mojo::PendingReceiver<Test2>(std::move(pipe21)));
+    new Test2Impl(mojo::PendingReceiver<Test2>(std::move(pipe1)));
   }
-  { new Test3Impl(mojo::PendingReceiver<Test3>(std::move(pipe31))); }
-  { new Test32Impl(mojo::PendingReceiver<Test32>(std::move(pipe32))); }
+  { new Test3Impl(mojo::PendingReceiver<Test3>(std::move(pipe3))); }
+  { new Test32Impl(mojo::PendingReceiver<Test32>(std::move(pipe4))); }
   {
     auto* test4 = new InterfaceBrokerImpl(
-        mojo::PendingReceiver<InterfaceBroker>(std::move(pipe4)));
+        mojo::PendingReceiver<InterfaceBroker>(std::move(pipe5)));
     test4->AddMap<Interface1, Interface1Impl>("Interface1");
     test4->AddMap<Interface2, Interface2Impl>("Interface2");
   }
@@ -406,20 +393,39 @@ int main(int argc, char** argv) {
   logging::InitLogging(logging_setting);
 #endif
   LOG(INFO) << base::CommandLine::ForCurrentProcess()->GetCommandLineString();
+
+  // 初始化 FeatureList，mojo::core::InitFeatures() 依赖它
+  base::FeatureList::SetInstance(std::make_unique<base::FeatureList>());
+
   // 创建主线程消息循环
   base::SingleThreadTaskExecutor main_task_executor;
   base::RunLoop run_loop;
 
-  // Init会创建一个sokcetpair和一条pipe，共4个fd
-  mojo::core::Init();
-  base::Thread ipc_thread("ipc!");
-  ipc_thread.StartWithOptions(
+  base::Thread io_thread("io_thread");
+  io_thread.StartWithOptions(
       base::Thread::Options(base::MessagePumpType::IO, 0));
 
-  // 初始化mojo的后台线程，用来异步收发消息存储到缓存
+  // 初始化 mojo 的 IO 线程，用来异步收发消息。
   mojo::core::ScopedIPCSupport ipc_support(
-      ipc_thread.task_runner(),
+      io_thread.task_runner(),
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
+
+  mojo::core::Configuration mojo_config;
+  mojo_config.disable_ipcz = false;
+  if (argc < 2) {
+    // 如果启用了 ipcz，则必须将发起 invitation 的进程的 is_broker_process 设为
+    // true。
+    mojo_config.is_broker_process = true;
+  }
+
+  // 可选，初始化 mojo features。如果想要使用该初始化需要提前初始化
+  // base::FeatureList，这里为了不引入更多复杂度，不初始化 mojo features。
+  mojo::core::InitFeatures();
+
+  // mojo 初始化
+  // Init 会创建一个 sokcetpair 和一条 pipe，共 4 个 fd。
+  // M120 已经在大部分平台上启用了 mojo 的新后端 ipcz。
+  mojo::core::Init(mojo_config);
 
   if (argc < 2) {
     logging::SetLogPrefix("producer");

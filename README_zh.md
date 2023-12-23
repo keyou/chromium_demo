@@ -22,9 +22,9 @@ Demo 列表：
 1. [M120] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor 位于demo_task下;
 1. [M120] `demo_callback_(once|repeating)`: 演示 Bind&Callback 相关内容；
 1. [M120] `demo_linktest`: 演示错误的使用 gn 导致链接错误；
-1. [M110] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
-1. [M110] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
-1. [M110] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
+1. [M120] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
+1. [M120] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
+1. [M120] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
 1. [M91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
 1. [M110] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
 1. [M91] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
@@ -100,7 +100,7 @@ Demo 列表：
 
 ### 2023.12.23
 
-- 升级以下 demo 到 chromium 120： demo_exe,demo_log,demo_tracing_console,demo_task_thread_pool,demo_task_executor,demo_callback_*,demo_linktest,demo_tracing_perfetto,demo_tracing_perfetto_content。
+- 升级以下 demo 到 chromium 120： demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*。
 
 ### 2023.8.24
 
