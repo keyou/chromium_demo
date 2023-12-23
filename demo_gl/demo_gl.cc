@@ -1,54 +1,26 @@
 #include "base/at_exit.h"
-#include "base/callback.h"
 #include "base/command_line.h"
-#include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
-#include "base/path_service.h"
-#include "base/power_monitor/power_monitor.h"
-#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/test/task_environment.h"
-#include "base/test/test_discardable_memory_allocator.h"
-#include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
-#include "build/build_config.h"
-#include "build/buildflag.h"
-#include "components/viz/common/quads/solid_color_draw_quad.h"
-#include "components/viz/demo/host/demo_host.h"
-#include "components/viz/demo/service/demo_service.h"
 #include "components/viz/host/host_frame_sink_manager.h"
-#include "components/viz/host/renderer_settings_creation.h"
-#include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
-#include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
-#include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
-#include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
-#include "mojo/public/cpp/bindings/pending_receiver.h"
-#include "mojo/public/cpp/bindings/pending_remote.h"
-#include "services/viz/privileged/mojom/viz_main.mojom.h"
-#include "ui/base/hit_test.h"
-#include "ui/base/ime/init/input_method_initializer.h"
 // #include "ui/base/material_design/material_design_controller.h"
-#include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #if defined(USE_X11)
 #include "ui/base/x/x11_util.h"
 #endif
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
-#include "ui/events/event_constants.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/canvas.h"
-#include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
-#include "ui/gfx/skia_util.h"
-#include "ui/gl/gl_switches.h"
 #include "ui/gl/init/gl_factory.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
@@ -59,31 +31,24 @@
 
 #include "GL/gl.h"
 #include "gpu/command_buffer/service/feature_info.h"
-#include "gpu/command_buffer/service/gr_shader_cache.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/config/gpu_driver_bug_workarounds.h"
 #include "gpu/config/gpu_info_collector.h"
 #include "gpu/config/gpu_preferences.h"
 #include "gpu/config/gpu_util.h"
-#include "gpu/ipc/common/gpu_client_ids.h"
-#include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
-#include "third_party/skia/src/gpu/gl/GrGLDefines.h"
+// #include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
 #include "ui/gl/init/gl_factory.h"
 
-#include "ui/gfx/geometry/size.h"
 #include "ui/gl/gl_share_group.h"
 
 #include "demo/common/utils.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
-#include "ui/wm/core/wm_state.h"
 #endif
 
 #if defined(USE_X11)
@@ -110,7 +75,7 @@ namespace demo {
 // compositor.
 class DemoWindowHost : public ui::PlatformWindowDelegate {
  public:
-  DemoWindowHost(base::OnceClosure close_closure)
+  explicit DemoWindowHost(base::OnceClosure close_closure)
       : close_closure_(std::move(close_closure)) {}
   ~DemoWindowHost() override = default;
 
@@ -157,7 +122,8 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     DCHECK_NE(widget_, gfx::kNullAcceleratedWidget);
     TRACE_EVENT0("shell", "InitializeDemo");
     if (!g_gl_surface) {
-      gl::GLDisplay* display = gl::init::InitializeGLOneOff(0);
+      gl::GLDisplay* display =
+          gl::init::InitializeGLOneOff(gl::GpuPreference::kDefault);
 
       g_gl_surface = gl::init::CreateViewGLSurface(display, widget_);
 
@@ -169,23 +135,23 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       g_context_state = base::MakeRefCounted<gpu::SharedContextState>(
           std::move(share_group), g_gl_surface, g_gl_context, false,
           base::DoNothing(), gpu::GrContextType::kGL);
-      
+
       gpu::GpuPreferences gpu_preferences;
       gpu::GpuFeatureInfo gpu_feature_info;
       gpu::GpuDriverBugWorkarounds workarounds;
       scoped_refptr<gpu::gles2::FeatureInfo> feature_info =
           new gpu::gles2::FeatureInfo(workarounds, gpu_feature_info);
       g_context_state->InitializeGL(gpu_preferences, feature_info);
-      g_context_state->InitializeGrContext(gpu_preferences, feature_info->workarounds(),
-                                           nullptr);
+      g_context_state->InitializeSkia(gpu_preferences,
+                                      feature_info->workarounds(), nullptr);
     }
     DCHECK(g_context_state->MakeCurrent(g_gl_surface.get(), true));
     DCHECK(g_context_state->gr_context());
     static unsigned int i = 0;
     glClearColor(1.f, (i++) % 10 / 10.f + 0.1f, 0, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
-    g_gl_surface->SwapBuffers(base::DoNothing(), gl::FrameData());
-    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
+    g_gl_surface->SwapBuffers(base::DoNothing(), gfx::FrameData());
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
         FROM_HERE,
         base::BindOnce(&DemoWindowHost::InitializeDemo, base::Unretained(this)),
         base::Seconds(1));

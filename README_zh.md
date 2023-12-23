@@ -31,8 +31,8 @@ Demo 列表：
 1. [M120] `demo_memory`: 演示使用 SharedMemory；
 1. [M120] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
 1. [M120] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
-1. [M110] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-1. [M110] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
+1. [M120] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
+1. [M120] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
 1. [M110] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
 1. [M110] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 1. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
@@ -100,7 +100,7 @@ Demo 列表：
 
 ### 2023.12.23
 
-- 升级以下 demo 到 chromium 120： `demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*,demo_ipc,demo_memory`。
+- 升级 demos 到 chromium 120。
 
 ### 2023.8.24
 

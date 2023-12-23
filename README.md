@@ -38,8 +38,8 @@ Demo list:
 1. [M120] `demo_memory`: Demonstrate the use of SharedMemory;
 1. [M120] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
 1. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
-1. [M110] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
-1. [M110] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
+1. [M120] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
+1. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
 1. [M110] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
 1. [M110] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 1. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
@@ -108,7 +108,7 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ### 2023.12.23
 
-- Migrate the flowing demo to chromium M120： `demo_exe,demo_log,demo_task_*,demo_callback_*,demo_linktest,demo_tracing_*,demo_mojo_*,demo_ipc,demo_memory`.
+- Migrate some demos to M120.
 
 ### 2023.8.24
 
