@@ -10,6 +10,7 @@ namespace demo_jni {
 class SkiaCanvasSoftware : public SkiaCanvas {
  public:
   SkiaCanvasSoftware(gfx::AcceleratedWidget widget,int width,int height);
+  ~SkiaCanvasSoftware() override;
   void InitializeOnRenderThread() override;
   void Resize(int width, int height) override;
   void OnPaint(SkCanvas* canvas) override;

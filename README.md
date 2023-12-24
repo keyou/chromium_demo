@@ -50,7 +50,7 @@ Demo list:
 1. [M120] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
 1. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
 1. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
-1. [M110] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
+1. [M120] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
 1. `demo_x11`: Demonstrate using X11 to create transparent windows;
 1. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
 1. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;

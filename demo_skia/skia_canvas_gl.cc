@@ -1,23 +1,19 @@
 
 #include "demo/demo_skia/skia_canvas_gl.h"
 
-#include "base/bind.h"
-#include "base/lazy_instance.h"
+#include "base/logging.h"
 #include "base/trace_event/trace_event.h"
-#include "third_party/skia/include/core/SkBitmap.h"
+#include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkColor.h"
-#include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
 #include "third_party/skia/include/core/SkExecutor.h"
-#include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-#include "ui/gl/gl_version_info.h"
-#include "ui/gl/init/create_gr_gl_interface.h"
+#include "third_party/skia/include/gpu/mock/GrMockTypes.h"
+#include "third_party/skia/include/private/chromium/GrDeferredDisplayList.h"
+#include "third_party/skia/include/private/chromium/GrSurfaceCharacterization.h"
 
 #ifndef GL_RGBA8
 #define GL_RGBA8 0x8058
@@ -446,7 +442,7 @@ void SkiaCanvasGL::InitializeOnRenderThread() {
   DCHECK(grGLInterface_);
 
   grContext_ =
-      GrDirectContext::MakeGL(grGLInterface_, CreateGrContextOptions());
+      GrDirectContexts::MakeGL(grGLInterface_, CreateGrContextOptions());
   DCHECK(grContext_);
   SkiaCanvas::InitializeOnRenderThread();
 }
@@ -482,22 +478,23 @@ SkCanvas* SkiaCanvasGL::BeginPaint() {
   fb_info.fFBOID = buffer;
   fb_info.fFormat = color_format_ /*GL_RGBA8*/;
 
-  GrBackendRenderTarget backendRT(width_, height_, sampleCount_, stencilBits_,
-                                  fb_info);
+  GrMockRenderTargetInfo m;
+  GrBackendRenderTarget backendRT = GrBackendRenderTargets::MakeGL(
+      width_, height_, sampleCount_, stencilBits_, fb_info);
   SkSurfaceProps props(SkSurfaceProps::kUseDistanceFieldFonts_Flag,
                        SkPixelGeometry::kRGB_H_SkPixelGeometry);
-  skSurface_ = SkSurface::MakeFromBackendRenderTarget(
+  skSurface_ = SkSurfaces::WrapBackendRenderTarget(
       grContext_.get(), backendRT, kBottomLeft_GrSurfaceOrigin,
       color_format_ == GL_RGBA8 ? kRGBA_8888_SkColorType : kRGB_565_SkColorType,
       nullptr, &props);
   SkCanvas* canvas;
   if (use_ddl_) {
-    SkSurfaceCharacterization characterization;
+    GrSurfaceCharacterization characterization;
     bool result = skSurface_->characterize(&characterization);
     DCHECK(result) << "Failed to characterize raster SkSurface.";
     // 使用 ddl 来记录绘制操作，并不执行真正的绘制
     recorder_ =
-        std::make_unique<SkDeferredDisplayListRecorder>(characterization);
+        std::make_unique<GrDeferredDisplayListRecorder>(characterization);
 
     canvas = recorder_->getCanvas();
   }
@@ -509,10 +506,10 @@ void SkiaCanvasGL::OnPaint(SkCanvas* canvas) {
   if (use_ddl_) {
     // 必须在list销毁前flush
     auto list = recorder_->detach();
-    DCHECK(skSurface_->draw(list));
-    skSurface_->flush();
-  } else
-    skSurface_->flush();
+    DCHECK(skgpu::ganesh::DrawDDL(skSurface_, list));
+  }
+  grContext_->flushAndSubmit();
+  // glFinish();
 }
 
 void SkiaCanvasGL::SwapBuffer() {

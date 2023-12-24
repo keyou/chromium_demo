@@ -2,24 +2,19 @@
 #define DEMO_DEMO_SKIA_SKIA_CANVAS_H
 
 #include "base/threading/thread.h"
-
-#include "ui/gfx/native_widget_types.h"
-
-#include "base/logging.h"
+#include "base/timer/timer.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkSurface.h"
-
-#include "base/timer/timer.h"
+#include "ui/gfx/native_widget_types.h"
 
 namespace demo_jni {
 
 class SkiaCanvas {
  public:
   void OnTouch(int action, float x, float y);
-  virtual ~SkiaCanvas() {}
+  virtual ~SkiaCanvas();
   virtual void Resize(int width, int height) {}
 
  protected:

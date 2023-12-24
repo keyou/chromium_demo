@@ -14,11 +14,11 @@
 
 #include "demo/demo_skia/skia_canvas.h"
 
-#include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
+// #include "third_party/skia/include/core/SkDeferredDisplayListRecorder.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "third_party/skia/include/private/chromium/GrDeferredDisplayListRecorder.h"
 
 namespace demo_jni {
 
@@ -44,7 +44,7 @@ class SkiaCanvasGL : public SkiaCanvas {
   sk_sp<const GrGLInterface> grGLInterface_;
   sk_sp<GrDirectContext> grContext_;
   bool use_ddl_ = false;
-  std::unique_ptr<SkDeferredDisplayListRecorder> recorder_;
+  std::unique_ptr<GrDeferredDisplayListRecorder> recorder_;
 };
 
 } // namespace demo_jni

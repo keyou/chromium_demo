@@ -1,16 +1,12 @@
 
 #include "demo/demo_skia/skia_canvas.h"
 
-#include "base/bind.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
-#include "base/lazy_instance.h"
+#include "base/logging.h"
 #include "base/memory/ref_counted_memory.h"
-#include "base/threading/thread_task_runner_handle.h"
-#include "base/trace_event/common/trace_event_common.h"
-#include "base/trace_event/trace_event.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_log.h"
-#include "demo/demo_skia/skia_canvas_gl.h"
 
 namespace demo_jni {
 
@@ -64,16 +60,6 @@ void FlushTrace() {
       }));
 }
 
-// static int SkiaCanvasInit(
-//     bool useGL) {
-//   DLOG(INFO) << "[demo_android_skia] JNI_SkiaCanvas_Init";
-//   if (!g_message_loop) {
-//     DemoMain();
-//   }
-//   if (useGL)
-//     return reinterpret_cast<intptr_t>(new SkiaCanvasGL(env, caller, surface));
-// }
-
 SkiaCanvas::SkiaCanvas(gfx::AcceleratedWidget widget,int width,int height)
     : nativeWindow_(widget),
       width_(width),
@@ -96,6 +82,8 @@ SkiaCanvas::SkiaCanvas(gfx::AcceleratedWidget widget,int width,int height)
       FROM_HERE, base::BindOnce(&SkiaCanvas::InitializeOnRenderThread,
                                 base::Unretained(this)));
 }
+
+SkiaCanvas::~SkiaCanvas() = default;
 
 void SkiaCanvas::InitializeOnRenderThread() {}
 
@@ -175,7 +163,7 @@ void SkiaCanvas::OnRenderOnRenderThread() {
     TRACE_EVENT0("shell", "paint");
     auto paint_start_time = base::TimeTicks::Now();
     TRACE_EVENT0("shell", "BeginPaint");
-    auto canvas = BeginPaint();
+    auto* canvas = BeginPaint();
     TRACE_EVENT0("shell", "draw");
     canvas->clear(background_);
     canvas->drawPath(skPath_, pathPaint_);
@@ -208,7 +196,7 @@ void SkiaCanvas::ShowFrameRateOnRenderThread() {
      << " swap= " << (total_swap_time_ / frame_count_).InMilliseconds() << " ms"
      << " touch= " << (total_touch_time_ / touch_count_).InMilliseconds()
      << " ms";
-  base::ThreadTaskRunnerHandle::Get()->PostTask(
+  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
       FROM_HERE,
       base::BindOnce(&SkiaCanvas::ShowInfo, base::Unretained(this), ss.str()));
 }

@@ -1,54 +1,20 @@
 #include "base/at_exit.h"
-#include "base/callback.h"
 #include "base/command_line.h"
-#include "base/files/file_path.h"
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
-#include "base/memory/ptr_util.h"
 #include "base/message_loop/message_pump_type.h"
-#include "base/path_service.h"
-#include "base/power_monitor/power_monitor.h"
-#include "base/power_monitor/power_monitor_device_source.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/test/task_environment.h"
-#include "base/test/test_discardable_memory_allocator.h"
-#include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
-#include "build/build_config.h"
-#include "build/buildflag.h"
-#include "components/viz/common/quads/solid_color_draw_quad.h"
-#include "components/viz/demo/host/demo_host.h"
-#include "components/viz/demo/service/demo_service.h"
-#include "components/viz/host/host_frame_sink_manager.h"
-#include "components/viz/host/renderer_settings_creation.h"
-#include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
-#include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
-#include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
-#include "mojo/core/embedder/embedder.h"
-#include "mojo/core/embedder/scoped_ipc_support.h"
-#include "mojo/public/cpp/bindings/pending_receiver.h"
-#include "mojo/public/cpp/bindings/pending_remote.h"
-#include "services/viz/privileged/mojom/viz_main.mojom.h"
-#include "ui/base/hit_test.h"
-#include "ui/base/ime/init/input_method_initializer.h"
-#include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/base/x/visual_picker_glx.h"
 #include "ui/base/x/x11_util.h"
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
-#include "ui/events/event_constants.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/canvas.h"
-#include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
-#include "ui/gfx/skia_util.h"
-#include "ui/gfx/x/xproto.h"
-#include "ui/gl/gl_switches.h"
-#include "ui/gl/init/gl_factory.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
@@ -58,7 +24,6 @@
 
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
-#include "ui/wm/core/wm_state.h"
 #endif
 
 #if defined(USE_X11)
@@ -87,7 +52,7 @@ namespace demo {
 // compositor.
 class DemoWindowHost : public ui::PlatformWindowDelegate {
  public:
-  DemoWindowHost(base::OnceClosure close_closure)
+  explicit DemoWindowHost(base::OnceClosure close_closure)
       : close_closure_(std::move(close_closure)) {}
   ~DemoWindowHost() override = default;
 
@@ -201,7 +166,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
         action = 2;
       else
         return;
-      auto located_event = event->AsLocatedEvent();
+      auto* located_event = event->AsLocatedEvent();
       auto location = located_event->location();
       if (action != 2)
         DLOG(INFO) << "action,x,y= " << action << "," << location.x() << ","
@@ -241,11 +206,7 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
-  // 启动 Trace
-  auto trace_config =
-      base::trace_event::TraceConfig("startup" /*, "trace-to-console"*/);
-  base::trace_event::TraceLog::GetInstance()->SetEnabled(
-      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
+
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
