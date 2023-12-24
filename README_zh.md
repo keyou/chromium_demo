@@ -98,9 +98,18 @@ Demo 列表：
 
 ## 更新日志
 
-### 2023.12.23
+### 2023.12.24
 
-- 升级 demos 到 chromium 120。
+- 升级 demos 到 chromium 120，升级内容如下：
+  1. `ThreadTaskRunnerHandle` 被 `SingleThreadTaskRunner` 取代；
+  2. `TRACE_*` 宏默认启用 perfetto client 库；
+  3. mojo 默认启用了 ipcz，多进程初始化必须传参；
+  4. gl 初始化接口支持选择 GPU；
+  5. `SharedQuadState::SetAll` 接口支持设置 fast_rounded_corner;
+  6. `viz::TransferableResource` 支持更明确的区分单 plane 和多 plane 资源；
+  7. 为了减少 viz PostTask 的数量，`CompositorFrameSinkClient::OnBeginFrame` 合并了 `ReclaimResources` 和 `DidReceiveCompositorFrameAck` 的功能；
+  8. 删除了 `SkEncodeImage` 接口，使用 `SkXXXEncoder::Encode` 替代；
+  9. skia 将 DDL 相关接口移动到 chromium private 内，并进行了重命名，后续不再提供 public 的 DDL 接口，变动后只有 ganesh 支持 DrawDDL，graphite 不支持。
 
 ### 2023.8.24
 

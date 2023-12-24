@@ -105,9 +105,19 @@ Public documents are in the [docs](./docs) directory, and other documents are in
 
 ## Changelog
 
-### 2023.12.23
+### 2023.12.24
 
-- Migrate some demos to M120.
+Migrate some demos to M120, the upgrade is described below:
+
+1. `ThreadTaskRunnerHandle` was replaced by `SingleThreadTaskRunner`;
+2. The `TRACE_*` macro enables the perfetto client library by default;
+3. mojo enables ipcz by default, and parameters must be passed for multi-process initialization;
+4. The gl initialization interface supports selecting GPU;
+5. The `SharedQuadState::SetAll` interface supports setting fast_rounded_corner;
+6. `viz::TransferableResource` supports a clearer distinction between single-plane and multi-plane resources;
+7. In order to reduce the number of viz PostTasks, `CompositorFrameSinkClient::OnBeginFrame` merges the functions of `ReclaimResources` and `DidReceiveCompositorFrameAck`;
+8. Deleted the `SkEncodeImage` interface and replaced it with `SkXXXEncoder::Encode`;
+9. Skia moved the DDL-related interfaces to chromium private and renamed them. The public DDL interface will no longer be provided in the future. After the change, only ganesh supports DrawDDL, and graphite does not.
 
 ### 2023.8.24
 
