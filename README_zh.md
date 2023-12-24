@@ -47,8 +47,8 @@ Demo 列表：
 1. `demo_x11`: 演示使用 X11 创建透明窗口；
 1. `demo_x11_glx`: 演示在透明窗口中使用 glx;
 1. `demo_x11_egl`: 演示在透明窗口中使用 egl；
+1. [M120] `demo_gin`: 演示使用 gin, 创建一个精简JS运行时；
 1. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
-1. [M110] `demo_gin`: 演示使用 gin, 创建一个精简JS运行时；
 
 文档：
 

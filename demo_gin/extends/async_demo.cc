@@ -1,12 +1,11 @@
 #include "demo_gin/extends/async_demo.h"
-#include "base/logging.h"
-#include "base/strings/string_util.h"
-#include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/threading/thread_task_runner_handle.h"
 
+#include "base/logging.h"
+#include "base/task/single_thread_task_runner.h"
 #include "gin/arguments.h"
 #include "gin/converter.h"
-#include "v8/include/v8.h"
+#include "v8/include/v8-microtask-queue.h"
+#include "v8/include/v8-template.h"
 
 namespace demo {
 
@@ -60,7 +59,7 @@ void Add(const v8::FunctionCallbackInfo<v8::Value>& info) {
   info.GetReturnValue().Set(resolver->GetPromise());
 
   // 执行异步计算
-  base::ThreadTaskRunnerHandle::Get()->PostTask(
+  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
       FROM_HERE, base::BindOnce(AsyncAdd, std::move(unique_resolver),
                                 std::move(persisted_context), isolate, a, b));
 }

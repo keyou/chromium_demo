@@ -54,9 +54,8 @@ Demo list:
 1. `demo_x11`: Demonstrate using X11 to create transparent windows;
 1. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
 1. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
+1. [M120] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
 1. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
-1. [M110] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
-
 
 Documents:
 

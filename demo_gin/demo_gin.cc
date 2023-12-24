@@ -1,11 +1,9 @@
 #include "base/at_exit.h"
-#include "base/bind.h"
 #include "base/command_line.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "base/threading/thread_task_runner_handle.h"
 #include "demo_gin/shell_runner_delegate.h"
 #include "gin/array_buffer.h"
 #include "gin/public/isolate_holder.h"
@@ -49,7 +47,7 @@ int main(int argc, char** argv) {
   base::SingleThreadTaskExecutor main_thread_task_executor;
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("gin");
 
-  // Load V8快照默认资源 这个是 GN 里配置的哪个
+  // Load V8快照默认资源
   gin::V8Initializer::LoadV8Snapshot();
 
   {
@@ -59,7 +57,7 @@ int main(int argc, char** argv) {
 
     // 创建VM实例
     gin::IsolateHolder instance(
-        base::ThreadTaskRunnerHandle::Get(),
+        base::SingleThreadTaskRunner::GetCurrentDefault(),
         gin::IsolateHolder::IsolateType::kBlinkMainThread);
 
     // 构建GinShellRunner 用于执行文件脚本
@@ -75,7 +73,7 @@ int main(int argc, char** argv) {
     }
 
     // 执行脚本
-    base::ThreadTaskRunnerHandle::Get()->PostTask(
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
         FROM_HERE, base::BindOnce(Run, runner.GetWeakPtr()));
     base::RunLoop().RunUntilIdle();
   }

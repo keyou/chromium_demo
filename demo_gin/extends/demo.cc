@@ -1,10 +1,9 @@
 #include "demo_gin/extends/demo.h"
-#include "base/strings/string_util.h"
+
+#include "base/logging.h"
 #include "gin/arguments.h"
 #include "gin/converter.h"
 #include "v8/include/v8-template.h"
-
-#include "base/logging.h"
 
 namespace demo {
 
