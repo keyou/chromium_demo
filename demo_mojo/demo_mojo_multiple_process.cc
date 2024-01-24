@@ -1,5 +1,3 @@
-
-#include <unistd.h>
 #include <memory>
 
 #include "base/command_line.h"
@@ -24,6 +22,12 @@
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "mojo/public/cpp/system/wait.h"
+
+#if BUILDFLAG(IS_WIN)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 class PipeReader {
  public:

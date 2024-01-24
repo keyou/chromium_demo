@@ -279,11 +279,13 @@ int main(int argc, char** argv) {
 
   base::RunLoop run_loop;
 
+#if BUILDFLAG(IS_OZONE)
   // Make Ozone run in single-process mode.
   ui::OzonePlatform::InitParams params;
   params.single_process = true;
   ui::OzonePlatform::InitializeForUI(params);
   ui::OzonePlatform::InitializeForGPU(params);
+#endif
 
   // 每秒生成一张图片保存到文件中
   // 可以使用这种原理将浏览器嵌入其他程序，当然这个demo演示的并不是最优方案，只是一种可行方案

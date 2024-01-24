@@ -33,7 +33,7 @@ void TraceMe() {
   TRACE_EVENT1("test", "TraceMe", "value", 1);
   TRACE_EVENT2("test", "TraceMe", "value", 1, "value2", 2);
 #if defined(OS_WIN)
-  base::PlatformThread::Sleep(base::TimeDelta::FromSeconds(5));
+  base::PlatformThread::Sleep(base::Seconds(5));
 #else
   usleep(50 * 1000);
 #endif
@@ -41,10 +41,11 @@ void TraceMe() {
 
 void TraceCount(int times) {
   TRACE_EVENT1("test", "TraceCount", "times", times);
-  // Counter 类型的 Trace 是进程级别的，因此在 TraceViewer 中它不会显示在某一个线程中
+  // Counter 类型的 Trace 是进程级别的，因此在 TraceViewer
+  // 中它不会显示在某一个线程中
   TRACE_COUNTER1("test", "TraceCounter", times);
 #if defined(OS_WIN)
-  base::PlatformThread::Sleep(base::TimeDelta::FromSeconds(1));
+  base::PlatformThread::Sleep(base::Seconds(1));
 #else
   usleep(10 * 1000);
 #endif
