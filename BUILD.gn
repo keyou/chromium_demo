@@ -60,6 +60,11 @@ group("demo") {
       "demo_resources",
       "demo_linktest",
     ]
+    # Mac下 demo_cc 和 demo_views 暂时不支持
+    deps -= [
+      "demo_cc",
+      "demo_views",
+    ]
   }
 }
 
