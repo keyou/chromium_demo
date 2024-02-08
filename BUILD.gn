@@ -7,10 +7,8 @@ group("demo") {
   deps = [
     ":demo_exe",
     "demo_callback",
-    "demo_cc",
     "demo_log",
     "demo_task",
-    "demo_views",
   ]
 
   if(is_desktop) {
@@ -24,12 +22,14 @@ group("demo") {
 
   if (is_linux) {
     deps += [
+      "demo_cc",
       "demo_gin",
       "demo_gl",
       "demo_mojo_v8",
       "demo_resources",
       "demo_shell",
       "demo_skia",
+      "demo_views",
       "demo_viz",
       "demo_x11",
       "demo_linktest",
@@ -46,9 +46,10 @@ group("demo") {
   if (is_win) {
     deps += [
       # "demo_resources",
+      "demo_cc",
       "demo_gl",
       "demo_mojo_v8",
-
+      "demo_views",
       # "demo_x11", windows不支持x11
       # "demo_skia", windows不支持x11的软件渲染
       "demo_viz",
@@ -59,11 +60,6 @@ group("demo") {
     deps += [
       "demo_resources",
       "demo_linktest",
-    ]
-    # Mac下 demo_cc 和 demo_views 暂时不支持
-    deps -= [
-      "demo_cc",
-      "demo_views",
     ]
   }
 }
