@@ -28,7 +28,7 @@
 // For MemoryPressureTest
 #include "base/memory/memory_pressure_monitor.h"
 #if !defined(OS_LINUX)
-#include "base/util/memory_pressure/multi_source_memory_pressure_monitor.h"
+#include "components/memory_pressure/multi_source_memory_pressure_monitor.h"
 #endif
 
 void SharedMemoryTest() {

@@ -1,7 +1,6 @@
 #include <memory>
 #include "base/at_exit.h"
 #include "base/base_paths.h"
-#include "base/callback.h"
 #include "base/command_line.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
@@ -50,7 +49,6 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "services/viz/privileged/mojom/viz_main.mojom.h"
 #include "third_party/blink/public/mojom/direct_sockets/direct_sockets.mojom-blink-forward.h"
-#include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ime/init/input_method_initializer.h"
@@ -141,7 +139,7 @@ class Layer : public cc::ContentLayerClient {
                                         SkBlendMode::kSrc);
     display_list->EndPaintOfUnpaired(bounds_);
     display_list->Finalize();
-    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
         FROM_HERE,
         base::BindOnce(
             [](scoped_refptr<cc::PictureLayer> layer, SkColor color, int i) {
@@ -177,6 +175,7 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
       : cc::LayerTreeFrameSink(nullptr,
                                nullptr,
                                std::move(task_runner),
+                               nullptr,
                                nullptr),
         widget_(widget),
         root_frame_sink_id_(frame_sink_id),
@@ -189,7 +188,7 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
 
  private:
   void Initialize() {
-    auto task_runner = base::ThreadTaskRunnerHandle::Get();
+    auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     // 创建 support 用于将提交的CF存入Surface
     constexpr bool is_root = true;
@@ -307,18 +306,20 @@ class DemoLayerTreeFrameSink : public cc::LayerTreeFrameSink,
     // 用于告诉cc::Scheduler上一帧已经处理完了
     client_->DidReceiveCompositorFrameAck();
   }
-  void OnBeginFrame(
-      const ::viz::BeginFrameArgs& args,
-      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& timing_details)
-      override {
+
+  void OnBeginFrame(const viz::BeginFrameArgs& args,
+                    const viz::FrameTimingDetailsMap& timing_details,
+                    bool frame_ack,
+                    std::vector<viz::ReturnedResource> resources) override {
     TRACE_EVENT0("cc", "DemoLayerTreeFrameSink::OnBeginFrame");
     LOG(INFO) << "OnBeginFrame: submit a new frame";
 
     // 这里用于结束PipelineReporter的
     // SubmitCompositorFrameToPresentationCompositorFrame
     // PipelineReporter用于统计cc各阶段的耗时，可以在chrome://tracing中查看
-    for (const auto& pair : timing_details)
+    for (const auto& pair : timing_details) {
       client_->DidPresentCompositorFrame(pair.first, pair.second);
+    }
 
     if (support_->last_activated_local_surface_id() !=
         root_local_surface_id_) {
@@ -388,7 +389,7 @@ class Compositor
       public viz::HostFrameSinkClient {
  public:
   explicit Compositor(gfx::AcceleratedWidget widget) : widget_(widget) {
-    auto task_runner = base::ThreadTaskRunnerHandle::Get();
+    auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
     cc::LayerTreeSettings settings;
     settings.initial_debug_state.show_fps_counter = true;
 
@@ -441,8 +442,6 @@ class Compositor
       bool defer_status,
       cc::PaintHoldingReason reason,
       absl::optional<cc::PaintHoldingCommitTrigger> trigger) override {}
-  // Notification that rendering has been paused or resumed.
-  void OnPauseRenderingChanged(bool) override {}
   // Notification that a compositing update has been requested.
   void OnCommitRequested() override {}
   void WillUpdateLayers() override {}
@@ -462,7 +461,7 @@ class Compositor
   // void SendScrollEndEventFromImplSide(
   //     cc::ElementId scroll_latched_element_id) override {}
   void RequestNewLayerTreeFrameSink() override {
-    auto task_runner = base::ThreadTaskRunnerHandle::Get();
+    auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
     frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(

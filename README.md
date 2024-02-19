@@ -45,7 +45,7 @@ Demo list:
 1. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
 1. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
 1. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
-1. `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
+1. [M120] `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
 1. [M120] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
 1. [M120] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
 1. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;

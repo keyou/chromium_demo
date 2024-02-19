@@ -35,6 +35,7 @@
 #include "ui/gfx/canvas.h"
 #include "ui/gfx/font_util.h"
 #include "ui/gfx/geometry/rect.h"
+#include "ui/gl/gl_utils.h"
 #include "ui/gl/gpu_preference.h"
 #include "ui/gl/init/gl_factory.h"
 #include "ui/views/accessibility/view_accessibility.h"
@@ -70,6 +71,10 @@
 #include "ui/gfx/x/connection.h"  // nogncheck
 #endif
 
+#if BUILDFLAG(IS_WIN)
+#include "ui/base/win/scoped_ole_initializer.h"
+#endif
+
 // Maintain the UI controls and web view for content shell
 class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
  public:
@@ -86,12 +91,12 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
     // 设置布局管理器，为了简单这里不使用布局管理器
     // this->SetLayoutManager(std::make_unique<views::FillLayout>());
     // 添加一个使用 Material Design 的按钮
-    button_ = std::make_unique<views::MdTextButton>(
+    auto button = std::make_unique<views::MdTextButton>(
         base::BindRepeating(&DemoViewsWidgetDelegateView::ButtonPressed,
                             base::Unretained(this)),
         u"MaterialButton");
-    button_->SetBounds(0, 0, 100, 50);
-    this->AddChildView(button_.release());
+    button->SetBounds(0, 0, 150, 50);
+    button_ = AddChildView(std::move(button));
   }
 
   void ButtonPressed(const ui::Event& event) {
@@ -113,12 +118,12 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
   void OnPaint(gfx::Canvas* canvas) override {
     DLOG(INFO) << "OnPaint()";
     // 在views::OnPaint()中绘制背景色，它会覆盖这里的蓝色
-    canvas->FillRect(gfx::Rect(0, 0, 300, 50), SK_ColorBLUE);
+    canvas->FillRect(gfx::Rect(100, 50, 200, 50), SK_ColorBLUE);
     views::WidgetDelegateView::OnPaint(canvas);
-    canvas->FillRect(gfx::Rect(0, 0, 150, 100), SK_ColorRED);
+    canvas->FillRect(gfx::Rect(100, 200, 150, 50), SK_ColorRED);
   }
 
-  std::unique_ptr<views::Button> button_;
+  base::raw_ptr<views::MdTextButton> button_;
   base::OnceClosure on_close_;
   std::unique_ptr<views::LayoutProvider> layout_provider_;
 };
@@ -141,6 +146,7 @@ class InkView : public views::View {
     paint_flags_.setColor(SK_ColorWHITE);
     paint_flags_.setStyle(cc::PaintFlags::Style::kStroke_Style);
     paint_flags_.setStrokeWidth(5);
+    SetBorder(views::CreateSolidBorder(1, SK_ColorRED));
   }
   void OnMouseMoved(const ui::MouseEvent& event) override {
     DLOG(INFO) << "OnMouseMoved()";
@@ -167,13 +173,13 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
+  ui::ScopedOleInitializer ole_initializer;
   logging::LoggingSettings logging_setting;
   logging_setting.logging_dest = logging::LOG_TO_STDERR;
   logging::SetLogItems(true, true, false, false);
   logging::InitLogging(logging_setting);
 #endif
-
   // 启动 Trace
   // auto trace_config = base::trace_event::TraceConfig("cc"/*,
   // "trace-to-console"*/);
@@ -183,16 +189,23 @@ int main(int argc, char** argv) {
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoViews");
+  // Disabling Direct Composition works around the limitation that
+  // InProcessContextFactory doesn't work with Direct Composition, causing the
+  // window to not render. See http://crbug.com/936249.
+  gl::SetGlWorkarounds(gl::GlWorkarounds{.disable_direct_composition = true});
 
   // 初始化mojo
   mojo::core::Init();
 
+#if defined(USE_OZONE)
   {
     // Make Ozone run in single-process mode.
     ui::OzonePlatform::InitParams params;
     params.single_process = true;
     ui::OzonePlatform::InitializeForGPU(params);
   }
+#endif
+
   // 加载相应平台的GL库及GL绑定
   gl::init::InitializeGLOneOff(gl::GpuPreference::kDefault);
   LOG(INFO) << "GetGLImplementation: " << gl::GetGLImplementation();
@@ -256,7 +269,7 @@ int main(int argc, char** argv) {
   view->SetBackground(std::make_unique<SolidBackground>(SK_ColorTRANSPARENT));
   views::Widget* child = new views::Widget;
   child->Init(std::move(child_params));
-  child->SetBounds(gfx::Rect(50, 20, 120, 120));
+  child->SetBounds(gfx::Rect(50, 50, 120, 120));
   child->SetContentsView(view.get());
   child->Show();
 
