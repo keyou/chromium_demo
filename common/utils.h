@@ -10,6 +10,8 @@
 #include "base/strings/sys_string_conversions.h"
 #include "base/threading/thread.h"
 #include "base/trace_event/trace_buffer.h"
+#include "base/trace_event/trace_config.h"
+#include "base/trace_event/trace_log.h"
 
 namespace demo {
 
@@ -42,8 +44,10 @@ void StartTrace(const std::string& categories = "",base::trace_event::TraceRecor
   // 配置及启动 Trace
   base::trace_event::TraceConfig trace_config =
       base::trace_event::TraceConfig(categories_,mode);
-  base::trace_event::TraceLog::GetInstance()->SetEnabled(
-      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
+
+  base::trace_event::InitializeInProcessPerfettoBackend();
+  base::trace_event::SetPerfettoInitializedForTesting();
+  base::trace_event::TraceLog::GetInstance()->SetEnabled(trace_config);
 }
 
 void FlushTrace(base::RepeatingClosure quit_closure) {

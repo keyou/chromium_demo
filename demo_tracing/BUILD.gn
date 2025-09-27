@@ -1,5 +1,5 @@
 
-import("//build/config/ui.gni")
+# import("//build/config/ui.gni")
 
 group("demo_tracing") {
   testonly = true
@@ -18,7 +18,6 @@ executable("demo_tracing_console") {
 
   deps = [
     "//base",
-    "//components/tracing:startup_tracing",
   ]
 }
 
@@ -31,10 +30,9 @@ executable("demo_tracing_perfetto_content") {
 
   deps = [
     "//base",
-    "//components/tracing:startup_tracing",
-    "//services/tracing:lib",
-    "//services/tracing/public/cpp",
-    "//content/test:test_support",
+    # "//services/tracing:lib",
+    # "//services/tracing/public/cpp",
+    # "//content/test:test_support",
   ]
 }
 
@@ -47,11 +45,10 @@ executable("demo_tracing_perfetto") {
 
   deps = [
     "//base",
-    "//components/tracing:startup_tracing",
-    "//services/tracing:lib",
-    "//services/tracing/public/cpp",
-    "//mojo/public",
-    "//mojo/core/embedder",
-    "//services/tracing/public/cpp:traced_process",
+    # "//services/tracing:lib",
+    # "//services/tracing/public/cpp",
+    # "//mojo/public",
+    # "//mojo/core/embedder",
+    # "//services/tracing/public/cpp:traced_process",
   ]
 }

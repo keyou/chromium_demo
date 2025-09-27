@@ -3,7 +3,7 @@
 #include "base/debug/stack_trace.h"
 
 int main(int argc, char** argv) {
-  // 使用log依赖它
+  // logging 内部也接受命令行参数控制，所以需要初始化下
   base::CommandLine::Init(argc, argv);
 
   int loglevel = -1;
@@ -15,12 +15,14 @@ int main(int argc, char** argv) {
 
   logging::LoggingSettings settings;
   settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG | logging::LOG_TO_STDERR;
-  settings.log_file_path = nullptr;
+  settings.log_file_path = {};
   settings.lock_log = logging::DONT_LOCK_LOG_FILE;
   settings.delete_old = logging::APPEND_TO_OLD_LOG_FILE;
   bool logging_res = logging::InitLogging(settings);
   CHECK(logging_res);
 
+  // 初始化符号信息
+  base::debug::EnableInProcessStackDumping();
   // 主动打印堆栈信息
   LOG(INFO) << "Stack: " << base::debug::StackTrace().ToString();
 
@@ -50,5 +52,6 @@ int main(int argc, char** argv) {
   DLOG(FATAL) << "DLOG: FATAL";
   LOG(FATAL) << "LOG: FATAL";
 
-  return 0;
+  // Not reached.
+  // return 0;
 }
