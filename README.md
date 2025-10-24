@@ -31,7 +31,7 @@ Demo list:
 1. [M141] `demo_task_thread`: Demonstrates the use of a task in a new thread;
 1. [M141] `demo_callback`: Demo Bind&Callback related content；
 1. [M120] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
-1. [M120] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
+1. [M141] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
 1. [M120] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
 1. [M120] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
 1. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;

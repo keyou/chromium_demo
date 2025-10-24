@@ -14,10 +14,6 @@
 int main(int argc, char** argv) {
   // 初始化CommandLine，DataPipe 依赖它
   base::CommandLine::Init(argc, argv);
-  mojo::core::Init();
-  base::Thread ipc_thread("ipc!");
-  ipc_thread.StartWithOptions(
-      base::Thread::Options(base::MessagePumpType::IO, 0));
 
 #if defined(OS_WIN)
   logging::LoggingSettings logging_setting;
@@ -25,6 +21,14 @@ int main(int argc, char** argv) {
   logging::SetLogItems(true, true, false, false);
   logging::InitLogging(logging_setting);
 #endif
+
+  // Initialize Mojo
+  mojo::core::Init();
+
+  // 准备 IPC 线程，看看 //mojo/core/embedder/README.md
+  base::Thread ipc_thread("ipc!");
+  ipc_thread.StartWithOptions(
+      base::Thread::Options(base::MessagePumpType::IO, 0));
 
   // As long as this object is alive, all Mojo API surface relevant to IPC
   // connections is usable, and message pipes which span a process boundary will
@@ -103,15 +107,24 @@ int main(int argc, char** argv) {
   {
     const char kMessage[] = "DataPipe";
     uint32_t length = sizeof(kMessage);
-    result = producer->WriteData(kMessage, &length, MOJO_WRITE_DATA_FLAG_NONE);
+    size_t bytes_written = 0;
+    result = producer->WriteData(
+        base::span<const uint8_t>(reinterpret_cast<const uint8_t*>(kMessage),
+                                  length),
+        MOJO_WRITE_DATA_FLAG_NONE, bytes_written);
     DCHECK_EQ(result, MOJO_RESULT_OK);
+    DCHECK_EQ(length, bytes_written);
     LOG(INFO) << "send data: " << kMessage;
   }
   // 使用 DataPipe 读数据
   {
     char buffer[100];
     uint32_t num_bytes = 100;
-    result = consumer->ReadData(buffer, &num_bytes, MOJO_READ_DATA_FLAG_NONE);
+    size_t bytes_read;
+    result = consumer->ReadData(
+        MOJO_READ_DATA_FLAG_NONE,
+        base::span<uint8_t>(reinterpret_cast<uint8_t*>(buffer), num_bytes),
+        bytes_read);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "receive data: " << buffer;
   }
