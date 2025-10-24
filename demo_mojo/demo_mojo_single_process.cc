@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
                                    &buffer_size);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     memcpy(buffer, "hello", 6);
-    LOG(INFO) << "send: " << (const char*)buffer;
+    LOG(INFO) << "send: " << static_cast<const char*>(buffer);
 
     result = MojoWriteMessage(sender_handle, message, nullptr);
     DCHECK_EQ(result, MOJO_RESULT_OK);
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     uint32_t num_bytes;
     result = MojoGetMessageData(message, nullptr, &buffer, &num_bytes, nullptr,
                                 nullptr);
-    LOG(INFO) << "receive: " << (const char*)buffer;
+    LOG(INFO) << "receive: " << static_cast<const char*>(buffer);
   }
 
   // 使用C++接口创建一条 MessagePipe
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
     result = mojo::ReadMessageRaw(pipe.handle1.get(), &data, nullptr,
                                   MOJO_READ_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "receive msg: " << (char*)&data[0];
+    LOG(INFO) << "receive msg: " << reinterpret_cast<char*>(&data[0]);
   }
 
   // 使用 C++ 接口创建一条 DataPipe，DataPipe 是单向的
@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
   // 使用 C++ 接口创建一个 SharedBuffer
   // Shared Buffer 内部也使用 Shared Memory 实现
   mojo::ScopedSharedBufferHandle buffer =
-      mojo::SharedBufferHandle::Create(4096);
+      mojo::SharedBufferHandle::Create(0x1000);
   // clone一个buffer的句柄，该句柄和buffer指向相同的内存，内部有引用计数
   // 当计数为0的时候，句柄指向的内存会被销毁
   // 这里只是为了演示Clone，并不是必须的

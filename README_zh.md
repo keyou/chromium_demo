@@ -24,7 +24,7 @@ Demo 列表：
 1. [M141] `demo_callback_(once|repeating)`: 演示 Bind&Callback 相关内容；
 1. [M120] `demo_linktest`: 演示错误的使用 gn 导致链接错误；
 1. [M141] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
-1. [M120] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
+1. [M141] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
 1. [M120] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
 1. [M91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
 1. [M120] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
