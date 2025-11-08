@@ -24,40 +24,41 @@ This project is used to demonstrate how to use some basic mechanisms in chromium
 Demo list:
 
 1. [M141] `demo_exe`: The simplest demo to demonstrate gn and create your own exe;
-1. [M141] `demo_log`: Demo log library;
-1. [M141] `demo_tracing_console`: Demonstrate using Trace to output to the console;
-1. [M141] `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
-1. [M141] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
-1. [M141] `demo_task_thread`: Demonstrates the use of a task in a new thread;
-1. [M141] `demo_callback`: Demo Bind&Callback related content；
-1. [M120] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
-1. [M141] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
-1. [M141] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
-1. [M120] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
-1. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
-1. [M120] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
-1. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
-1. [M120] `demo_memory`: Demonstrate the use of SharedMemory;
-1. [M120] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
-1. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
-1. [M120] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
-1. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
-1. [M120] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
-1. [M120] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
-1. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
-1. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
-1. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
-1. [M120] `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
-1. [M120] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
-1. [M120] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
-1. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
-1. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
-1. [M120] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
-1. `demo_x11`: Demonstrate using X11 to create transparent windows;
-1. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
-1. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
-1. [M120] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
-1. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
+2. [M141] `demo_log`: Demo log library;
+3. [M141] `demo_tracing_console`: Demonstrate using Trace to output to the console;
+4. [M141] `demo_task_thread_pool`: Demonstrate the use of thread pool ThreadPool;
+5. [M141] `demo_task_executor`: Demonstrate using the message loop SingleThreadTaskExecutor;
+6. [M141] `demo_task_thread`: Demonstrates the use of a task in a new thread;
+7. [M141] `demo_callback`: Demo Bind&Callback related content；
+8. [M120] `demo_linktest`: Demonstrates incorrect use of gn causing link errors;
+9.  [M141] `demo_mojo_single_process`: Demonstrate the use of the `mojo` library in a single process;
+10. [M141] `demo_mojo_multiple_process`: Demonstrate the use of the `mojo` library in multiple processes;
+11. [M141] `demo_mojo_multiple_process_binding`: Demonstrate using the binding layer of the `mojo` library in multiple processes;
+12. [M141] `demo_mojo_child_process`: Demonstrate using the the `mojo` library to connect via parent and directly communicate between two child process
+13. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
+14. [M120] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
+15. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
+16. [M120] `demo_memory`: Demonstrate the use of SharedMemory;
+17. [M120] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
+18. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
+19. [M120] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
+20. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
+21. [M120] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
+22. [M120] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
+23. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
+24. `demo_viz_layer`: Demonstrate the use of `viz` for interactive rendering;
+25. `demo_viz_layer_offscreen`, demonstrate using VIZ's `CopyOutput` interface for off-screen rendering;
+26. [M120] `demo_cc_gui`: Demonstrate using `cc` to display GUI interface;
+27. [M120] `demo_cc_offscreen`: Demonstrate using `cc` for off-screen rendering;
+28. [M120] `demo_views`: Demonstrate the use of `//ui/views` to create UI;
+29. `demo_apk`: Demonstrate the creation of Android applications, the use of base::android::* and JNI;
+30. `demo_android_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Android;
+31. [M120] `demo_skia`: Demonstrate the use of Skia for software rendering and hardware rendering on Linux;
+32. `demo_x11`: Demonstrate using X11 to create transparent windows;
+33. `demo_x11_glx`: Demonstrate the use of glx in a transparent window;
+34. `demo_x11_egl`: Demonstrate the use of egl in a transparent window;
+35. [M120] `demo_gin`: Demonstrate the use of gin to create a javascript runtime;
+36. `demo_shell`: Demonstrate the use of content api to create a streamlined browser that supports Linux and Android;
 
 Documents:
 

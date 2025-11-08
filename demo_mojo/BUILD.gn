@@ -50,6 +50,20 @@ executable("demo_mojo_multiple_process_binding") {
   ]
 }
 
+executable("demo_mojo_child_process") {
+  testonly = true
+  sources = [
+    "demo_mojo_child_process.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+    "//mojo/core/embedder",
+    "mojom",
+  ]
+}
+
 executable("demo_services") {
  testonly = true
  sources = [
