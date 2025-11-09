@@ -5,6 +5,7 @@ group("demo_mojo"){
         ":demo_mojo_multiple_process",
         ":demo_mojo_multiple_process_binding",
         # ":demo_services"
+        ":demo_mojo_child_process",
     ]
 }
 
