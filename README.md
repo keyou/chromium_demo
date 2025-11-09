@@ -38,10 +38,10 @@ Demo list:
 13. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
 14. [M120] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
 15. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
-16. [M120] `demo_memory`: Demonstrate the use of SharedMemory;
+16. [M141] `demo_memory`: Demonstrate the use of SharedMemory;
 17. [M120] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
 18. [M120] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
-19. [M120] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
+19. [M141] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
 20. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
 21. [M120] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
 22. [M120] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;

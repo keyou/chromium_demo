@@ -45,7 +45,7 @@ group("demo") {
 
   if (is_win) {
     deps += [
-      # "demo_resources",
+      "demo_resources",
       "demo_cc",
       # "demo_gl",
       "demo_mojo_v8",

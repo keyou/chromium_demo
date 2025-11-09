@@ -30,9 +30,12 @@ grit("demo_resources_grit") {
     "grit/demo_gen_resources_en.pak",
     "grit/demo_gen_resources_zh-CN.pak",
     "grit/demo_gen_resources_en.rc",
+    # 实践上 All 或 translateable 应该二选一
     "grit/demo_gen_resources_zh-CN.rc",
-    "grit/demo_gen_resources_translateable_zh-CN.rc",
-    "grit/demo_gen_resources_nontranslateable_zh-CN.rc",
+    # "grit/demo_gen_resources_translateable_zh-CN.rc",
+    
+    # 非翻译资源，按语言中性处理，不应加语言后缀
+    "grit/demo_gen_resources_nontranslateable.rc",
   ]
 }
 
