@@ -6,6 +6,8 @@
 #include "base/path_service.h"
 #include "base/test/test_timeouts.h"
 #include "base/threading/thread.h"
+#include "base/trace_event/trace_config.h"
+#include "base/trace_event/trace_event.h"
 #include "content/browser/tracing/tracing_controller_impl.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/tracing_controller.h"
@@ -67,11 +69,16 @@ int main(int argc, char** argv) {
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
   // 使用单进程的Tracing
-  base::FeatureList::InitializeInstance(features::kTracingServiceInProcess.name,
-                                        "");
+  base::FeatureList::InitInstance(features::kTracingServiceInProcess.name, "");
 
-  // 在 Chromium 中 Startup 的Trace需要特殊处理，因为 TracingService 启动的比较晚
-  tracing::EnableStartupTracingIfNeeded();
+  // 在 Chromium 中 Startup 的Trace需要特殊处理，因为 TracingService
+  // 启动的比较晚 Since M141:
+  // 函数改名并提前到初始化 FeatureList 之后，
+  // 1. https://chromium-review.googlesource.com/c/chromium/src/+/6180638
+  // 2. https://chromium-review.googlesource.com/c/chromium/src/+/6685790
+  // tracing::EnableStartupTracingIfNeeded();
+  tracing::InitTracingPostFeatureList(/*enable_consumer=*/false,
+                                      /*will_trace_thread_restart=*/false);
 
   TRACE_EVENT0("test", "This trace can not be record.");
 
@@ -81,8 +88,6 @@ int main(int argc, char** argv) {
   // 由于 content::TracingControllerImpl 依赖 content
   // 模块，所以这里初始化Browser的测试环境
   content::BrowserTaskEnvironment task_environment_;
-
-  tracing::InitTracingPostThreadPoolStartAndFeatureList(true);
 
   content::ContentClient content_client;
   content::ContentBrowserClient browser_client;
