@@ -1,13 +1,11 @@
 #pragma once
 
-#include "base/macros.h"
 #include "base/memory/weak_ptr.h"
-#include "base/sequenced_task_runner.h"
-#include "mojo/public/cpp/bindings/remote.h"
-#include "v8/include/v8.h"
-
+#include "base/task/sequenced_task_runner.h"
 #include "demo/demo_mojo_v8/mojom/demo.mojom.h"
 #include "demo/demo_mojo_v8/v8/node_object_wrap.h"
+#include "mojo/public/cpp/bindings/remote.h"
+#include "v8/include/v8.h"
 
 namespace demo {
 
@@ -17,6 +15,8 @@ class DemoV8Binding : public node::ObjectWrap {
   static bool Initialize(v8::Isolate* bind_isolate,
                          v8::Local<v8::Context> bind_context,
                          v8::Local<v8::Object> bind_parent_object);
+  DemoV8Binding(const DemoV8Binding&) = delete;
+  DemoV8Binding& operator=(const DemoV8Binding&) = delete;
 
  private:
   static void V8New(const v8::FunctionCallbackInfo<v8::Value>& info);
@@ -34,6 +34,5 @@ class DemoV8Binding : public node::ObjectWrap {
   SEQUENCE_CHECKER(sequence_checker_);
   mojo::Remote<demo::mojom::Demo> remote_;
   base::WeakPtrFactory<DemoV8Binding> weak_ptr_factory_;
-  DISALLOW_COPY_AND_ASSIGN(DemoV8Binding);
 };
 }  // namespace demo

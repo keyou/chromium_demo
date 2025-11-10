@@ -36,7 +36,7 @@ Demo list:
 11. [M141] `demo_mojo_child_process`: Demonstrate using the the `mojo` library to connect via parent and directly communicate between two child process
 12. [M91] `demo_services`: Demonstrate the use of servcies and multi-process architecture based on `mojo`;
 13. [M120] `demo_ipc`: Demonstrate the use of IPC interface based on `mojo`;
-14. [M91] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
+14. [M141] `demo_mojo_v8`: Demonstrate the use of js to access the mojo interface;
 15. [M141] `demo_memory`: Demonstrate the use of SharedMemory;
 16. [M141] `demo_tracing_console`: Demonstrate using Trace to output to the console;
 17. [M141] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);

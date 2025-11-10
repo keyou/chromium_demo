@@ -28,7 +28,7 @@ Demo 列表：
 11. [M141] `demo_mojo_child_process`: 演示通过父进程建联并在两个子进程间直接通讯；
 12. [M91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
 13. [M120] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
-14. [M91] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
+14. [M141] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
 15. [M141] `demo_memory`: 演示使用 SharedMemory；
 16. [M141] `demo_tracing_console`: 演示使用 Trace 输出到控制台；
 17. [M141] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；

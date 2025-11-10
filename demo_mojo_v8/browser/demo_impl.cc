@@ -11,7 +11,7 @@ void BindMojomImpl(mojo::PendingReceiver<demo::mojom::Demo> receiver) {
 // 初始化，向BinderRegistry注册当前实例的工厂
 bool DemoImpl::Initialize(service_manager::BinderRegistry* registry) {
   registry->AddInterface(base::BindRepeating(&BindMojomImpl),
-                         base::SequencedTaskRunnerHandle::Get());
+                         base::SequencedTaskRunner::GetCurrentDefault());
   return true;
 }
 

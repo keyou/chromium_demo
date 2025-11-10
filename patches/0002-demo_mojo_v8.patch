@@ -1,74 +1,68 @@
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
-index 9fedd83307439..4ef0925545e31 100644
+index 51efc0986c4b5..dc7f34b5f3a27 100644
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
-@@ -1868,6 +1868,8 @@ static_library("browser") {
+@@ -1862,6 +1862,7 @@ static_library("browser") {
+     "//chrome/browser/headless",
+     "//chrome/browser/profiles",
+     "//chrome/browser/ui/tabs:tab_enums",
++    "//demo/demo_mojo_v8:browser",
    ]
  
-   public_deps = [
-+    # 加入我们的依赖
-+    "//demo/demo_mojo_v8:browser",
-     "//base",
-     "//chrome/common",
-     "//chrome/common:buildflags",
+   deps = [
 diff --git a/chrome/browser/chrome_content_browser_client_receiver_bindings.cc b/chrome/browser/chrome_content_browser_client_receiver_bindings.cc
-index 5feac0c791c70..7cbd4bb5d9e31 100644
+index 74d28c413c7e3..43b2a680b4bbe 100644
 --- a/chrome/browser/chrome_content_browser_client_receiver_bindings.cc
 +++ b/chrome/browser/chrome_content_browser_client_receiver_bindings.cc
-@@ -73,6 +73,8 @@
- #endif
+@@ -131,6 +131,8 @@
+ #include "chrome/browser/offline_pages/offline_page_tab_helper.h"
  #endif
  
 +#include "demo/demo_mojo_v8/browser/demo_impl.h"
 +
  namespace {
  
- // Helper method for ExposeInterfacesToRenderer() that checks the latest
-@@ -134,6 +136,10 @@ void ChromeContentBrowserClient::ExposeInterfacesToRenderer(
-     service_manager::BinderRegistry* registry,
-     blink::AssociatedInterfaceRegistry* associated_registry,
-     content::RenderProcessHost* render_process_host) {
-+
-+  // 注册 DemoImpl
+ #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
+@@ -220,6 +222,8 @@ void ChromeContentBrowserClient::ExposeInterfacesToRenderer(
+   registry->AddInterface<metrics::mojom::CallStackProfileCollector>(
+       base::BindRepeating(&metrics::CallStackProfileCollector::Create));
+ 
 +  demo::DemoImpl::Initialize(registry);
 +
-   // The CacheStatsRecorder is an associated binding, instead of a
-   // non-associated one, because the sender (in the renderer process) posts the
-   // message after a time delay, in order to rate limit. The association
+   if (NetBenchmarking::CheckBenchmarkingEnabled()) {
+     Profile* profile =
+         Profile::FromBrowserContext(render_process_host->GetBrowserContext());
 diff --git a/chrome/renderer/BUILD.gn b/chrome/renderer/BUILD.gn
-index cd4395923de75..a739f6e632fa3 100644
+index 283e1c70773a3..952f9813a6dd8 100644
 --- a/chrome/renderer/BUILD.gn
 +++ b/chrome/renderer/BUILD.gn
-@@ -145,6 +145,8 @@ static_library("renderer") {
-   public_deps = [ "//components/contextual_search:buildflags" ]
- 
-   deps = [
-+    #加入我们的依赖
+@@ -235,6 +235,7 @@ static_library("renderer") {
+     "//ui/gfx/geometry",
+     "//ui/surface",
+     "//v8",
 +    "//demo/demo_mojo_v8:renderer",
-     "//base/allocator:buildflags",
-     "//build:chromeos_buildflags",
-     "//chrome:resources",
+   ]
+ 
+   data_deps = [ "//tools/v8_context_snapshot" ]
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
-index ceb29f83a9dc1..c7fe313e195fc 100644
+index a69564cd5dfdf..8bb3ca236d64b 100644
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
-@@ -234,6 +234,8 @@
- #include "chrome/renderer/supervised_user/supervised_user_error_page_controller_delegate_impl.h"
+@@ -256,6 +256,8 @@
+ #include "chrome/renderer/media/chrome_key_systems.h"
  #endif
  
 +#include "demo/demo_mojo_v8/renderer/demo_render_frame_observer.h"
 +
  using autofill::AutofillAgent;
- using autofill::AutofillAssistantAgent;
  using autofill::PasswordAutofillAgent;
-@@ -467,6 +469,11 @@ void ChromeContentRendererClient::ExposeInterfacesToBrowser(
+ using autofill::PasswordGenerationAgent;
+@@ -580,6 +582,9 @@ void ChromeContentRendererClient::ExposeInterfacesToBrowser(
  
  void ChromeContentRendererClient::RenderFrameCreated(
      content::RenderFrame* render_frame) {
-+
-+    // 创建 Observer 并监听
-+    // 这不会导致内存泄漏，因为 render_frame 会通知它释放自己的内存
-+    new demo::DemoRenderFrameObserver(render_frame);
++  // 这不会导致内存泄漏，因为 render_frame 会通知它释放自己的内存
++  new demo::DemoRenderFrameObserver(render_frame);
 +
    ChromeRenderFrameObserver* render_frame_observer =
        new ChromeRenderFrameObserver(render_frame, web_cache_impl_.get());
