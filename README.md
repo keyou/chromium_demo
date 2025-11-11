@@ -1,6 +1,6 @@
 # Demo
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 - English [README](./README.md) [Change Log](./CHANGELOG.md)
@@ -124,6 +124,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://qzq.at"><img src="https://avatars.githubusercontent.com/u/19623228?v=4?s=100" width="100px;" alt="QZQ"/><br /><sub><b>QZQ</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=SamuelQZQ" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mikucy"><img src="https://avatars.githubusercontent.com/u/23072202?v=4?s=100" width="100px;" alt="Midori"/><br /><sub><b>Midori</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=mikucy" title="Code">💻</a> <a href="https://github.com/keyou/chromium_demo/commits?author=mikucy" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/shaochenguang"><img src="https://avatars.githubusercontent.com/u/33643378?v=4?s=100" width="100px;" alt="chenguang shao"/><br /><sub><b>chenguang shao</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=shaochenguang" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.dyldr.top"><img src="https://avatars.githubusercontent.com/u/53362310?v=4?s=100" width="100px;" alt="Yi Lu"/><br /><sub><b>Yi Lu</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=DynamicLoader" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
