@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
                                    &buffer_size);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     memcpy(buffer, "hello", 6);
-    LOG(INFO) << "send: " << static_cast<const char*>(buffer);
+    LOG(INFO) << "send: " << reinterpret_cast<const char*>(buffer);
 
     result = MojoWriteMessage(sender_handle, message, nullptr);
     DCHECK_EQ(result, MOJO_RESULT_OK);
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     uint32_t num_bytes;
     result = MojoGetMessageData(message, nullptr, &buffer, &num_bytes, nullptr,
                                 nullptr);
-    LOG(INFO) << "receive: " << static_cast<const char*>(buffer);
+    LOG(INFO) << "receive: " << reinterpret_cast<const char*>(buffer);
   }
 
   // 使用C++接口创建一条 MessagePipe
@@ -144,13 +144,13 @@ int main(int argc, char** argv) {
     mojo::ScopedSharedBufferMapping mapping = buffer->Map(kMessage.length());
     DCHECK(mapping);
     std::copy(kMessage.begin(), kMessage.end(),
-              static_cast<char*>(mapping.get()));
+              reinterpret_cast<char*>(mapping.get()));
     LOG(INFO) << "write buffer: " << kMessage;
   }
   // 从 SharedBuffer 读数据
   {
     mojo::ScopedSharedBufferMapping mapping = buffer_clone ->Map(64);
-    LOG(INFO) << "read buffer: " << static_cast<char*>(mapping.get());
+    LOG(INFO) << "read buffer: " << reinterpret_cast<char*>(mapping.get());
   }
 
   // 创建消息循环

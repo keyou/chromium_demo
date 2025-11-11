@@ -1,5 +1,17 @@
 ## 更新日志
 
+### 2025.11.11
+- 基础部分（log, task, memory, tracing, resources, mojo, mojo_v8）升级到 M141，更改如下：
+  1. `DISALLOW_COPY_AND_ASSIGN` 宏已弃用
+  2. `base::MemoryPressureMonitor::GetCurrentPressureLevel()` 需要传入一个 `base::MemoryPressureMonitorTag` 参数
+  3. mojo 的 `ReadData()` 和 `WriteData()` 都改用了 `std::span` 以替代原来的缓冲区指针+长度参数, 并新增了一个引用传递参数指示实际读取/写入了的数据量
+  4. `v8::FunctionCallbackInfo::Holder()` 已弃用，改用 `This()` 
+  5. Resources `kDemoGenResources` 数组不提供长度信息
+  6. Tracing 全面启用 Perfetto, 传统初始化方法已移除；Startup 时的初始化提前到仅需初始化 FeatureGating 后执行一次 `tracing::InitTracingPostFeatureList()`
+- mojo 下新增一个 case `demo_mojo_child_process`，演示通过父进程建联并在两个子进程间直接通讯
+- ChangeLog 拆分到单独文件
+
+
 ### 2024.6.23
 
 - 添加 demo_task_thread, 演示在新线程中使用 task, 位于 demo_task 下;

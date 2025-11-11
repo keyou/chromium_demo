@@ -1,5 +1,17 @@
 ## Changelog
 
+
+### 2025.11.11
+- Upgraded core modules (log, task, memory, tracing, resources, mojo, mojo_v8) to M141 with the following changes:
+  1. The `DISALLOW_COPY_AND_ASSIGN` macro is deprecated
+  2. `base::MemoryPressureMonitor::GetCurrentPressureLevel()` now requires a `base::MemoryPressureMonitorTag` parameter
+  3. mojo's `ReadData()` and `WriteData()` now use `std::span` to replace the previous buffer pointer + length parameters, and a new reference parameter has been added to indicate the actual amount of data read/written
+  4. `v8::FunctionCallbackInfo::Holder()` is deprecated, use `This()` instead
+  5. Resources `kDemoGenResources` array no longer provides length information
+  6. Tracing fully enables Perfetto, traditional initialization methods have been removed; Startup initialization is now moved forward to execute `tracing::InitTracingPostFeatureList()` once after only initializing FeatureGating
+- Added a new case `demo_mojo_child_process` under mojo, demonstrating direct inter-process communication between two child processes through parent process establishment
+- ChangeLog split to a separate file
+
 ### 2024.6.23
 
 - Add demo_task_thread, which demonstrates the use of a task in a new thread;

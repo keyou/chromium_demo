@@ -207,7 +207,7 @@ void MojoProducer() {
     mojo::ScopedSharedBufferMapping mapping = buffer->Map(kMessage.length());
     DCHECK(mapping);
     std::copy(kMessage.begin(), kMessage.end(),
-              static_cast<char*>(mapping.get()));
+              reinterpret_cast<char*>(mapping.get()));
     LOG(INFO) << "write buffer: " << kMessage;
     std::ignore = buffer_clone.release();
     std::ignore = buffer.release();
@@ -279,7 +279,7 @@ void MojoConsumer() {
     uint32_t num_bytes;
     result = MojoGetMessageData(message, nullptr, &buffer, &num_bytes, nullptr,
                                 nullptr);
-    LOG(INFO) << "receive msg: " << static_cast<const char*>(buffer);
+    LOG(INFO) << "receive msg: " << reinterpret_cast<const char*>(buffer);
   }
   // Data Pipe transport by MessagePipe
   {
@@ -293,7 +293,7 @@ void MojoConsumer() {
     result = mojo::GetMessageData(message.get(), &data, &length, &handles,
                                   MOJO_GET_MESSAGE_DATA_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "receive msg: " << static_cast<char*>(data)
+    LOG(INFO) << "receive msg: " << reinterpret_cast<char*>(data)
               << " consumer: " << handles[0]->value();
 
     mojo::ScopedDataPipeConsumerHandle consumer =
@@ -341,7 +341,7 @@ void MojoConsumer() {
     mojo::ScopedSharedBufferHandle buffer =
         mojo::ScopedSharedBufferHandle::From(std::move(handles[0]));
     mojo::ScopedSharedBufferMapping mapping = buffer->Map(64);
-    LOG(INFO) << "read buffer: " << static_cast<char*>(mapping.get());
+    LOG(INFO) << "read buffer: " << reinterpret_cast<char*>(mapping.get());
     std::ignore = buffer.release();
   }
   // C++ Signal&Trap test
