@@ -20,7 +20,7 @@ render 和 browser 通过自定义 mojo 接口进行通信。
 
 ## 使用方式
 
-首先确保 `src` 仓库的分支为 `91.0.4472.*`，然后进入 `src` 目录下，使用以下命令应用 0002 号 patch `demo/patches/0002-demo_mojo_v8.patch`：
+首先确保 `src` 仓库的分支为 `141.0.7390.*`，然后进入 `src` 目录下，使用以下命令应用 0002 号 patch `demo/patches/0002-demo_mojo_v8.patch`：
 
 ```sh
 git apply demo/patches/0002-demo_mojo_v8.patch
@@ -32,4 +32,6 @@ git apply demo/patches/0002-demo_mojo_v8.patch
 autoninja -C out/Default chrome
 ```
 
-最后使用使用编译好的 chrome 打开 `demo/demo_mojo_v8/test/index.html` 文件，观察页面控制台即可看到运行结果。
+最后使用使用编译好的 chrome 打开 `demo/demo_mojo_v8/test/index.html` 文件，观察目录下的 chrome_debug.log：
+
+![alt text](image.png)

@@ -93,7 +93,7 @@ void MemoryPresureTest() {
 
   base::MemoryPressureMonitor* monitor = base::MemoryPressureMonitor::Get();
   base::MemoryPressureMonitor::MemoryPressureLevel level =
-      monitor->GetCurrentPressureLevel();
+      monitor->GetCurrentPressureLevel(base::MemoryPressureMonitorTag::kTest);
 
   if (level == base::MemoryPressureMonitor::MemoryPressureLevel::
                    MEMORY_PRESSURE_LEVEL_CRITICAL) {

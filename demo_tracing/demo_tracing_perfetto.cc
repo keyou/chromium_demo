@@ -8,7 +8,9 @@
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
-#include "components/tracing/common/trace_startup_config.h"
+#include "base/trace_event/trace_config.h"
+#include "base/trace_event/trace_event.h"
+#include "base/trace_event/trace_log.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/receiver.h"
@@ -28,8 +30,8 @@ class TracingController : public mojo::DataPipeDrainer::Client,
                           public tracing::mojom::TracingSessionClient {
  public:
   static TracingController* GetInstance() {
-    static TracingController controller;
-    return &controller;
+    static base::NoDestructor<TracingController> controller;
+    return controller.get();
   }
 
   TracingController() = default;
@@ -41,10 +43,10 @@ class TracingController : public mojo::DataPipeDrainer::Client,
     // 这里进行稍微改造即可支持多进程的 Trace
     start_callback_ = std::move(start_callback);
     perfetto::TraceConfig perfetto_config = tracing::GetDefaultPerfettoConfig(
-      trace_config,
-      /*privacy_filtering_enabled=*/false,
-      /*convert_to_legacy_json=*/true,
-      perfetto::protos::gen::ChromeConfig::USER_INITIATED);
+        trace_config,
+        /*privacy_filtering_enabled=*/false,
+        /*convert_to_legacy_json=*/true
+        /* ,perfetto::protos::gen::ChromeConfig::USER_INITIATED */);
     // Initialize the new service instance by pushing a pipe to each currently
     // registered client, including the browser process itself.
     std::vector<tracing::mojom::ClientInfoPtr> initial_clients;
@@ -70,7 +72,7 @@ class TracingController : public mojo::DataPipeDrainer::Client,
     return true;
   }
   bool StopTracing(base::OnceClosure stop_callback) {
-    tracing::TraceStartupConfig::GetInstance()->SetDisabled();
+    base::trace_event::TraceLog::GetInstance()->SetDisabled();
 
     mojo::ScopedDataPipeProducerHandle producer_handle;
     mojo::ScopedDataPipeConsumerHandle consumer_handle;
@@ -98,10 +100,11 @@ class TracingController : public mojo::DataPipeDrainer::Client,
   }
 
   // mojo::DataPipeDrainer::Client
-  void OnDataAvailable(const void* data, size_t num_bytes) override {
+  void OnDataAvailable(base::span<const uint8_t> data) override {
     // 如果想要将 Trace 保存到文件需要在这里添加保存逻辑
     LOG(INFO) << "OnDataAvailable:\n"
-              << std::string(static_cast<const char*>(data), num_bytes);
+              << std::string(reinterpret_cast<const char*>(data.data()),
+                             data.size_bytes());
   }
   void OnDataComplete() override { LOG(INFO) << "OnDataComplete"; }
 
@@ -152,8 +155,7 @@ int main(int argc, char** argv) {
 #endif
 
   // 使用单进程的 Tracing
-  base::FeatureList::InitializeInstance(features::kTracingServiceInProcess.name,
-                                        "");
+  base::FeatureList::InitInstance(features::kTracingServiceInProcess.name, "");
 
   base::SingleThreadTaskExecutor main_thread_task_executor;
 
@@ -175,15 +177,14 @@ int main(int argc, char** argv) {
   // 开启了 Startup, 则会创建共享内存来保存 Startup 的 Trace。否则
   // 在 TracingService 启动前的所有 Trace 都不能被记录。
   // 如果 TracingService 启动的足够早，则这里不是必须的
-  tracing::EnableStartupTracingIfNeeded();
+  tracing::InitTracingPostFeatureList(/*enable_consumer=*/false,
+                                      /*will_trace_thread_restart=*/false);
 
   // 如果在程序启动时没有指定 --trace-startup=... 参数，则下面这个 Trace
   // 不会被记录
   TRACE_EVENT0(
       "test",
       "This trace can not be record without '--trace-startup=...' parameter.");
-
-  tracing::InitTracingPostThreadPoolStartAndFeatureList(true);
 
   bool result = false;
   {

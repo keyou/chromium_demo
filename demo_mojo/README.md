@@ -9,3 +9,4 @@
 - demo_mojo_multiple_process: 演示在多进程使用 mojo 的 C 接口；
 - demo_mojo_multiple_process_binding: 演示在多进程中使用 mojo 的 C++ 接口；
 - demo_services: （**DEPRECATED**）演示在多进程中使用 service 机制；
+- demo_mojo_child_process: 演示两个子进程通过主进程建立直接连接并通信（renderer 和 gpu 的一条通道抽象）

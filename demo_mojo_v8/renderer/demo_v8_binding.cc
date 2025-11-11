@@ -81,7 +81,11 @@ void DemoV8Binding::V8Hello(const v8::FunctionCallbackInfo<v8::Value>& info) {
   }
   v8::String::Utf8Value utf8_value(isolate, info[0]);
   std::string utf8_string(*utf8_value);
-  DemoV8Binding* self_pointer = GetSelfPointer(info.Holder());
+  // DemoV8Binding* self_pointer = GetSelfPointer(info.Holder());
+  // 在 https://chromium-review.googlesource.com/c/v8/v8/+/5444829 和
+  // https://chromium-review.googlesource.com/c/v8/v8/+/6309166
+  // 之后，内部原型不再通过 Holder 暴露，改用 This。
+  DemoV8Binding* self_pointer = GetSelfPointer(info.This());
   DCHECK(self_pointer);
   self_pointer->Hello(utf8_string);
 }

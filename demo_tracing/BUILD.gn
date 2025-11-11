@@ -18,7 +18,6 @@ executable("demo_tracing_console") {
 
   deps = [
     "//base",
-    "//components/tracing:startup_tracing",
   ]
 }
 
@@ -31,7 +30,6 @@ executable("demo_tracing_perfetto_content") {
 
   deps = [
     "//base",
-    "//components/tracing:startup_tracing",
     "//services/tracing:lib",
     "//services/tracing/public/cpp",
     "//content/test:test_support",
@@ -47,7 +45,6 @@ executable("demo_tracing_perfetto") {
 
   deps = [
     "//base",
-    "//components/tracing:startup_tracing",
     "//services/tracing:lib",
     "//services/tracing/public/cpp",
     "//mojo/public",

@@ -10,6 +10,8 @@ namespace demo {
 class DemoRenderFrameObserver : public content::RenderFrameObserver {
  public:
   DemoRenderFrameObserver() = delete;
+  DemoRenderFrameObserver(const DemoRenderFrameObserver&) = delete;
+  DemoRenderFrameObserver& operator=(const DemoRenderFrameObserver&) = delete;
 
   explicit DemoRenderFrameObserver(content::RenderFrame* render_frame);
   ~DemoRenderFrameObserver() override;
@@ -25,6 +27,5 @@ class DemoRenderFrameObserver : public content::RenderFrameObserver {
 
  private:
   content::RenderFrame* render_frame_;
-  DISALLOW_COPY_AND_ASSIGN(DemoRenderFrameObserver);
 };
 }  // namespace demo

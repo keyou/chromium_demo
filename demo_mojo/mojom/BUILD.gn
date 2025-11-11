@@ -9,6 +9,7 @@ group("mojom"){
         ":mojom_test3",
         ":mojom_test4",
         ":mojom_test_service",
+        ":mojom_child_proc_direct_pipe",
     ]
 }
 
@@ -40,5 +41,11 @@ mojom("mojom_test_service") {
   sources = [
     "test_service.mojom",
   ]
+}
+
+mojom("mojom_child_proc_direct_pipe"){
+  sources = [
+    "child_proc_direct_pipe.mojom",
+  ] 
 }
 

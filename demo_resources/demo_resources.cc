@@ -1,12 +1,12 @@
+#include <iostream>
+
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/logging.h"
+#include "base/path_service.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
-#include "base/path_service.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-
-#include <iostream>
 
 // for resources
 #include "ui/base/l10n/l10n_util.h"
@@ -14,15 +14,14 @@
 #include "ui/base/ui_base_paths.h"
 
 // grit生成的头文件
-#include "demo/demo_resources/grit/demo_gen_resources.h"
 #include "demo/demo_resources/grit/demo_gen_resources_map.h"
-#include "demo/demo_resources/grit/demo_gen_strings.h"
 #include "demo/demo_resources/grit/demo_gen_strings_map.h"
 
-void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
+void LoadResources(std::string_view resource_file, bool use_strings = false) {
   // 因为InitSharedInstanceWithxxx只能执行一次，因此这里先清除之前的数据
-  if (ui::ResourceBundle::HasSharedInstance())
+  if (ui::ResourceBundle::HasSharedInstance()) {
     ui::ResourceBundle::CleanupSharedInstance();
+  }
 
   // 初始化locale,也就是本地化/语言资源包
   // 会导致代码去加载
@@ -37,8 +36,9 @@ void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
 
   // 加载数据资源包
   base::FilePath resource_path;
-  if (base::PathService::Get(base::DIR_MODULE, &resource_path))
+  if (base::PathService::Get(base::DIR_MODULE, &resource_path)) {
     resource_path = resource_path.AppendASCII(resource_file);
+  }
   ui::ResourceBundle::InitSharedInstanceWithPakPath(resource_path);
 
   ui::ResourceBundle& bundle = ui::ResourceBundle::GetSharedInstance();
@@ -54,9 +54,7 @@ void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
   // 遍历demo_gen_resources.pak资源
   // text6会显示类似乱码的样子，因为grit使用了伪翻译，详见demo_resources.grd文件
   // 这里故意保持乱码以便读者注意这个问题
-  for (size_t i = 0; i < kDemoGenResourcesSize; i++) {
-    auto resource = kDemoGenResources[i];
-
+  for (auto&& resource : kDemoGenResources) {
     std::cout << resource.path << ": ["
               << bundle.GetRawDataResource(resource.id) << "]" << std::endl;
     // 读取语言内容
@@ -69,14 +67,11 @@ void LoadResources(base::StringPiece resource_file, bool use_strings = false) {
   if (use_strings) {
     std::cout << "------------------------------------------" << std::endl;
     // 遍历demo_gen_strings.pak资源
-    for (size_t i = 0; i < kDemoGenStringsSize; i++) {
-      auto resource = kDemoGenStrings[i];
+    for (auto&& resource : kDemoGenStrings) {
       std::cout << resource.path << ": ["
-                << bundle.GetRawDataResource(resource.id) << "]"
-                << std::endl;
+                << bundle.GetRawDataResource(resource.id) << "]" << std::endl;
       std::cout << resource.path << ": ["
-                << l10n_util::GetStringUTF16(resource.id) << "]"
-                << std::endl;
+                << l10n_util::GetStringUTF16(resource.id) << "]" << std::endl;
     }
   }
   std::cout << "==========================================" << std::endl;
@@ -96,6 +91,10 @@ int main(int argc, char** argv) {
 
   // 提供 DIR_LOCALE 路径,用于寻找资源
   ui::RegisterPathProvider();
+
+  std::cout << "Note: If you are using Windows, Please use 'chcp 65001' to get "
+               "UTF8 support."
+            << std::endl;
 
   LoadResources("gen/demo/demo_resources/grit/demo_gen_resources_en.pak");
   LoadResources("gen/demo/demo_resources/grit/demo_gen_resources_zh-CN.pak");

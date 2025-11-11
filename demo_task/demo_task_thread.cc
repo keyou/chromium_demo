@@ -11,18 +11,19 @@
 #include "base/threading/thread_restrictions.h"
 #include "base/time/time.h"
 
-std::optional<base::RepeatingClosure> g_quit_closure;
-
-void LogDelay(base::TimeTicks start_time, int count) {
+void LogDelay(base::TimeTicks start_time,
+              int count,
+              base::RepeatingClosure quit_closure) {
   auto delay_delta = base::TimeTicks::Now() - start_time;
   LOG(INFO) << count << " task delay(ms): " << delay_delta.InMilliseconds();
   if (count >= 9) {
-    CHECK(g_quit_closure);
-    g_quit_closure->Run();
+    CHECK(quit_closure);
+    quit_closure.Run();
     return;
   }
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
-      FROM_HERE, base::BindOnce(LogDelay, base::TimeTicks::Now(), count + 1),
+      FROM_HERE,
+      base::BindOnce(LogDelay, base::TimeTicks::Now(), count + 1, quit_closure),
       base::Milliseconds(1));
 }
 
@@ -34,12 +35,12 @@ int main(int argc, char **argv) {
 
   base::SingleThreadTaskExecutor main_thread_task_executor;
   base::RunLoop loop;
-  g_quit_closure = loop.QuitClosure();
 
   base::Thread thread("FooThreadName");
   thread.Start();
   thread.task_runner()->PostDelayedTask(
-      FROM_HERE, base::BindOnce(LogDelay, base::TimeTicks::Now(), 0),
+      FROM_HERE,
+      base::BindOnce(LogDelay, base::TimeTicks::Now(), 0, loop.QuitClosure()),
       base::Milliseconds(1));
 
   LOG(INFO) << "main start";

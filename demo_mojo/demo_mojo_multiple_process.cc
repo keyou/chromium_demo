@@ -52,7 +52,8 @@ class PipeReader {
         result = mojo::ReadMessageRaw(pipe_.get(), &data, nullptr,
                                       MOJO_READ_MESSAGE_FLAG_NONE);
         if (result == MOJO_RESULT_OK)
-          LOG(INFO) << "receive msg(watcher): " << (char*)&data[0];
+          LOG(INFO) << "receive msg(watcher): "
+                    << reinterpret_cast<char*>(&data[0]);
         else
           LOG(INFO) << "receive finished.";
       }
@@ -152,8 +153,9 @@ void MojoProducer() {
     LOG(INFO) << "send msg: " << kMessage << " producer: " << producer->value()
               << " consumer: " << consumer->value();
 
-    uint32_t length = sizeof(kMessage);
-    result = producer->WriteData(kMessage, &length, MOJO_WRITE_DATA_FLAG_NONE);
+    size_t sent_length = 0;
+    result = producer->WriteData(base::byte_span_from_cstring(kMessage),
+                                 MOJO_WRITE_DATA_FLAG_NONE, sent_length);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "send data: " << kMessage;
     // 这里需要 release handle ，因为 WriteMessage 内部会 close 发送的 handle
@@ -205,7 +207,7 @@ void MojoProducer() {
     mojo::ScopedSharedBufferMapping mapping = buffer->Map(kMessage.length());
     DCHECK(mapping);
     std::copy(kMessage.begin(), kMessage.end(),
-              static_cast<char*>(mapping.get()));
+              reinterpret_cast<char*>(mapping.get()));
     LOG(INFO) << "write buffer: " << kMessage;
     std::ignore = buffer_clone.release();
     std::ignore = buffer.release();
@@ -265,7 +267,7 @@ void MojoConsumer() {
     result = mojo::ReadMessageRaw(pipe.get(), &data, nullptr,
                                   MOJO_READ_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "receive msg: " << (char*)&data[0];
+    LOG(INFO) << "receive msg: " << reinterpret_cast<char*>(&data[0]);
   }
   // C platform API, message pipe read test
   {
@@ -277,7 +279,7 @@ void MojoConsumer() {
     uint32_t num_bytes;
     result = MojoGetMessageData(message, nullptr, &buffer, &num_bytes, nullptr,
                                 nullptr);
-    LOG(INFO) << "receive msg: " << (const char*)buffer;
+    LOG(INFO) << "receive msg: " << reinterpret_cast<const char*>(buffer);
   }
   // Data Pipe transport by MessagePipe
   {
@@ -291,14 +293,18 @@ void MojoConsumer() {
     result = mojo::GetMessageData(message.get(), &data, &length, &handles,
                                   MOJO_GET_MESSAGE_DATA_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "receive msg: " << (char*)data
+    LOG(INFO) << "receive msg: " << reinterpret_cast<char*>(data)
               << " consumer: " << handles[0]->value();
 
     mojo::ScopedDataPipeConsumerHandle consumer =
         mojo::ScopedDataPipeConsumerHandle::From(std::move(handles[0]));
     char buffer[100];
     uint32_t num_bytes = 100;
-    result = consumer->ReadData(buffer, &num_bytes, MOJO_READ_DATA_FLAG_NONE);
+    size_t bytes_read = 0;
+    result = consumer->ReadData(
+        MOJO_READ_DATA_FLAG_NONE,
+        base::span<uint8_t>(reinterpret_cast<uint8_t*>(buffer), num_bytes),
+        bytes_read);
     DCHECK_EQ(result, MOJO_RESULT_OK);
     LOG(INFO) << "receive data: " << buffer;
     std::ignore = consumer.release();
@@ -310,7 +316,7 @@ void MojoConsumer() {
     result = mojo::ReadMessageRaw(pipe.get(), &data, &handles,
                                   MOJO_READ_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "receive msg: " << (char*)&data[0]
+    LOG(INFO) << "receive msg: " << reinterpret_cast<char*>(&data[0])
               << " client: " << handles[0]->value();
 
     mojo::ScopedMessagePipeHandle client =
@@ -319,7 +325,7 @@ void MojoConsumer() {
     result = mojo::ReadMessageRaw(client.get(), &data2, nullptr,
                                   MOJO_READ_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "receive msg client: " << (char*)&data2[0];
+    LOG(INFO) << "receive msg client: " << reinterpret_cast<char*>(&data2[0]);
     std::ignore = client.release();
   }
   // Shared Buffer Test
@@ -329,13 +335,13 @@ void MojoConsumer() {
     result = mojo::ReadMessageRaw(pipe.get(), &data, &handles,
                                   MOJO_READ_MESSAGE_FLAG_NONE);
     DCHECK_EQ(result, MOJO_RESULT_OK);
-    LOG(INFO) << "receive msg: " << (char*)&data[0]
+    LOG(INFO) << "receive msg: " << reinterpret_cast<char*>(&data[0])
               << " buffer: " << handles[0]->value();
 
     mojo::ScopedSharedBufferHandle buffer =
         mojo::ScopedSharedBufferHandle::From(std::move(handles[0]));
     mojo::ScopedSharedBufferMapping mapping = buffer->Map(64);
-    LOG(INFO) << "read buffer: " << static_cast<char*>(mapping.get());
+    LOG(INFO) << "read buffer: " << reinterpret_cast<char*>(mapping.get());
     std::ignore = buffer.release();
   }
   // C++ Signal&Trap test

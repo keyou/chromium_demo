@@ -1,0 +1,16 @@
+
+module demo.demo_mojo.mojom;
+
+interface Connection {
+
+    EstablishChannel() =>
+        (int32 client_id,
+         handle<message_pipe>? channel_handle);
+
+};
+
+interface MyService {
+
+    Hi(string message);
+
+};

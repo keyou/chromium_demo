@@ -5,6 +5,7 @@ group("demo_mojo"){
         ":demo_mojo_multiple_process",
         ":demo_mojo_multiple_process_binding",
         # ":demo_services"
+        ":demo_mojo_child_process",
     ]
 }
 
@@ -40,6 +41,20 @@ executable("demo_mojo_multiple_process_binding") {
   testonly = true
   sources = [
     "demo_mojo_multiple_process_binding.cc",
+  ]
+
+  deps = [
+    "//base",
+    "//mojo/public",
+    "//mojo/core/embedder",
+    "mojom",
+  ]
+}
+
+executable("demo_mojo_child_process") {
+  testonly = true
+  sources = [
+    "demo_mojo_child_process.cc",
   ]
 
   deps = [
