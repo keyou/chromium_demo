@@ -15,21 +15,21 @@
 
 namespace demo {
 
-std::unique_ptr<base::File>& trace_file() {
-  static std::unique_ptr<base::File> g_trace_file;
-  return g_trace_file;
+base::File* trace_file() {
+  static base::NoDestructor<base::File> g_trace_file;
+  return g_trace_file.get();
 }
 
 void InitTrace(const std::string& file) {
 #if defined(OS_WIN)
-  trace_file() = std::make_unique<base::File>(
-      base::FilePath(base::SysUTF8ToWide(file)), base::File::FLAG_OPEN_ALWAYS |
-                                base::File::FLAG_WRITE);
+  *trace_file() =
+      base::File(base::FilePath(base::SysUTF8ToWide(file)),
+                 base::File::FLAG_OPEN_ALWAYS | base::File::FLAG_WRITE);
 #else
-  trace_file() = std::make_unique<base::File>(
-      base::FilePath(file), base::File::FLAG_OPEN_ALWAYS |
-                                base::File::FLAG_WRITE |
-                                base::File::FLAG_OPEN_TRUNCATED);
+  *trace_file() =
+      base::File(base::FilePath(file), base::File::FLAG_OPEN_ALWAYS |
+                                           base::File::FLAG_WRITE |
+                                           base::File::FLAG_OPEN_TRUNCATED);
 #endif
   DCHECK(trace_file()->IsValid());
   trace_file()->WriteAtCurrentPos("[", 1);
@@ -38,7 +38,8 @@ void InitTrace(const std::string& file) {
 
 void StartTrace(const std::string& categories = "",base::trace_event::TraceRecordMode mode = base::trace_event::RECORD_AS_MUCH_AS_POSSIBLE) {
   DLOG(INFO) << "Start trace: " << categories;
-  static std::string categories_;
+  static base::NoDestructor<std::string> g_categories_;
+  auto& categories_ = *g_categories_;
   if (!categories.empty())
     categories_ = categories;
   // 配置及启动 Trace
@@ -59,8 +60,9 @@ void FlushTrace(base::RepeatingClosure quit_closure) {
          const scoped_refptr<base::RefCountedString>& events_str,
          bool has_more_events) {
         // LOG(INFO) << std::endl << events_str->data();
-        trace_file()->WriteAtCurrentPos(events_str->data().c_str(),
-                                        events_str->size());
+        trace_file()->WriteAtCurrentPos(
+            reinterpret_cast<const char*>(events_str->data()),
+            events_str->size());
         trace_file()->WriteAtCurrentPos(",\n", 2);
         if (!has_more_events) {
           trace_file()->WriteAtCurrentPos("\n", 1);

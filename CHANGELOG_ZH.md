@@ -1,5 +1,13 @@
 ## 更新日志
 
+### 2025.11.16
+- 升级 demo_gl 到 M141, 主要更改：
+  1. `ui::Event` 的 `type()` 返回值类型变更到 `ui::EventType`，关键字修改
+  2. `ui::PlatformWindowDelegate` 的 `OnMouseEnter()` 方法重命名为 `OnCursorUpdate()`
+  3. `//gpu` 现在不能被外部可见，此例中依赖的功能集中在 `//gpu/config`
+  4. gl 的 `SharedContextState` 需要 surface 是 off-screen 的，暂时注释掉 `SharedContextState` 的创建和使用
+
+
 ### 2025.11.11
 - 基础部分（log, task, memory, tracing, resources, mojo, mojo_v8）升级到 M141，更改如下：
   1. `DISALLOW_COPY_AND_ASSIGN` 宏已弃用

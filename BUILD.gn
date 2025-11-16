@@ -47,7 +47,7 @@ group("demo") {
     deps += [
       "demo_resources",
       "demo_cc",
-      # "demo_gl",
+      "demo_gl",
       "demo_mojo_v8",
       "demo_views",
       # "demo_x11", windows不支持x11

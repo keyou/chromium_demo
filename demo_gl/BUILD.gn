@@ -11,7 +11,7 @@ executable("demo_gl") {
   deps = [
     "//base",
     "//base:i18n",
-    "//gpu",
+    "//gpu/config",
     "//gpu:gles2",
     "//gpu:raster",
     # "//gpu/command_buffer/client",
