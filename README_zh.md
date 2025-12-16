@@ -34,7 +34,7 @@ Demo 列表：
 17. [M141] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
 18. [M141] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
 19. [M141] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-20. [M120] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
+20. [M141] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
 21. [M120] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
 22. [M120] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
 23. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；

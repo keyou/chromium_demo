@@ -1,5 +1,16 @@
 ## 更新日志
 
+### 2025.12.16
+- 部分升级 demo_viz_gui 到 M141，主要更改：
+  1. `components/viz/common/resources/bitmap_allocation.h` 已移除
+  2. `viz::TileDrawQuad::SetNew` 移除了 `is_premultiplied` 参数，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6500701
+  3. `viz::ContentDrawQuadBase::texture_size` 已被移除，几种 quad 均作修改，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6653194
+  4. `viz::extureDrawQuad::SetNew` 移除了 `is_premultiplied`, `flipped` 和 `opacity` 参数，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6516061, https://chromium-review.googlesource.com/c/chromium/src/+/6019939, https://chromium-review.googlesource.com/c/chromium/src/+/5119685
+  5. `SharedBitmap` 已被删除，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6180918。使用 `viz::RasterContextProvider` 取代之。
+  6. `RootFrameSink` 中 `OnBeginFrame` 的 `frame_ack` 参数已被删除，新增一个纯虚方法 `OnSurfaceEvicted()`，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6417183，https://chromium-review.googlesource.com/c/chromium/src/+/4956873。
+  7. 按照该提交 https://chromium-review.googlesource.com/c/chromium/src/+/7230224 修正了 Windows 下的初始化。
+  8. (TextureDrawQuad和 TileDrawQuad 由于引用了资源，又弃用了SharedBitmap，暂未调通)
+
 ### 2025.11.16
 - 升级 demo_gl 到 M141, 主要更改：
   1. `ui::Event` 的 `type()` 返回值类型变更到 `ui::EventType`，关键字修改

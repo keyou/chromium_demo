@@ -19,12 +19,18 @@ template("viz") {
       "//ui/events",
       "//ui/events/platform",
       "//ui/platform_window",
-      "//gpu",
+      "//gpu/config",
+      "//gpu/command_buffer/client",
+      "//gpu/command_buffer/common",
       "//gpu/ipc/host",
       "//components/discardable_memory/service",
       "//components/discardable_memory/client",
       "//services/viz/public/cpp/gpu",
     ]
+
+    if(defined(extra_deps)) {
+      deps += extra_deps
+    }
 
     if (ozone_platform_x11) {
       deps += [
@@ -62,6 +68,11 @@ group("demo_viz") {
 viz("demo_viz_gui") {
   sources = [
       "demo_viz_gui.cc"
+  ]
+
+  # TODO: 换用真的 RasterContextProvider
+  extra_deps = [
+    "//components/viz/test:test_support"
   ]
 }
 

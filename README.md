@@ -42,7 +42,7 @@ Demo list:
 17. [M141] `demo_tracing_perfetto`: Demonstrate the output of Trace as Json format (used to interface with perfetto);
 18. [M141] `demo_tracing_perfetto_content`: Demonstrate how the content module is connected to perfetto;
 19. [M141] `demo_resources`: Demo resources related content, including grit, l10n, pak, etc.;
-20. [M120] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
+20. [M141] `demo_gl`: Demonstrate using `//ui/gl` for GPU rendering;
 21. [M120] `demo_viz_gui`: Demonstrate using `viz` to display the GUI interface;
 22. [M120] `demo_viz_offscreen`: Demonstrate using `viz` for off-screen rendering;
 23. `demo_viz_gui_gpu`: Demonstrate the use of `viz` for hardware accelerated rendering;
