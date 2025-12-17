@@ -27,11 +27,6 @@ template("viz") {
       "//components/discardable_memory/client",
       "//services/viz/public/cpp/gpu",
     ]
-
-    if(defined(extra_deps)) {
-      deps += extra_deps
-    }
-
     if (ozone_platform_x11) {
       deps += [
         "//ui/events/platform/x11",
@@ -68,11 +63,6 @@ group("demo_viz") {
 viz("demo_viz_gui") {
   sources = [
       "demo_viz_gui.cc"
-  ]
-
-  # TODO: 换用真的 RasterContextProvider
-  extra_deps = [
-    "//components/viz/test:test_support"
   ]
 }
 
