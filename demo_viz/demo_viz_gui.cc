@@ -115,16 +115,19 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     return local_surface_id_allocator_.GetCurrentLocalSurfaceId();
   }
 
-  void BindSIIProvider(
-      std::unique_ptr<viz::SharedImageInterfaceProvider> sii_provider) {
+  void BindSharedImageInterfaceProvider(
+      std::unique_ptr<viz::SharedImageInterfaceProvider>
+          shared_image_interface_provider) {
     if (!thread_.task_runner()->BelongsToCurrentThread()) {
       thread_.task_runner()->PostTask(
           FROM_HERE,
-          base::BindOnce(&LayerTreeFrameSink::BindSIIProvider,
-                         base::Unretained(this), std::move(sii_provider)));
+          base::BindOnce(&LayerTreeFrameSink::BindSharedImageInterfaceProvider,
+                         base::Unretained(this),
+                         std::move(shared_image_interface_provider)));
       return;
     }
-    sii_provider_ = std::move(sii_provider);
+    shared_image_interface_provider_ =
+        std::move(shared_image_interface_provider);
   }
 
  private:
@@ -426,21 +429,24 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
 
   viz::ResourceId AllocateAndFillSoftwareResource(const gfx::Size& size,
                                                   const SkBitmap& source) {
-    raw_ptr<gpu::SharedImageInterface> sii;
-    if (!sii_provider_) {
+    raw_ptr<gpu::SharedImageInterface> shared_image_interface;
+    if (!shared_image_interface_provider_) {
       return {};
     }
-    if ((sii = sii_provider_->GetSharedImageInterface()) == nullptr) {
+    if ((shared_image_interface =
+             shared_image_interface_provider_->GetSharedImageInterface()) ==
+        nullptr) {
       return {};
     }
-    auto shared_image = sii->CreateSharedImageForSoftwareCompositor(
-        {viz::SinglePlaneFormat::kBGRA_8888, size, gfx::ColorSpace(),
-         gpu::SHARED_IMAGE_USAGE_CPU_WRITE_ONLY,
-         "SoftwareRendererTestSharedBitmap"});
+    auto shared_image =
+        shared_image_interface->CreateSharedImageForSoftwareCompositor(
+            {viz::SinglePlaneFormat::kBGRA_8888, size, gfx::ColorSpace(),
+             gpu::SHARED_IMAGE_USAGE_CPU_WRITE_ONLY,
+             "SoftwareRendererTestSharedBitmap"});
     auto mapping = shared_image->Map();
 
-    // 使用 SharedImageInterfaceProvider 拿到的 SII
-    // 在创建 SI 时默认不验证
+    // 使用 SharedImageInterfaceProvider 拿到的 SharedImageInterface
+    // 在创建 SharedImage 时默认不验证
     // creation_token，需要写入完成后手动复制验证，并将这个作为
     // TransferableResource 的 sync_token.
     gpu::SyncToken token = shared_image->creation_sync_token();
@@ -520,7 +526,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   viz::FrameTokenGenerator frame_token_generator_;
   base::Lock lock_;
 
-  std::unique_ptr<viz::SharedImageInterfaceProvider> sii_provider_;
+  std::unique_ptr<viz::SharedImageInterfaceProvider>
+      shared_image_interface_provider_;
   std::unique_ptr<viz::ClientResourceProvider> client_resource_provider_;
 };
 
@@ -552,13 +559,13 @@ class Compositor : public viz::HostFrameSinkClient {
     CHECK(compositor_thread_.Start());
   }
 
-  using BindSIIProviderCallbackType = base::RepeatingCallback<void(
+  using BindSharedImageInterfaceProviderCallback = base::RepeatingCallback<void(
       base::OnceCallback<void(
           std::unique_ptr<viz::SharedImageInterfaceProvider>)>)>;
   void Initialize(
       mojo::PendingReceiver<viz::mojom::FrameSinkManagerClient> client,
       mojo::PendingRemote<viz::mojom::FrameSinkManager> manager,
-      BindSIIProviderCallbackType callback) {
+      BindSharedImageInterfaceProviderCallback callback) {
     compositor_thread_.task_runner()->PostTask(
         FROM_HERE, base::BindOnce(&Compositor::InitializeOnThread,
                                   base::Unretained(this), std::move(client),
@@ -582,7 +589,7 @@ class Compositor : public viz::HostFrameSinkClient {
   void InitializeOnThread(
       mojo::PendingReceiver<viz::mojom::FrameSinkManagerClient> client,
       mojo::PendingRemote<viz::mojom::FrameSinkManager> manager,
-      BindSIIProviderCallbackType callback) {
+      BindSharedImageInterfaceProviderCallback callback) {
     host_frame_sink_manager_.BindAndSetManager(std::move(client), nullptr,
                                                std::move(manager));
     display_client_ = std::make_unique<DemoHostDisplayClient>(widget_);
@@ -631,21 +638,23 @@ class Compositor : public viz::HostFrameSinkClient {
         gfx::Rect(size_));
     root_client_->Bind(std::move(root_client_receiver),
                        std::move(frame_sink_remote));
-    // 为 client 尝试绑定 SIIProvicer，异步回调
+    // 为 client 尝试绑定 SharedImageInterfaceProvicer，异步回调
     callback.Run(base::BindOnce(
         [](base::WeakPtr<Compositor> compositor,
-           std::unique_ptr<viz::SharedImageInterfaceProvider> sii_provider) {
+           std::unique_ptr<viz::SharedImageInterfaceProvider>
+               shared_image_interface_provider) {
           if (!compositor) {
             return;
           }
-          compositor->root_client_->BindSIIProvider(std::move(sii_provider));
+          compositor->root_client_->BindSharedImageInterfaceProvider(
+              std::move(shared_image_interface_provider));
         },
         weak_factory_.GetWeakPtr()));
     EmbedChildClient(root_frame_sink_id, std::move(callback));
   }
 
   void EmbedChildClient(viz::FrameSinkId parent_frame_sink_id,
-                        BindSIIProviderCallbackType callback) {
+                        BindSharedImageInterfaceProviderCallback callback) {
     // 创建 child 的 FrameSinkId
     viz::FrameSinkId frame_sink_id = frame_sink_id_allocator_.NextFrameSinkId();
     // uint64_t rand = base::RandUint64();
@@ -675,11 +684,13 @@ class Compositor : public viz::HostFrameSinkClient {
                         std::move(frame_sink_remote));
     callback.Run(base::BindOnce(
         [](base::WeakPtr<Compositor> compositor,
-           std::unique_ptr<viz::SharedImageInterfaceProvider> sii_provider) {
+           std::unique_ptr<viz::SharedImageInterfaceProvider>
+               shared_image_interface_provider) {
           if (!compositor) {
             return;
           }
-          compositor->child_client_->BindSIIProvider(std::move(sii_provider));
+          compositor->child_client_->BindSharedImageInterfaceProvider(
+              std::move(shared_image_interface_provider));
         },
         weak_factory_.GetWeakPtr()));
   }
@@ -731,12 +742,6 @@ class GpuService {
     std::ignore = gpu_host_proxy.InitWithNewPipeAndPassReceiver();
 
     scoped_refptr<gl::GLSurface> default_offscreen_surface;
-    //   base::CommandLine* command_line =
-    //   base::CommandLine::ForCurrentProcess(); if
-    //   (command_line->HasSwitch(switches::kVizDemoUseGPU)) {
-    //     default_offscreen_surface = gl::init::CreateOffscreenGLSurface(
-    //         gl::GetDefaultDisplay(), gfx::Size());
-    //   }
 
     gpu_service_->InitializeWithHost(
         std::move(gpu_host_proxy), gpu::GpuProcessShmCount(),
@@ -745,20 +750,21 @@ class GpuService {
     runner_->CreateFrameSinkManager(std::move(params), gpu_service_.get());
   }
 
-  using BindSIIProviderCallbackType = base::OnceCallback<void(
+  using BindSharedImageInterfaceProviderCallback = base::OnceCallback<void(
       std::unique_ptr<viz::SharedImageInterfaceProvider>)>;
-  void BindSIIProvider(BindSIIProviderCallbackType callback) {
+  void BindSharedImageInterfaceProvider(
+      BindSharedImageInterfaceProviderCallback callback) {
     if (!gpu_task_runner_->BelongsToCurrentThread()) {
       gpu_task_runner_->PostTask(
           FROM_HERE,
-          base::BindOnce(&GpuService::BindSIIProvider, base::Unretained(this),
-                         std::move(callback)));
+          base::BindOnce(&GpuService::BindSharedImageInterfaceProvider,
+                         base::Unretained(this), std::move(callback)));
       return;
     }
 
-    auto sii_provider =
+    auto shared_image_interface_provider =
         std::make_unique<viz::SharedImageInterfaceProvider>(gpu_service_.get());
-    std::move(callback).Run(std::move(sii_provider));
+    std::move(callback).Run(std::move(shared_image_interface_provider));
   }
 
  private:
@@ -856,13 +862,14 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
     host_->Initialize(
         std::move(frame_sink_manager_client_receiver),
         std::move(frame_sink_manager),
-        base::BindRepeating(&DemoVizWindow::BindSIIProviderService,
-                            base::Unretained(this)));
+        base::BindRepeating(
+            &DemoVizWindow::BindSharedImageInterfaceProviderService,
+            base::Unretained(this)));
   }
 
-  void BindSIIProviderService(
-      GpuService::BindSIIProviderCallbackType callback) {
-    service_->BindSIIProvider(std::move(callback));
+  void BindSharedImageInterfaceProviderService(
+      GpuService::BindSharedImageInterfaceProviderCallback callback) {
+    service_->BindSharedImageInterfaceProvider(std::move(callback));
   }
 
   // ui::PlatformWindowDelegate:

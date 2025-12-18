@@ -1,16 +1,16 @@
 ## 更新日志
 
 ### 2025.12.17
-- 部分升级 demo_viz_gui 到 M141，主要更改：
+- 升级 demo_viz_gui 到 M141，主要更改：
   1. `components/viz/common/resources/bitmap_allocation.h` 已移除
-  2. `viz::TileDrawQuad::SetNew` 移除了 `is_premultiplied` 参数，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6500701
-  3. `viz::ContentDrawQuadBase::texture_size` 已被移除，几种 quad 均作修改，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6653194
-  4. `viz::TextureDrawQuad::SetNew` 移除了 `is_premultiplied`, `flipped` 和 `opacity` 参数，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6516061,  https://chromium-review.googlesource.com/c/chromium/src/+/6019939,  https://chromium-review.googlesource.com/c/chromium/src/+/5119685
-  5. `SharedBitmap` 已被删除，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6180918。 正常情况下应使用 `viz::RasterContextProvider` 中提供的 `SharedImageInterface` 取代之，此处使用底层接口 `viz::SharedImageInterfaceProvider` 提供的进行绕过。
-  6. `RootFrameSink` 中 `OnBeginFrame` 的 `frame_ack` 参数已被删除，新增一个纯虚方法 `OnSurfaceEvicted()`，参见 https://chromium-review.googlesource.com/c/chromium/src/+/6417183， https://chromium-review.googlesource.com/c/chromium/src/+/4956873。
-  7. 按照该提交 https://chromium-review.googlesource.com/c/chromium/src/+/7230224 修正了 Windows 下的初始化。
-  8. 修正了 `SharedQuadState` 的 `clip` 参数。此项更改暂未找到对应的上游更改，测试发现**不**这样改就会导致 transform 后超出 `clip` 的绘制内容被直接丢弃（透明化）。
-  9. 由于资源全部经过 `SharedImage` 传递，相应释放逻辑较为复杂，保存好 trace 后改成直接强制退出进程，以简化实现。
+  2. `viz::TileDrawQuad::SetNew` 移除了 `is_premultiplied` 参数，参见 [6500701](https://chromium-review.googlesource.com/c/chromium/src/+/6500701)
+  3. `viz::ContentDrawQuadBase::texture_size` 已被移除，几种 quad 均作修改，参见 [6653194](https://chromium-review.googlesource.com/c/chromium/src/+/6653194)
+  4. `viz::TextureDrawQuad::SetNew` 移除了 `is_premultiplied`, `flipped` 和 `opacity` 参数，参见 [6516061](https://chromium-review.googlesource.com/c/chromium/src/+/6516061),  [6019939](https://chromium-review.googlesource.com/c/chromium/src/+/6019939),  [5119685](https://chromium-review.googlesource.com/c/chromium/src/+/5119685)
+  5. `SharedBitmap` 已被删除，参见 [6180918](https://chromium-review.googlesource.com/c/chromium/src/+/6180918)。 正常情况下应使用 `viz::RasterContextProvider` 中提供的 `SharedImageInterface` 取代之，此处使用底层接口 `viz::SharedImageInterfaceProvider` 提供的进行绕过
+  6. `RootFrameSink` 中 `OnBeginFrame` 的 `frame_ack` 参数已被删除，新增一个纯虚方法 `OnSurfaceEvicted()`，参见 [6417183](https://chromium-review.googlesource.com/c/chromium/src/+/6417183), [4956873](https://chromium-review.googlesource.com/c/chromium/src/+/4956873)
+  7. 按照该提交 [7230224](https://chromium-review.googlesource.com/c/chromium/src/+/7230224) 修正了 Windows 下的初始化，避免崩溃
+  8. 修正了 `SharedQuadState` 的 `clip` 参数。此项更改暂未找到对应的上游更改，测试发现**不**这样改就会导致 transform 后超出 `clip` 的绘制内容被直接丢弃（透明化）
+  9. 由于资源全部经过 `SharedImage` 传递，相应释放逻辑较为复杂，保存好 trace 后改成直接强制退出进程，以简化实现
 
 ### 2025.11.16
 - 升级 demo_gl 到 M141, 主要更改：

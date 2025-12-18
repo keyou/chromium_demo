@@ -132,21 +132,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       g_gl_context = gl::init::CreateGLContext(
           share_group.get(), g_gl_surface.get(), gl::GLContextAttribs());
       DCHECK(g_gl_context->MakeCurrent(g_gl_surface.get()));
-      // g_context_state = base::MakeRefCounted<gpu::SharedContextState>(
-      //     std::move(share_group), g_gl_surface, g_gl_context, false,
-      //     base::DoNothing(), gpu::GrContextType::kGL);
-
-      // gpu::GpuPreferences gpu_preferences;
-      // gpu::GpuFeatureInfo gpu_feature_info;
-      // gpu::GpuDriverBugWorkarounds workarounds;
-      // scoped_refptr<gpu::gles2::FeatureInfo> feature_info =
-      //     new gpu::gles2::FeatureInfo(workarounds, gpu_feature_info);
-      // g_context_state->InitializeGL(gpu_preferences, feature_info);
-      // g_context_state->InitializeSkia(gpu_preferences,
-      //                                 feature_info->workarounds(), nullptr);
     }
-    // DCHECK(g_context_state->MakeCurrent(g_gl_surface.get(), true));
-    // DCHECK(g_context_state->gr_context());
     static unsigned int i = 0;
     glClearColor(1.f, (i++) % 10 / 10.f + 0.1f, 0, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
