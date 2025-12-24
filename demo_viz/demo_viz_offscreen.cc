@@ -9,6 +9,10 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
+#include "base/trace_event/trace_config.h"
+#include "base/trace_event/trace_event.h"
+#include "base/trace_event/trace_log.h"
+#include "command_buffer/service/scheduler.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "components/viz/demo/service/demo_service.h"
@@ -19,7 +23,6 @@
 #include "components/viz/service/display/overlay_processor_stub.h"
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
-#include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/display_embedder/software_output_surface.h"
 #include "components/viz/service/frame_sinks/compositor_frame_sink_support.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
@@ -40,6 +43,8 @@
 #include "ui/gfx/skia_util.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
+#include "gpu/command_buffer/service/shared_image/shared_image_manager.h"
+
 
 #if defined(USE_AURA)
 #endif
@@ -97,10 +102,10 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
 
  private:
   void InitializeOnThread() {
-    shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
-    auto init_params = viz::FrameSinkManagerImpl::InitParams(
-        shared_bitmap_manager_.get());
-    frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(init_params);
+    sync_point_manager_ = std::make_unique<gpu::SyncPointManager>();
+    gpu_scheduler_ = std::make_unique<gpu::Scheduler>(sync_point_manager_.get());
+    shared_image_manager_ = std::make_unique<gpu::SharedImageManager>();
+    frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(viz::FrameSinkManagerImpl::InitParams());
     auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     // 生成 root client 的 LocalSurfaceId
@@ -134,7 +139,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     // settings.use_skia_renderer = false;
     auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
-        shared_bitmap_manager_.get(), settings, &debug_settings_, root_frame_sink_id_,
+        shared_image_manager_.get(), gpu_scheduler_.get(),  settings, &debug_settings_, root_frame_sink_id_,
         nullptr, std::move(output_surface), std::move(overlay_processor),
         std::move(scheduler), task_runner);
     display_->Initialize(this, frame_sink_manager_->surface_manager());
@@ -195,7 +200,6 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
   void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
       const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details,
-      bool frame_ack,
       std::vector<::viz::ReturnedResource> resources) override {
     DLOG(INFO) << "OnBeginFrame: submit a new frame";
     if (support_->last_activated_local_surface_id() != root_local_surface_id_) {
@@ -210,6 +214,7 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
   void OnCompositorFrameTransitionDirectiveProcessed(uint32_t sequence_id) override {}
   void ReclaimResources(
       std::vector<::viz::ReturnedResource> resources) override {}
+  void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) override {}
 
   // viz::DisplayClient overrides.
   void DisplayAddChildWindowToBrowser(gpu::SurfaceHandle child_window) override {}
@@ -222,15 +227,11 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
   void DisplayDidReceiveCALayerParams(
       const gfx::CALayerParams& ca_layer_params) override {}
   void DisplayDidCompleteSwapWithSize(const gfx::Size& pixel_size) override {}
-  void SetPreferredFrameInterval(base::TimeDelta interval) override {}
-  base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
-      const viz::FrameSinkId& id,
-      viz::mojom::CompositorFrameSinkType* type) override {
-    return frame_sink_manager_->GetPreferredFrameIntervalForFrameSinkId(id, type);
-  }
 
   base::Thread thread_;
-  std::unique_ptr<viz::ServerSharedBitmapManager> shared_bitmap_manager_;
+  std::unique_ptr<gpu::SyncPointManager> sync_point_manager_;
+  std::unique_ptr<gpu::Scheduler> gpu_scheduler_;
+  std::unique_ptr<gpu::SharedImageManager> shared_image_manager_;
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   std::unique_ptr<viz::CompositorFrameSinkSupport> support_;
   std::unique_ptr<viz::DelayBasedBeginFrameSource> begin_frame_source_;
@@ -259,8 +260,9 @@ int main(int argc, char** argv) {
   // 启动 Trace
   auto trace_config =
       base::trace_event::TraceConfig("viz" /*, "trace-to-console"*/);
-  base::trace_event::TraceLog::GetInstance()->SetEnabled(
-      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
+  base::trace_event::InitializeInProcessPerfettoBackend();
+  base::trace_event::SetPerfettoInitializedForTesting();
+  base::trace_event::TraceLog::GetInstance()->SetEnabled(trace_config);
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop

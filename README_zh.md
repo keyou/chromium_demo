@@ -8,49 +8,50 @@
 
 > 提示：
 > 1. 如果你是 chromium 的新手，建议按照顺序学习这些 demo。
-> 1. 这些 demo 只在 Linux 和 Android 上进行了测试。每个平台支持的 demo 列表见 BUILD.gn。
-> 1. 下面 demo 列表前面的标签表示该 demo 最高支持的 chromium 版本，比如 `M120` 表示最高支持 chromium 120，没有标签的 demo 表示只在 chromium 80 上验证过。
+> 1. 每个平台支持的 demo 列表见 BUILD.gn，下表中也提供测试的概况（其中 `Y` 表示已测过，`N` 表示不支持，空置表示暂未测试）。
 > 1. 欢迎提交 PR 新增 demo 或者将这些 demo 迁移到其他 chromium 版本。
 > 1. 由于精力有限，该项目每年更新一次内核（大约间隔 10 个版本）。
 
 Demo 列表：
 
-1. [M141] `demo_exe`: 最简单的 demo，演示 gn 及创建自己的 exe；
-2. [M141] `demo_log`: 演示使用日志库；
-3. [M141] `demo_task_thread_pool`: 演示使用线程池 ThreadPool, 位于 demo_task 下;
-4. [M141] `demo_task_executor`: 演示使用消息循环 SingleThreadTaskExecutor, 位于 demo_task 下;
-5. [M141] `demo_task_thread`: 演示在新线程中使用 task, 位于 demo_task 下;
-6. [M141] `demo_callback_(once|repeating)`: 演示 Bind&Callback 相关内容；
-7. [M120] `demo_linktest`: 演示错误的使用 gn 导致链接错误；
-8.  [M141] `demo_mojo_single_process`: 演示在单进程中使用 `mojo` 库；
-9.  [M141] `demo_mojo_multiple_process`: 演示在多进程中使用 `mojo` 库；
-10. [M141] `demo_mojo_multiple_process_binding`: 演示在多进程中使用 `mojo` 库的 binding 层；
-11. [M141] `demo_mojo_child_process`: 演示通过父进程建联并在两个子进程间直接通讯；
-12. [M91] `demo_services`: 演示使用基于 `mojo` 的 servcies 及多进程架构；
-13. [M120] `demo_ipc`: 演示使用基于 `mojo` 的 IPC 接口；
-14. [M141] `demo_mojo_v8`: 演示使用 js 访问 mojo 接口；
-15. [M141] `demo_memory`: 演示使用 SharedMemory；
-16. [M141] `demo_tracing_console`: 演示使用 Trace 输出到控制台；
-17. [M141] `demo_tracing_perfetto`: 演示将 Trace 输出为 Json 格式（用来对接 perfetto）；
-18. [M141] `demo_tracing_perfetto_content`: 演示 content 模块是如何对接 perfetto 的；
-19. [M141] `demo_resources`: 演示 resources 相关内容，包括 grit，l10n，pak 等；
-20. [M141] `demo_gl`: 演示使用 `//ui/gl` 进行 GPU 渲染；
-21. [M141] `demo_viz_gui`: 演示使用 `viz` 显示 GUI 界面；
-22. [M120] `demo_viz_offscreen`: 演示使用 `viz` 进行离屏渲染；
-23. `demo_viz_gui_gpu`: 演示使用 `viz` 进行硬件加速渲染；
-24. `demo_viz_layer`: 演示使用 `viz` 进行交互渲染；
-25. `demo_viz_layer_offscreen`, 演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染；
-26. [M120] `demo_cc_gui`: 演示使用 `cc` 显示 GUI 界面；
-27. [M120] `demo_cc_offscreen`: 演示使用 `cc` 进行离屏渲染；
-28. [M120] `demo_views`: 演示使用 `//ui/views` 创建 UI；
-29. `demo_apk`: 演示创建 Android 应用，base::android::* 和 JNI 的使用；
-30. `demo_android_skia`: 演示在 Android 上使用 Skia 进行软件渲染和硬件渲染；
-31. [M120] `demo_skia`: 演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染；
-32. `demo_x11`: 演示使用 X11 创建透明窗口；
-33. `demo_x11_glx`: 演示在透明窗口中使用 glx;
-34. `demo_x11_egl`: 演示在透明窗口中使用 egl；
-35. [M120] `demo_gin`: 演示使用 gin, 创建一个精简JS运行时；
-37. `demo_shell`: 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android；
+|                 名称                 |                               描述                                | 目标版本 | Windows | Linux/Android |
+| :----------------------------------: | :---------------------------------------------------------------: | :------: | :-----: | :-----------: |
+|              `demo_exe`              |              最简单的 demo，演示 gn 及创建自己的 exe              |   M141   |    Y    |               |
+|              `demo_log`              |                          演示使用日志库                           |   M141   |    Y    |               |
+|       `demo_task_thread_pool`        |           演示使用线程池 ThreadPool, 位于 demo_task 下            |   M141   |    Y    |               |
+|         `demo_task_executor`         |   演示使用消息循环 SingleThreadTaskExecutor, 位于 demo_task 下    |   M141   |    Y    |               |
+|          `demo_task_thread`          |            演示在新线程中使用 task, 位于 demo_task 下             |   M141   |    Y    |               |
+|  `demo_callback_(once\|repeating)`   |                    演示 Bind&Callback 相关内容                    |   M141   |    Y    |               |
+|           `demo_linktest`            |                  演示错误的使用 gn 导致链接错误                   |   M120   |         |               |
+|      `demo_mojo_single_process`      |                   演示在单进程中使用 `mojo` 库                    |   M141   |    Y    |               |
+|     `demo_mojo_multiple_process`     |                   演示在多进程中使用 `mojo` 库                    |   M141   |    Y    |               |
+| `demo_mojo_multiple_process_binding` |             演示在多进程中使用 `mojo` 库的 binding 层             |   M141   |    Y    |               |
+|      `demo_mojo_child_process`       |            演示通过父进程建联并在两个子进程间直接通讯             |   M141   |    Y    |               |
+|           `demo_services`            |           演示使用基于 `mojo` 的 servcies 及多进程架构            |   M91    |         |               |
+|              `demo_ipc`              |                  演示使用基于 `mojo` 的 IPC 接口                  |   M120   |         |               |
+|            `demo_mojo_v8`            |                    演示使用 js 访问 mojo 接口                     |   M141   |    Y    |               |
+|            `demo_memory`             |                       演示使用 SharedMemory                       |   M141   |    Y    |               |
+|        `demo_tracing_console`        |                    演示使用 Trace 输出到控制台                    |   M141   |    Y    |               |
+|       `demo_tracing_perfetto`        |        演示将 Trace 输出为 Json 格式（用来对接 perfetto）         |   M141   |    Y    |               |
+|   `demo_tracing_perfetto_content`    |              演示 content 模块是如何对接 perfetto 的              |   M141   |    Y    |               |
+|           `demo_resources`           |         演示 resources 相关内容，包括 grit，l10n，pak 等          |   M141   |    Y    |               |
+|              `demo_gl`               |                 演示使用 `//ui/gl` 进行 GPU 渲染                  |   M141   |    Y    |               |
+|            `demo_viz_gui`            |                   演示使用 `viz` 显示 GUI 界面                    |   M141   |    Y    |               |
+|         `demo_viz_offscreen`         |                    演示使用 `viz` 进行离屏渲染                    |   M141   |    Y    |               |
+|          `demo_viz_gui_gpu`          |                  演示使用 `viz` 进行硬件加速渲染                  |   M80    |         |       Y       |
+|           `demo_viz_layer`           |                    演示使用 `viz` 进行交互渲染                    |   M80    |         |       Y       |
+|      `demo_viz_layer_offscreen`      |           演示使用 VIZ 的 `CopyOutput` 接口进行离屏渲染           |   M80    |         |       Y       |
+|            `demo_cc_gui`             |                    演示使用 `cc` 显示 GUI 界面                    |   M120   |         |               |
+|         `demo_cc_offscreen`          |                    演示使用 `cc` 进行离屏渲染                     |   M120   |         |               |
+|             `demo_views`             |                   演示使用 `//ui/views` 创建 UI                   |   M120   |         |               |
+|              `demo_apk`              |      演示创建 Android 应用，`base::android::*` 和 JNI 的使用      |   M80    |         |       Y       |
+|         `demo_android_skia`          |         演示在 Android 上使用 Skia 进行软件渲染和硬件渲染         |   M80    |         |       Y       |
+|             `demo_skia`              |          演示在 Linux 上使用 Skia 进行软件渲染和硬件渲染          |   M120   |         |               |
+|              `demo_x11`              |                     演示使用 X11 创建透明窗口                     |   M80    |    N    |       Y       |
+|            `demo_x11_glx`            |                     演示在透明窗口中使用 glx                      |   M80    |    N    |       Y       |
+|            `demo_x11_egl`            |                     演示在透明窗口中使用 egl                      |   M80    |    N    |       Y       |
+|              `demo_gin`              |                演示使用 gin, 创建一个精简JS运行时                 |   M120   |         |               |
+|             `demo_shell`             | 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android |   M80    |         |       Y       |
 
 文档：
 
@@ -80,8 +81,6 @@ Demo 列表：
     ```
 
 4. 执行 `ninja -C out/Default <demo列表中的名称>` 生成所需的demo（详见 [BUILD.gn](./BUILD.gn)），比如使用名称 `demo_exe` 生成 demo_exe 程序。或者使用 `demo` 生成所有的程序；
-
-> 再次强调，这些 demo 只在 Linux 和 Android 上测试通过，其他平台没有测试，欢迎提交 PR/MR 兼容其他平台。
 
 ## TODO
 
@@ -115,6 +114,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hc-tec"><img src="https://avatars.githubusercontent.com/u/59106739?v=4?s=100" width="100px;" alt="hc-tec"/><br /><sub><b>hc-tec</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=hc-tec" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://qzq.at"><img src="https://avatars.githubusercontent.com/u/19623228?v=4?s=100" width="100px;" alt="QZQ"/><br /><sub><b>QZQ</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=SamuelQZQ" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mikucy"><img src="https://avatars.githubusercontent.com/u/23072202?v=4?s=100" width="100px;" alt="Midori"/><br /><sub><b>Midori</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=mikucy" title="Code">💻</a> <a href="https://github.com/keyou/chromium_demo/commits?author=mikucy" title="Documentation">📖</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://octz.net"><img src="https://avatars.githubusercontent.com/u/53362310?v=4?s=100" width="100px;" alt="Yi Lu"/><br /><sub><b>Yi Lu</b></sub></a><br /><a href="https://github.com/keyou/chromium_demo/commits?author=DynamicLoader" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

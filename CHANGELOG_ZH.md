@@ -1,5 +1,12 @@
 ## 更新日志
 
+### 2025.12.24
+- 升级 demo_viz_offscreen 到 M141，主要更改：
+  1. `SharedBitmapManager` 已从 `FrameSinkManagerImpl::InitParams` 移除，参见 [6180026](https://chromium-review.googlesource.com/c/chromium/src/+/6180026)
+  2. `FrameRateDecider` 已移除，参见 [6515298](https://chromium-review.googlesource.com/c/chromium/src/+/6515298)
+  3. `viz::Display` 的实例化需要 `gpu::Scheduler`，参见 [5757160](https://chromium-review.googlesource.com/c/chromium/src/+/5757160)
+- 文档更新，将 demo 列表改成表格并加入兼容性测试情况标记
+
 ### 2025.12.17
 - 升级 demo_viz_gui 到 M141，主要更改：
   1. `components/viz/common/resources/bitmap_allocation.h` 已移除

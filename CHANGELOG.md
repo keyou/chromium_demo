@@ -1,5 +1,30 @@
 ## Changelog
 
+### 2025.12.24
+- Upgraded demo_viz_offscreen to M141 with the following main changes:
+  1. `SharedBitmapManager` has been removed from `FrameSinkManagerImpl::InitParams`, see [6180026](https://chromium-review.googlesource.com/c/chromium/src/+/6180026)
+  2. `FrameRateDecider` has been removed, see [6515298](https://chromium-review.googlesource.com/c/chromium/src/+/6515298)
+  3. Instantiation of `viz::Display` now requires `gpu::Scheduler`, see [5757160](https://chromium-review.googlesource.com/c/chromium/src/+/5757160)
+- Documentation update: converted demo list to table format and added compatibility test status markers
+
+### 2025.12.17
+- Upgraded demo_viz_gui to M141 with the following main changes:
+  1. `components/viz/common/resources/bitmap_allocation.h` has been removed
+  2. `viz::TileDrawQuad::SetNew` removed the `is_premultiplied` parameter, see [6500701](https://chromium-review.googlesource.com/c/chromium/src/+/6500701)
+  3. `viz::ContentDrawQuadBase::texture_size` has been removed, multiple quad types were modified, see [6653194](https://chromium-review.googlesource.com/c/chromium/src/+/6653194)
+  4. `viz::TextureDrawQuad::SetNew` removed the `is_premultiplied`, `flipped`, and `opacity` parameters, see [6516061](https://chromium-review.googlesource.com/c/chromium/src/+/6516061), [6019939](https://chromium-review.googlesource.com/c/chromium/src/+/6019939), [5119685](https://chromium-review.googlesource.com/c/chromium/src/+/5119685)
+  5. `SharedBitmap` has been deleted, see [6180918](https://chromium-review.googlesource.com/c/chromium/src/+/6180918). Normally, `SharedImageInterface` provided by `viz::RasterContextProvider` should be used instead; here we bypass using the low-level interface provided by `viz::SharedImageInterfaceProvider`
+  6. The `frame_ack` parameter in `OnBeginFrame` of `RootFrameSink` has been removed, and a new pure virtual method `OnSurfaceEvicted()` has been added, see [6417183](https://chromium-review.googlesource.com/c/chromium/src/+/6417183), [4956873](https://chromium-review.googlesource.com/c/chromium/src/+/4956873)
+  7. Fixed initialization on Windows according to commit [7230224](https://chromium-review.googlesource.com/c/chromium/src/+/7230224) to avoid crashes
+  8. Fixed the `clip` parameter of `SharedQuadState`. This change has not yet found a corresponding upstream change; testing found that without this change, drawing content that exceeds the `clip` after transform will be discarded (made transparent) directly
+  9. Since all resources are passed through `SharedImage`, the corresponding release logic is complex; after saving the trace, changed to directly force exit the process to simplify the implementation
+
+### 2025.11.16
+- Upgraded demo_gl to M141 with the following main changes:
+  1. The return type of `ui::Event::type()` has changed to `ui::EventType`, keywords modified
+  2. The `OnMouseEnter()` method of `ui::PlatformWindowDelegate` has been renamed to `OnCursorUpdate()`
+  3. `//gpu` can no longer be externally visible; the required functionality in this case is concentrated in `//gpu/config`
+  4. gl's `SharedContextState` requires surface to be off-screen; temporarily commented out the creation and use of `SharedContextState`
 
 ### 2025.11.11
 - Upgraded core modules (log, task, memory, tracing, resources, mojo, mojo_v8) to M141 with the following changes:
