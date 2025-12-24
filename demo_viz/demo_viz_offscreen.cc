@@ -27,6 +27,7 @@
 #include "components/viz/service/frame_sinks/compositor_frame_sink_support.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
+#include "gpu/command_buffer/service/shared_image/shared_image_manager.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
@@ -43,8 +44,6 @@
 #include "ui/gfx/skia_util.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
-#include "gpu/command_buffer/service/shared_image/shared_image_manager.h"
-
 
 #if defined(USE_AURA)
 #endif
@@ -103,9 +102,11 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
  private:
   void InitializeOnThread() {
     sync_point_manager_ = std::make_unique<gpu::SyncPointManager>();
-    gpu_scheduler_ = std::make_unique<gpu::Scheduler>(sync_point_manager_.get());
+    gpu_scheduler_ =
+        std::make_unique<gpu::Scheduler>(sync_point_manager_.get());
     shared_image_manager_ = std::make_unique<gpu::SharedImageManager>();
-    frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(viz::FrameSinkManagerImpl::InitParams());
+    frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
+        viz::FrameSinkManagerImpl::InitParams());
     auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     // 生成 root client 的 LocalSurfaceId
@@ -139,8 +140,9 @@ class OffscreenRenderer : public viz::mojom::CompositorFrameSinkClient,
     // settings.use_skia_renderer = false;
     auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
-        shared_image_manager_.get(), gpu_scheduler_.get(),  settings, &debug_settings_, root_frame_sink_id_,
-        nullptr, std::move(output_surface), std::move(overlay_processor),
+        shared_image_manager_.get(), gpu_scheduler_.get(), settings,
+        &debug_settings_, root_frame_sink_id_, nullptr,
+        std::move(output_surface), std::move(overlay_processor),
         std::move(scheduler), task_runner);
     display_->Initialize(this, frame_sink_manager_->surface_manager());
 
