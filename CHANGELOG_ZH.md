@@ -1,5 +1,12 @@
 ## 更新日志
 
+### 2025.12.25
+- 在 Windows 平台上将 demo_skia 升级到 M141 (仅软件)，主要更改：
+  1. 添加了 `WinSoftwareBitmapPresenter`，使用 GDI API 支持在 Windows 平台上呈现软件渲染的位图
+  2. 修改了 `SkiaCanvasSoftware`，使其在 Windows 上运行时使用 `WinSoftwareBitmapPresenter`
+  3. 更新了构建配置，包含 Windows 平台所需的依赖项
+  4. 将 `demo_skia` 模块中的命名空间 `demo_jni` 重命名为 `demo` 以保持一致性
+
 ### 2025.12.24
 - 升级 demo_viz_offscreen 到 M141，主要更改：
   1. `SharedBitmapManager` 已从 `FrameSinkManagerImpl::InitParams` 移除，参见 [6180026](https://chromium-review.googlesource.com/c/chromium/src/+/6180026)

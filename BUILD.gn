@@ -51,7 +51,7 @@ group("demo") {
       "demo_mojo_v8",
       "demo_views",
       # "demo_x11", windows不支持x11
-      # "demo_skia", windows不支持x11的软件渲染
+      "demo_skia", # windows不支持x11的软件渲染
       "demo_viz",
     ]
   }

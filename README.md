@@ -54,12 +54,14 @@ Demo list:
 |             `demo_views`             |                               Demonstrate the use of `//ui/views` to create UI                                |      M120      |         |               |
 |              `demo_apk`              |             Demonstrate the creation of Android applications, the use of base::android::* and JNI             |      M80       |         |       Y       |
 |         `demo_android_skia`          |             Demonstrate the use of Skia for software rendering and hardware rendering on Android              |      M80       |         |       Y       |
-|             `demo_skia`              |              Demonstrate the use of Skia for software rendering and hardware rendering on Linux               |      M120      |         |               |
+|             `demo_skia`              |          Demonstrate the use of Skia for software rendering and hardware rendering on Windows/Linux           |     M141*      |    Y    |               |
 |              `demo_x11`              |                              Demonstrate using X11 to create transparent windows                              |      M80       |    N    |       Y       |
 |            `demo_x11_glx`            |                              Demonstrate the use of glx in a transparent window                               |      M80       |    N    |       Y       |
 |            `demo_x11_egl`            |                              Demonstrate the use of egl in a transparent window                               |      M80       |    N    |       Y       |
 |              `demo_gin`              |                           Demonstrate the use of gin to create a javascript runtime                           |      M120      |         |               |
 |             `demo_shell`             |      Demonstrate the use of content api to create a streamlined browser that supports Linux and Android       |      M80       |         |       Y       |
+
+*: This demo only uses GDI to support software on-screen presentation on Windows platform, Linux platform should support both software and hardware rendering, further testing is needed.
 
 Documents:
 

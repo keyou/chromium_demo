@@ -8,8 +8,6 @@ executable("demo_skia") {
     "demo_skia.cc",
     "skia_canvas.cc",
     "skia_canvas.h",
-    "skia_canvas_gl.cc",
-    "skia_canvas_gl.h",
     "skia_canvas_software.cc",
     "skia_canvas_software.h",
   ]
@@ -17,7 +15,6 @@ executable("demo_skia") {
   deps = [
     "//base",
     "//base:i18n",
-    "//gpu",
     "//gpu:gles2",
     "//gpu:raster",
     "//gpu/command_buffer/client",
@@ -44,5 +41,19 @@ executable("demo_skia") {
     #configs += [ "//build/config/linux:x11" ]
   }
 
-  libs = ["EGL","GLESv2"]
+  if(is_win){
+    sources += [
+      "win_software_bitmap_presenter.cc",
+      "win_software_bitmap_presenter.h",
+    ]
+    deps += [
+      "//ui/platform_window/win:win",
+    ]
+  } else {
+    sources += [
+      "skia_canvas_gl.cc",
+      "skia_canvas_gl.h",
+    ]
+    libs = ["EGL","GLESv2"]
+  }
 }

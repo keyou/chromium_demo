@@ -2,9 +2,11 @@
 #include "demo/demo_skia/skia_canvas_software.h"
 
 #include "base/trace_event/trace_event.h"
+#if defined(USE_X11)
 #include "ui/gfx/x/connection.h"
+#endif  // defined(USE_X11)
 
-namespace demo_jni {
+namespace demo {
 
 SkiaCanvasSoftware::SkiaCanvasSoftware(gfx::AcceleratedWidget widget,int width,int height)
     : SkiaCanvas(widget, width, height) {
@@ -16,8 +18,13 @@ SkiaCanvasSoftware::~SkiaCanvasSoftware() = default;
 
 void SkiaCanvasSoftware::InitializeOnRenderThread() {
   TRACE_EVENT0("shell", "SkiaCanvasSoftware::InitializeOnRenderThread");
+#if defined(USE_X11)
   x11_presenter_ = std::make_unique<ui::X11SoftwareBitmapPresenter>(
       x11::Connection::Get(), nativeWindow_, true);
+#endif  // defined(USE_X11)
+#if defined(OS_WIN)
+  win_presenter_ = std::make_unique<WinSoftwareBitmapPresenter>(nativeWindow_);
+#endif  // defined (OS_WIN)
 
   // 当 format = AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM = 4
   // 时，一个像素占2个字节，所以x2
@@ -36,16 +43,30 @@ void SkiaCanvasSoftware::Resize(int width, int height) {
 }
 
 SkCanvas* SkiaCanvasSoftware::BeginPaint() {
+#if defined(USE_X11)
   x11_presenter_->Resize(gfx::Size(width_, height_));
   return x11_presenter_->GetSkCanvas();
+#elif defined(OS_WIN)
+  win_presenter_->Resize(gfx::Size(width_, height_));
+  return win_presenter_->GetSkCanvas();
+#else
+  return nullptr;
+#endif
 }
 
 void SkiaCanvasSoftware::OnPaint(SkCanvas* canvas) {
+#if defined(USE_X11)
   x11_presenter_->EndPaint(gfx::Rect(width_,height_));
+#endif  // defined(USE_X11)
+#if defined(OS_WIN)
+  win_presenter_->EndPaint(gfx::Rect(width_, height_));
+#endif  // defined (OS_WIN)
 }
 
 void SkiaCanvasSoftware::SwapBuffer() {
+#if defined(USE_X11)
   x11_presenter_->OnSwapBuffers(base::BindOnce([](const gfx::Size&){}));
+#endif  // defined(USE_X11)
 }
 
-}  // namespace demo_jni
+}  // namespace demo

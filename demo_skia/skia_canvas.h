@@ -9,7 +9,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "ui/gfx/native_widget_types.h"
 
-namespace demo_jni {
+namespace demo {
 
 class SkiaCanvas {
  public:
@@ -60,6 +60,6 @@ class SkiaCanvas {
   base::WeakPtrFactory<SkiaCanvas> weak_factory_{this};
 };
 
-}  // namespace demo_jni
+}  // namespace demo
 
 #endif  // DEMO_DEMO_SKIA_SKIA_CANVAS_H
