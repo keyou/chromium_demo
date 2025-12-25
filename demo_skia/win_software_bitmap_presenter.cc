@@ -4,6 +4,8 @@
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkSurface.h"
 
+namespace demo {
+
 WinSoftwareBitmapPresenter::WinSoftwareBitmapPresenter(HWND hwnd)
     : hwnd_(hwnd) {}
 
@@ -27,8 +29,7 @@ void WinSoftwareBitmapPresenter::Resize(const gfx::Size& size) {
   HDC hdc = GetDC(hwnd_);
   // h_bitmap_ 是 GDI 句柄，pixel_ptr_ 是 Skia 可以直接写的内存地址
   void* pptr;
-  h_bitmap_ =
-      CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, &pptr, nullptr, 0);
+  h_bitmap_ = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, &pptr, nullptr, 0);
   pixel_ptr_ = pptr;
   ReleaseDC(hwnd_, hdc);
 
@@ -54,3 +55,5 @@ void WinSoftwareBitmapPresenter::EndPaint(const gfx::Rect& damage) {
   DeleteDC(mem_dc);
   ReleaseDC(hwnd_, hdc);
 }
+
+}  // namespace demo

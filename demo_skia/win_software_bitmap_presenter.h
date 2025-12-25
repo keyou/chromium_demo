@@ -9,6 +9,8 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 
+namespace demo {
+
 // 一个帮助类，使用 GDI 在 Windows 上呈现 Skia 软件位图
 // （很 Legacy 的方案，仅演示思路）
 class WinSoftwareBitmapPresenter {
@@ -27,5 +29,7 @@ class WinSoftwareBitmapPresenter {
   base::raw_ptr<void> pixel_ptr_ = nullptr;
   sk_sp<SkSurface> surface_;
 };
+
+}  // namespace demo
 
 #endif  // DEMO_DEMO_SKIA_WIN_SOFTWARE_BITMAP_PRESENTER_H_
