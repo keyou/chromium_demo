@@ -269,5 +269,11 @@ int main(int argc, char** argv) {
   LOG(INFO) << "running...";
   run_loop.Run();
 
+  {
+    base::RunLoop run_loop_to_flush_trace;
+    demo::FlushTrace(run_loop_to_flush_trace.QuitClosure());
+    run_loop_to_flush_trace.Run();
+  }
+
   return 0;
 }
