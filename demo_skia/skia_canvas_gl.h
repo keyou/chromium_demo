@@ -20,7 +20,7 @@
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 #include "third_party/skia/include/private/chromium/GrDeferredDisplayListRecorder.h"
 
-namespace demo_jni {
+namespace demo {
 
 class SkiaCanvasGL : public SkiaCanvas {
  public:
@@ -47,6 +47,6 @@ class SkiaCanvasGL : public SkiaCanvas {
   std::unique_ptr<GrDeferredDisplayListRecorder> recorder_;
 };
 
-} // namespace demo_jni
+}  // namespace demo
 
 #endif // DEMO_DEMO_SKIA_SKIA_CANVAS_GL_H

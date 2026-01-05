@@ -7,8 +7,9 @@
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
+#include "demo/common/utils.h"
+#include "demo/demo_skia/skia_canvas_software.h"
 #include "ui/base/ui_base_paths.h"
-#include "ui/base/x/x11_util.h"
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
 #include "ui/events/platform/platform_event_source.h"
@@ -19,20 +20,18 @@
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
 
-#include "demo/demo_skia/skia_canvas_gl.h"
-#include "demo/demo_skia/skia_canvas_software.h"
-
 #if defined(USE_AURA)
 #include "ui/aura/env.h"
 #endif
 
 #if defined(USE_X11)
-#include "ui/gfx/x/x11_connection.h"            // nogncheck
-#include "ui/platform_window/x11/x11_window.h"  // nogncheck
+#include "ui/base/x/x11_util.h"
 #include "ui/base/x/x11_util_internal.h"
 #include "ui/gfx/x/x11_atom_cache.h"
-#include "ui/gl/gl_visual_picker_glx.h"
+#include "ui/gfx/x/x11_connection.h"  // nogncheck
 #include "ui/gl/gl_surface_glx.h"
+#include "ui/gl/gl_visual_picker_glx.h"
+#include "ui/platform_window/x11/x11_window.h"  // nogncheck
 // #include "/usr/include/GL/glx.h"
 // #include "/usr/include/GL/glx_mangle.h"
 #endif
@@ -42,8 +41,9 @@
 #endif
 
 #if defined(OS_WIN)
-#include "ui/base/cursor/cursor_loader_win.h"
 #include "ui/platform_window/win/win_window.h"
+#else
+#include "demo/demo_skia/skia_canvas_gl.h"
 #endif
 
 namespace demo {
@@ -90,13 +90,16 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     auto bounds = platform_window_->GetBoundsInPixels();
     if(is_software_) {
       LOG(INFO) << "Create SkiaCanvas: Software";
-      skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasSoftware>(
-          widget_, bounds.width(), bounds.height());
-    } else {
-      LOG(INFO) << "Create SkiaCanvas: GLES2";
-      skia_canvas_ = std::make_unique<demo_jni::SkiaCanvasGL>(
+      skia_canvas_ = std::make_unique<SkiaCanvasSoftware>(
           widget_, bounds.width(), bounds.height());
     }
+#if !defined(OS_WIN)
+    else {
+      LOG(INFO) << "Create SkiaCanvas: GLES2";
+      skia_canvas_ = std::make_unique<SkiaCanvasGL>(widget_, bounds.width(),
+                                                    bounds.height());
+    }
+#endif  // !defined (OS_WIN)
   }
 #if defined(USE_X11)
   VisualID GetTransparentVisualId() {
@@ -155,17 +158,18 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     if ((event->IsMouseEvent() && event->AsMouseEvent()->IsLeftMouseButton()) ||
         event->IsTouchEvent()) {
       int action = -1;
-      if (event->type() == ui::ET_MOUSE_PRESSED ||
-          event->type() == ui::ET_TOUCH_PRESSED)
+      if (event->type() == ui::EventType::kMousePressed ||
+          event->type() == ui::EventType::kTouchPressed) {
         action = 0;
-      else if (event->type() == ui::ET_MOUSE_RELEASED ||
-               event->type() == ui::ET_TOUCH_RELEASED)
+      } else if (event->type() == ui::EventType::kMouseReleased ||
+                 event->type() == ui::EventType::kTouchReleased) {
         action = 1;
-      else if (event->type() == ui::ET_MOUSE_DRAGGED ||
-               event->type() == ui::ET_TOUCH_MOVED)
+      } else if (event->type() == ui::EventType::kMouseDragged ||
+                 event->type() == ui::EventType::kTouchMoved) {
         action = 2;
-      else
+      } else {
         return;
+      }
       auto* located_event = event->AsLocatedEvent();
       auto location = located_event->location();
       if (action != 2)
@@ -188,12 +192,12 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   void OnLostCapture() override {}
   void OnAcceleratedWidgetDestroyed() override {}
   void OnActivationChanged(bool active) override {}
-  void OnMouseEnter() override {}
+  void OnCursorUpdate() override {}
 
   std::unique_ptr<ui::PlatformWindow> platform_window_;
   gfx::AcceleratedWidget widget_;
   base::OnceClosure close_closure_;
-  std::unique_ptr<demo_jni::SkiaCanvas> skia_canvas_;
+  std::unique_ptr<SkiaCanvas> skia_canvas_;
   bool is_software_ = true;
 };
 
@@ -207,11 +211,15 @@ int main(int argc, char** argv) {
   // 设置日志格式
   logging::SetLogItems(true, true, true, false);
 
+  demo::InitTrace("./trace_demo_skia.json");
+  demo::StartTrace("shell");
+
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoSkia");
 
+#if defined(USE_OZONE)
   {
     // Make Ozone run in single-process mode.
     ui::OzonePlatform::InitParams params;
@@ -219,6 +227,7 @@ int main(int argc, char** argv) {
     ui::OzonePlatform::InitializeForUI(params);
     ui::OzonePlatform::InitializeForGPU(params);
   }
+#endif  // defined(USE_OZONE)
 
   auto event_source_ = ui::PlatformEventSource::CreateDefault();
 
@@ -227,9 +236,6 @@ int main(int argc, char** argv) {
 
   ui::RegisterPathProvider();
 
-  // This app isn't a test and shouldn't timeout.
-  // base::RunLoop::ScopedDisableRunTimeoutForTest disable_timeout;
-
   base::RunLoop run_loop;
 
   demo::DemoWindowHost window(run_loop.QuitClosure());
@@ -237,6 +243,12 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << "running...";
   run_loop.Run();
+
+  {
+    base::RunLoop run_loop_to_flush_trace;
+    demo::FlushTrace(run_loop_to_flush_trace.QuitClosure());
+    run_loop_to_flush_trace.Run();
+  }
 
   return 0;
 }

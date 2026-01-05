@@ -8,57 +8,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_log.h"
 
-namespace demo_jni {
-
-// 注意该程序会向以下文件写数据，请只在测试机上使用该程序
-const base::FilePath::CharType kTraceFileName[] =
-    FILE_PATH_LITERAL("./trace_demo_skia.json");
-std::unique_ptr<base::File> g_trace_file;
-
-void StartTrace();
-void DemoMain() {
-  g_trace_file = std::make_unique<base::File>(
-      base::FilePath(kTraceFileName), base::File::FLAG_OPEN_ALWAYS |
-                                          base::File::FLAG_WRITE |
-                                          base::File::FLAG_OPEN_TRUNCATED);
-  DCHECK(g_trace_file->IsValid());
-  g_trace_file->WriteAtCurrentPos("[", 1);
-  StartTrace();
-}
-
-void StartTrace() {
-  // return;
-  // 配置及启动 Trace
-  base::trace_event::TraceConfig trace_config =
-      base::trace_event::TraceConfig("shell");
-  base::trace_event::TraceLog::GetInstance()->SetEnabled(
-      trace_config, base::trace_event::TraceLog::RECORDING_MODE);
-}
-
-bool is_flushing_ = false;
-void FlushTrace() {
-  // return;
-  if (is_flushing_)
-    return;
-  is_flushing_ = true;
-  DLOG(INFO) << "Flush trace start.";
-
-  base::trace_event::TraceLog::GetInstance()->SetDisabled();
-  base::trace_event::TraceLog::GetInstance()->Flush(base::BindRepeating(
-      [](const scoped_refptr<base::RefCountedString>& events_str,
-         bool has_more_events) {
-        // LOG(INFO) << std::endl << events_str->data();
-        g_trace_file->WriteAtCurrentPos(events_str->data().c_str(), events_str->size());
-        g_trace_file->WriteAtCurrentPos(",\n", 2);
-        if (!has_more_events) {
-          StartTrace();
-          g_trace_file->WriteAtCurrentPos("\n", 1);
-          is_flushing_ = false;
-          g_trace_file->Flush();
-          DLOG(INFO) << "Flush trace finish.";
-        }
-      }));
-}
+namespace demo {
 
 SkiaCanvas::SkiaCanvas(gfx::AcceleratedWidget widget,int width,int height)
     : nativeWindow_(widget),
@@ -66,8 +16,6 @@ SkiaCanvas::SkiaCanvas(gfx::AcceleratedWidget widget,int width,int height)
       height_(height),
       render_thread_("DemoRender") {
   DCHECK(nativeWindow_);
-  if(!g_trace_file)
-    DemoMain();
   circlePaint_.setAntiAlias(false);
   circlePaint_.setColor(SK_ColorRED);
   pathPaint_.setAntiAlias(false);
@@ -120,8 +68,6 @@ void SkiaCanvas::OnTouchOnRenderThread(int action, float x, float y) {
     if (action == 1) {
       SetNeedsRedraw(false);
       ShowFrameRateOnRenderThread();
-      render_task_runner_->PostDelayedTask(
-          FROM_HERE, base::BindOnce(FlushTrace), base::Seconds(1));
     }
   }
 }
@@ -206,4 +152,4 @@ void SkiaCanvas::ShowInfo(std::string info) {
   DLOG(INFO) << "[demo_android_skia] Info: " << info;
 }
 
-}  // namespace demo_jni
+}  // namespace demo

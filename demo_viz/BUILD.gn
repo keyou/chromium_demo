@@ -19,13 +19,14 @@ template("viz") {
       "//ui/events",
       "//ui/events/platform",
       "//ui/platform_window",
-      "//gpu",
+      "//gpu/config",
+      "//gpu/command_buffer/client",
+      "//gpu/command_buffer/common",
       "//gpu/ipc/host",
       "//components/discardable_memory/service",
       "//components/discardable_memory/client",
       "//services/viz/public/cpp/gpu",
     ]
-
     if (ozone_platform_x11) {
       deps += [
         "//ui/events/platform/x11",

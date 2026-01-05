@@ -14,15 +14,16 @@
 #include "components/viz/common/quads/texture_draw_quad.h"
 #include "components/viz/common/quads/tile_draw_quad.h"
 #include "components/viz/common/quads/video_hole_draw_quad.h"
-#include "components/viz/common/resources/bitmap_allocation.h"
 #include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
-#include "components/viz/demo/service/demo_service.h"
 #include "components/viz/host/host_display_client.h"
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "components/viz/host/renderer_settings_creation.h"
+#include "components/viz/service/frame_sinks/shared_image_interface_provider.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
 #include "demo/common/utils.h"
+#include "gpu/ipc/raster_in_process_context.h"
 #include "include/core/SkColor.h"
+#include "ipc/service/gpu_init.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
@@ -37,6 +38,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/skia_util.h"
+#include "ui/gl/init/gl_factory.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/platform_window_init_properties.h"
@@ -111,6 +113,21 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     child_frame_sink_id_ = child_frame_sink_id;
     local_surface_id_allocator_.GenerateId();
     return local_surface_id_allocator_.GetCurrentLocalSurfaceId();
+  }
+
+  void BindSharedImageInterfaceProvider(
+      std::unique_ptr<viz::SharedImageInterfaceProvider>
+          shared_image_interface_provider) {
+    if (!thread_.task_runner()->BelongsToCurrentThread()) {
+      thread_.task_runner()->PostTask(
+          FROM_HERE,
+          base::BindOnce(&LayerTreeFrameSink::BindSharedImageInterfaceProvider,
+                         base::Unretained(this),
+                         std::move(shared_image_interface_provider)));
+      return;
+    }
+    shared_image_interface_provider_ =
+        std::move(shared_image_interface_provider);
   }
 
  private:
@@ -215,26 +232,26 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     transform.Translate(50, 50);
 
     auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(transform,
-                       /*layer_rect=*/output_rect,
-                       /*visible_layer_rect=*/output_rect,
-                       /*filter_info=*/gfx::MaskFilterInfo(),
-                       /*clip=*/output_rect,
-                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
-                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
+    quad_state->SetAll(
+        transform,
+        /*layer_rect=*/output_rect,
+        /*visible_layer_rect=*/output_rect,
+        /*filter_info=*/gfx::MaskFilterInfo(),
+        /*clip=*/output_rect,  // 这样剪裁只能拿到 x [50,200], y [50,200] 的输出
+        /*contents_opaque=*/false, /*opacity_f=*/1.f,
+        /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+        /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     auto* tile_quad = render_pass->CreateAndAppendDrawQuad<viz::TileDrawQuad>();
     // 将 resource 添加到 tile_quad 中
     tile_quad->SetNew(quad_state, output_rect, output_rect, false, resource,
-                      gfx::RectF(output_rect), output_rect.size(), true, true,
-                      true);
+                      gfx::RectF(output_rect), true, true);
 
     // 将 resource 对用的资源添加到 frame.resource_list
     // 中，在最简单的情况下可以直接使用 frame.resource_list.push_back(...)
     // 来添加
     client_resource_provider_->PrepareSendToParent(
-        {resource}, &frame.resource_list, (viz::RasterContextProvider*)nullptr);
+        {resource}, &frame.resource_list, nullptr);
   }
 
   // 演示 TextureDrawQuad 的使用
@@ -268,29 +285,29 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
     transform.Translate(350, 50);
 
     auto* quad_state = render_pass->CreateAndAppendSharedQuadState();
-    quad_state->SetAll(transform,
-                       /*layer_rect=*/output_rect,
-                       /*visible_layer_rect=*/output_rect,
-                       /*filter_info=*/gfx::MaskFilterInfo(),
-                       /*clip=*/output_rect,
-                       /*contents_opaque=*/false, /*opacity_f=*/1.f,
-                       /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
-                       /*layer_id=*/0, /*fast_rounded_corner=*/true);
+    quad_state->SetAll(
+        transform,
+        /*layer_rect=*/output_rect,
+        /*visible_layer_rect=*/output_rect,
+        /*filter_info=*/gfx::MaskFilterInfo(),
+        /*clip=*/std::nullopt,  // 剪裁在 Transform 后做，出界将透明。
+        /*contents_opaque=*/false, /*opacity_f=*/1.f,
+        /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
+        /*layer_id=*/0, /*fast_rounded_corner=*/true);
 
     auto* texture_quad =
         render_pass->CreateAndAppendDrawQuad<viz::TextureDrawQuad>();
-    float vertex_opacity[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     // 将 resource 添加到 tile_quad 中
     texture_quad->SetNew(quad_state, output_rect, output_rect, false, resource,
-                         true, gfx::PointF(0.f, 0.f), gfx::PointF(1.f, 1.f),
-                         SkColors::kGray, vertex_opacity, false, false, false,
+                         gfx::PointF(0.f, 0.f), gfx::PointF(1.f, 1.f),
+                         SkColors::kGray, false, false,
                          gfx::ProtectedVideoType::kClear);
 
     // 将 resource 对用的资源添加到 frame.resource_list
     // 中，在最简单的情况下可以直接使用 frame.resource_list.push_back(...)
     // 来添加
     client_resource_provider_->PrepareSendToParent(
-        {resource}, &frame.resource_list, (viz::RasterContextProvider*)nullptr);
+        {resource}, &frame.resource_list, nullptr);
   }
 
   void AppendSurfaceDrawQuad(viz::CompositorFrame& frame,
@@ -304,7 +321,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*layer_rect=*/output_rect,
                        /*visible_layer_rect=*/output_rect,
                        /*filter_info=*/gfx::MaskFilterInfo(),
-                       /*clip=*/output_rect,
+                       /*clip=*/std::nullopt,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
                        /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
                        /*layer_id=*/0, /*fast_rounded_corner=*/true);
@@ -334,7 +351,7 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
                        /*layer_rect=*/output_rect,
                        /*visible_layer_rect=*/output_rect,
                        /*filter_info=*/gfx::MaskFilterInfo(),
-                       /*clip=*/output_rect,
+                       /*clip=*/std::nullopt,
                        /*contents_opaque=*/false, /*opacity_f=*/1.f,
                        /*blend=*/SkBlendMode::kSrcOver, /*sorting_context=*/0,
                        /*layer_id=*/0, /*fast_rounded_corner=*/true);
@@ -410,31 +427,51 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
         false);
   }
 
-  // 使用共享内存来传递资源到 viz
   viz::ResourceId AllocateAndFillSoftwareResource(const gfx::Size& size,
                                                   const SkBitmap& source) {
-    viz::SharedBitmapId shared_bitmap_id = viz::SharedBitmap::GenerateId();
-    // 创建共享内存
-    base::MappedReadOnlyRegion shm =
-        viz::bitmap_allocation::AllocateSharedBitmap(
-            size, viz::SinglePlaneFormat::kRGBA_8888);
-    base::WritableSharedMemoryMapping mapping = std::move(shm.mapping);
+    raw_ptr<gpu::SharedImageInterface> shared_image_interface;
+    if (!shared_image_interface_provider_) {
+      return {};
+    }
+    if ((shared_image_interface =
+             shared_image_interface_provider_->GetSharedImageInterface()) ==
+        nullptr) {
+      return {};
+    }
+    auto shared_image =
+        shared_image_interface->CreateSharedImageForSoftwareCompositor(
+            {viz::SinglePlaneFormat::kBGRA_8888, size, gfx::ColorSpace(),
+             gpu::SHARED_IMAGE_USAGE_CPU_WRITE_ONLY,
+             "SoftwareRendererTestSharedBitmap"});
+    auto mapping = shared_image->Map();
+
+    // 使用 SharedImageInterfaceProvider 拿到的 SharedImageInterface
+    // 在创建 SharedImage 时默认不验证
+    // creation_token，需要写入完成后手动复制验证，并将这个作为
+    // TransferableResource 的 sync_token.
+    gpu::SyncToken token = shared_image->creation_sync_token();
+    token.SetVerifyFlush();
 
     SkImageInfo info = SkImageInfo::MakeN32Premul(size.width(), size.height());
     // 将 SkBitmap 中的像素数据拷贝到共享内存
-    source.readPixels(info, mapping.memory(), info.minRowBytes(), 0, 0);
+    source.readPixels(info, mapping->GetMemoryForPlane(0).data(),
+                      info.minRowBytes(), 0, 0);
 
-    // 将共享内存及与之对应的资源Id发送到 viz service 端
-    GetCompositorFrameSinkPtr()->DidAllocateSharedBitmap(std::move(shm.region),
-                                                         shared_bitmap_id);
+    auto transferable_resource = viz::TransferableResource::Make(
+        shared_image,
+        viz::TransferableResource::ResourceSource::kTileRasterTask, token);
+    auto release_callback = base::BindOnce(
+        [](scoped_refptr<gpu::ClientSharedImage> shared_image,
+           const gpu::SyncToken& sync_token, bool is_lost) {
+          shared_image->UpdateDestructionSyncToken(sync_token);
+        },
+        std::move(shared_image));
 
     // 把资源存入 ClientResourceProvider 进行统一管理。
     // 后续会使用 ClientResourceProvider::PrepareSendToParent
     // 将已经存入的资源添加 到 CF 中。
     return client_resource_provider_->ImportResource(
-        viz::TransferableResource::MakeSoftware(
-            shared_bitmap_id, size, viz::SinglePlaneFormat::kRGBA_8888),
-        base::DoNothing());
+        std::move(transferable_resource), std::move(release_callback));
   }
 
   void DidReceiveCompositorFrameAck(
@@ -446,7 +483,6 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   void OnBeginFrame(
       const ::viz::BeginFrameArgs& args,
       const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details,
-      bool frame_ack,
       std::vector<::viz::ReturnedResource> resources) override {
     base::AutoLock lock(lock_);
     GetCompositorFrameSinkPtr()->SubmitCompositorFrame(
@@ -457,8 +493,18 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
 
   void OnBeginFramePausedChanged(bool paused) override {}
 
+  void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) override {}
+
   void ReclaimResources(
-      std::vector<::viz::ReturnedResource> resources) override {}
+      std::vector<::viz::ReturnedResource> resources) override {
+    for (auto&& res : resources) {
+      //   DLOG(INFO) << "ReclaimRes: id: " << res.id << ", count: " <<
+      //   res.count;
+      client_resource_provider_->RemoveImportedResource(res.id);
+    }
+
+    client_resource_provider_->ReceiveReturnsFromParent(std::move(resources));
+  }
 
   viz::mojom::CompositorFrameSink* GetCompositorFrameSinkPtr() {
     if (frame_sink_associated_remote_.is_bound())
@@ -480,6 +526,8 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
   viz::FrameTokenGenerator frame_token_generator_;
   base::Lock lock_;
 
+  std::unique_ptr<viz::SharedImageInterfaceProvider>
+      shared_image_interface_provider_;
   std::unique_ptr<viz::ClientResourceProvider> client_resource_provider_;
 };
 
@@ -487,27 +535,51 @@ class LayerTreeFrameSink : public viz::mojom::CompositorFrameSinkClient {
 // 在 Chromium 中，Compositor 实现了 HostFrameSinkClient 接口，这里模拟 Chromium
 // 中的命名。
 class Compositor : public viz::HostFrameSinkClient {
+ protected:
+  class DemoHostDisplayClient : public viz::HostDisplayClient {
+   public:
+    explicit DemoHostDisplayClient(gfx::AcceleratedWidget widget)
+        : viz::HostDisplayClient(widget) {}
+
+    DemoHostDisplayClient(const DemoHostDisplayClient&) = delete;
+    DemoHostDisplayClient& operator=(const DemoHostDisplayClient&) = delete;
+
+    ~DemoHostDisplayClient() override = default;
+
+#if BUILDFLAG(IS_WIN)
+    void AddChildWindowToBrowser(gpu::SurfaceHandle child_window) override {
+      SetParent(child_window, widget());
+    }
+#endif
+  };
+
  public:
-  Compositor(gfx::AcceleratedWidget widget,
-             gfx::Size size,
-             mojo::PendingReceiver<viz::mojom::FrameSinkManagerClient> client,
-             mojo::PendingRemote<viz::mojom::FrameSinkManager> manager)
+  Compositor(gfx::AcceleratedWidget widget, gfx::Size size)
       : widget_(widget), size_(size), compositor_thread_("CompositorThread") {
     CHECK(compositor_thread_.Start());
+  }
+
+  using BindSharedImageInterfaceProviderCallback = base::RepeatingCallback<void(
+      base::OnceCallback<void(
+          std::unique_ptr<viz::SharedImageInterfaceProvider>)>)>;
+  void Initialize(
+      mojo::PendingReceiver<viz::mojom::FrameSinkManagerClient> client,
+      mojo::PendingRemote<viz::mojom::FrameSinkManager> manager,
+      BindSharedImageInterfaceProviderCallback callback) {
     compositor_thread_.task_runner()->PostTask(
-        FROM_HERE,
-        base::BindOnce(&Compositor::InitializeOnThread, base::Unretained(this),
-                       std::move(client), std::move(manager)));
+        FROM_HERE, base::BindOnce(&Compositor::InitializeOnThread,
+                                  base::Unretained(this), std::move(client),
+                                  std::move(manager), std::move(callback)));
   }
 
   void Resize(gfx::Size size) {
     // TODO:
   }
 
-  // Called when a CompositorFrame with a new SurfaceId activates for the first
-  // time.
-  void OnFirstSurfaceActivation(
-      const viz::SurfaceInfo& surface_info) override {}
+  // Called when a CompositorFrame with a new SurfaceId activates for the
+  // first time.
+  void OnFirstSurfaceActivation(const viz::SurfaceInfo& surface_info) override {
+  }
 
   // Called when a CompositorFrame with a new frame token is provided.
   void OnFrameTokenChanged(uint32_t frame_token,
@@ -516,10 +588,11 @@ class Compositor : public viz::HostFrameSinkClient {
  private:
   void InitializeOnThread(
       mojo::PendingReceiver<viz::mojom::FrameSinkManagerClient> client,
-      mojo::PendingRemote<viz::mojom::FrameSinkManager> manager) {
+      mojo::PendingRemote<viz::mojom::FrameSinkManager> manager,
+      BindSharedImageInterfaceProviderCallback callback) {
     host_frame_sink_manager_.BindAndSetManager(std::move(client), nullptr,
                                                std::move(manager));
-    display_client_ = std::make_unique<viz::HostDisplayClient>(widget_);
+    display_client_ = std::make_unique<DemoHostDisplayClient>(widget_);
 
     // 创建 root client 的 FrameSinkId
     viz::FrameSinkId root_frame_sink_id =
@@ -565,10 +638,23 @@ class Compositor : public viz::HostFrameSinkClient {
         gfx::Rect(size_));
     root_client_->Bind(std::move(root_client_receiver),
                        std::move(frame_sink_remote));
-    EmbedChildClient(root_frame_sink_id);
+    // 为 client 尝试绑定 SharedImageInterfaceProvicer，异步回调
+    callback.Run(base::BindOnce(
+        [](base::WeakPtr<Compositor> compositor,
+           std::unique_ptr<viz::SharedImageInterfaceProvider>
+               shared_image_interface_provider) {
+          if (!compositor) {
+            return;
+          }
+          compositor->root_client_->BindSharedImageInterfaceProvider(
+              std::move(shared_image_interface_provider));
+        },
+        weak_factory_.GetWeakPtr()));
+    EmbedChildClient(root_frame_sink_id, std::move(callback));
   }
 
-  void EmbedChildClient(viz::FrameSinkId parent_frame_sink_id) {
+  void EmbedChildClient(viz::FrameSinkId parent_frame_sink_id,
+                        BindSharedImageInterfaceProviderCallback callback) {
     // 创建 child 的 FrameSinkId
     viz::FrameSinkId frame_sink_id = frame_sink_id_allocator_.NextFrameSinkId();
     // uint64_t rand = base::RandUint64();
@@ -596,6 +682,17 @@ class Compositor : public viz::HostFrameSinkClient {
         frame_sink_id, child_local_surface_id, gfx::Rect(size_));
     child_client_->Bind(std::move(client_receiver),
                         std::move(frame_sink_remote));
+    callback.Run(base::BindOnce(
+        [](base::WeakPtr<Compositor> compositor,
+           std::unique_ptr<viz::SharedImageInterfaceProvider>
+               shared_image_interface_provider) {
+          if (!compositor) {
+            return;
+          }
+          compositor->child_client_->BindSharedImageInterfaceProvider(
+              std::move(shared_image_interface_provider));
+        },
+        weak_factory_.GetWeakPtr()));
   }
 
   gfx::AcceleratedWidget widget_;
@@ -608,6 +705,8 @@ class Compositor : public viz::HostFrameSinkClient {
   mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private_;
   std::unique_ptr<LayerTreeFrameSink> root_client_;
   std::unique_ptr<LayerTreeFrameSink> child_client_;
+
+  base::WeakPtrFactory<Compositor> weak_factory_{this};
 };
 
 // Service 端
@@ -615,19 +714,74 @@ class Compositor : public viz::HostFrameSinkClient {
 class GpuService {
  public:
   GpuService(mojo::PendingReceiver<viz::mojom::FrameSinkManager> receiver,
-             mojo::PendingRemote<viz::mojom::FrameSinkManagerClient> client) {
+             mojo::PendingRemote<viz::mojom::FrameSinkManagerClient> client)
+      : gpu_task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()) {
     auto params = viz::mojom::FrameSinkManagerParams::New();
     params->restart_id = viz::BeginFrameSource::kNotRestartableId;
     params->use_activation_deadline = false;
     params->activation_deadline_in_frames = 0u;
     params->frame_sink_manager = std::move(receiver);
     params->frame_sink_manager_client = std::move(client);
+
+    gpu_init_ = std::make_unique<gpu::GpuInit>();
+
+    io_thread_ = CreateAndStartIOThread();
+
+    viz::GpuServiceImpl::InitParams init_params;
+    init_params.watchdog_thread = gpu_init_->TakeWatchdogThread();
+    init_params.io_runner = io_thread_->task_runner();
+    init_params.vulkan_implementation = gpu_init_->vulkan_implementation();
+
+    gpu_service_ = std::make_unique<viz::GpuServiceImpl>(
+        gpu_init_->gpu_preferences(), gpu_init_->gpu_info(),
+        gpu_init_->gpu_feature_info(), gpu_init_->gpu_info_for_hardware_gpu(),
+        gpu_init_->gpu_feature_info_for_hardware_gpu(),
+        gpu_init_->gpu_extra_info(), std::move(init_params));
+
+    mojo::PendingRemote<viz::mojom::GpuHost> gpu_host_proxy;
+    std::ignore = gpu_host_proxy.InitWithNewPipeAndPassReceiver();
+
+    scoped_refptr<gl::GLSurface> default_offscreen_surface;
+
+    gpu_service_->InitializeWithHost(
+        std::move(gpu_host_proxy), gpu::GpuProcessShmCount(),
+        default_offscreen_surface, viz::mojom::GpuServiceCreationParams::New());
     runner_ = std::make_unique<viz::VizCompositorThreadRunnerImpl>();
-    runner_->CreateFrameSinkManager(std::move(params), nullptr);
+    runner_->CreateFrameSinkManager(std::move(params), gpu_service_.get());
+  }
+
+  using BindSharedImageInterfaceProviderCallback = base::OnceCallback<void(
+      std::unique_ptr<viz::SharedImageInterfaceProvider>)>;
+  void BindSharedImageInterfaceProvider(
+      BindSharedImageInterfaceProviderCallback callback) {
+    if (!gpu_task_runner_->BelongsToCurrentThread()) {
+      gpu_task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(&GpuService::BindSharedImageInterfaceProvider,
+                         base::Unretained(this), std::move(callback)));
+      return;
+    }
+
+    auto shared_image_interface_provider =
+        std::make_unique<viz::SharedImageInterfaceProvider>(gpu_service_.get());
+    std::move(callback).Run(std::move(shared_image_interface_provider));
   }
 
  private:
+  static std::unique_ptr<base::Thread> CreateAndStartIOThread() {
+    base::Thread::Options thread_options(base::MessagePumpType::IO, 0);
+    thread_options.thread_type = base::ThreadType::kDisplayCritical;
+    auto io_thread = std::make_unique<base::Thread>("GpuIOThread");
+    CHECK(io_thread->StartWithOptions(std::move(thread_options)));
+    return io_thread;
+  }
+
+  scoped_refptr<base::SingleThreadTaskRunner> gpu_task_runner_;
+
   std::unique_ptr<viz::VizCompositorThreadRunnerImpl> runner_;
+  std::unique_ptr<base::Thread> io_thread_;
+  std::unique_ptr<gpu::GpuInit> gpu_init_;
+  std::unique_ptr<viz::GpuServiceImpl> gpu_service_;
 };
 
 // DemoWindow creates the native window for the demo app. The native window
@@ -693,13 +847,29 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
     // Next, create the host and the service, and pass them the right ends of
     // the message-pipes.
     host_ = std::make_unique<Compositor>(
-        widget_, platform_window_->GetBoundsInPixels().size(),
-        std::move(frame_sink_manager_client_receiver),
-        std::move(frame_sink_manager));
+        widget_, platform_window_->GetBoundsInPixels().size());
 
+#if defined(OS_WIN)
+    base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    command_line->AppendSwitchASCII(switches::kUseGL,
+                                    gl::kGLImplementationDisabledName);
+    gl::init::InitializeGLOneOff(gl::GpuPreference::kDefault);
+#endif
     service_ =
         std::make_unique<GpuService>(std::move(frame_sink_manager_receiver),
                                      std::move(frame_sink_manager_client));
+
+    host_->Initialize(
+        std::move(frame_sink_manager_client_receiver),
+        std::move(frame_sink_manager),
+        base::BindRepeating(
+            &DemoVizWindow::BindSharedImageInterfaceProviderService,
+            base::Unretained(this)));
+  }
+
+  void BindSharedImageInterfaceProviderService(
+      GpuService::BindSharedImageInterfaceProviderCallback callback) {
+    service_->BindSharedImageInterfaceProvider(std::move(callback));
   }
 
   // ui::PlatformWindowDelegate:
@@ -719,8 +889,6 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
   void OnCloseRequest() override {
     // TODO: Use a more robust exit method
     platform_window_->Close();
-    // service_.reset();
-    // host_.reset();
   }
   void OnClosed() override {
     if (close_closure_)
@@ -731,7 +899,7 @@ class DemoVizWindow : public ui::PlatformWindowDelegate {
   void OnLostCapture() override {}
   void OnAcceleratedWidgetDestroyed() override {}
   void OnActivationChanged(bool active) override {}
-  void OnMouseEnter() override {}
+  void OnCursorUpdate() override {}
 
   std::unique_ptr<Compositor> host_;
   std::unique_ptr<GpuService> service_;
@@ -817,5 +985,6 @@ int main(int argc, char** argv) {
     run_loop_to_flush_trace.Run();
   }
 
-  return 0;
+  // 资源清理还需要很多逻辑，强制退出来简化
+  base::Process::TerminateCurrentProcessImmediately(0);
 }

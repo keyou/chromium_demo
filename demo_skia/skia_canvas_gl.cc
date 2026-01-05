@@ -19,7 +19,7 @@
 #define GL_RGBA8 0x8058
 #endif
 
-namespace demo_jni {
+namespace demo {
 
 namespace {
 class GLShaderErrorHandler : public GrContextOptions::ShaderErrorHandler {
@@ -519,4 +519,4 @@ void SkiaCanvasGL::SwapBuffer() {
   eglSwapBuffers(display_, surface_);
 }
 
-}  // namespace demo_jni
+}  // namespace demo

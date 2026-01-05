@@ -132,21 +132,7 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
       g_gl_context = gl::init::CreateGLContext(
           share_group.get(), g_gl_surface.get(), gl::GLContextAttribs());
       DCHECK(g_gl_context->MakeCurrent(g_gl_surface.get()));
-      g_context_state = base::MakeRefCounted<gpu::SharedContextState>(
-          std::move(share_group), g_gl_surface, g_gl_context, false,
-          base::DoNothing(), gpu::GrContextType::kGL);
-
-      gpu::GpuPreferences gpu_preferences;
-      gpu::GpuFeatureInfo gpu_feature_info;
-      gpu::GpuDriverBugWorkarounds workarounds;
-      scoped_refptr<gpu::gles2::FeatureInfo> feature_info =
-          new gpu::gles2::FeatureInfo(workarounds, gpu_feature_info);
-      g_context_state->InitializeGL(gpu_preferences, feature_info);
-      g_context_state->InitializeSkia(gpu_preferences,
-                                      feature_info->workarounds(), nullptr);
     }
-    DCHECK(g_context_state->MakeCurrent(g_gl_surface.get(), true));
-    DCHECK(g_context_state->gr_context());
     static unsigned int i = 0;
     glClearColor(1.f, (i++) % 10 / 10.f + 0.1f, 0, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -176,17 +162,18 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
     if ((event->IsMouseEvent() && event->AsMouseEvent()->IsLeftMouseButton()) ||
         event->IsTouchEvent()) {
       int action = -1;
-      if (event->type() == ui::ET_MOUSE_PRESSED ||
-          event->type() == ui::ET_TOUCH_PRESSED)
+      if (event->type() == ui::EventType::kMousePressed ||
+          event->type() == ui::EventType::kTouchPressed) {
         action = 0;
-      else if (event->type() == ui::ET_MOUSE_RELEASED ||
-               event->type() == ui::ET_TOUCH_RELEASED)
+      } else if (event->type() == ui::EventType::kMouseReleased ||
+                 event->type() == ui::EventType::kTouchReleased) {
         action = 1;
-      else if (event->type() == ui::ET_MOUSE_DRAGGED ||
-               event->type() == ui::ET_TOUCH_MOVED)
+      } else if (event->type() == ui::EventType::kMouseDragged ||
+                 event->type() == ui::EventType::kTouchMoved) {
         action = 2;
-      else
+      } else {
         return;
+      }
       auto* located_event = event->AsLocatedEvent();
       auto location = located_event->location();
       if (action != 2)
@@ -208,7 +195,11 @@ class DemoWindowHost : public ui::PlatformWindowDelegate {
   void OnLostCapture() override {}
   void OnAcceleratedWidgetDestroyed() override {}
   void OnActivationChanged(bool active) override {}
-  void OnMouseEnter() override {}
+
+  // Since M141, This is renamed to OnCursorUpdate
+  // https://chromium-review.googlesource.com/c/chromium/src/+/6849744
+  // void OnMouseEnter() override {}
+  void OnCursorUpdate() override {}
 
   std::unique_ptr<ui::PlatformWindow> platform_window_;
   gfx::AcceleratedWidget widget_;
@@ -277,6 +268,12 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << "running...";
   run_loop.Run();
+
+  {
+    base::RunLoop run_loop_to_flush_trace;
+    demo::FlushTrace(run_loop_to_flush_trace.QuitClosure());
+    run_loop_to_flush_trace.Run();
+  }
 
   return 0;
 }

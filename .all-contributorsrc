@@ -1,6 +1,7 @@
 {
   "files": [
     "README.md"
+    "README_zh.md"
   ],
   "imageSize": 100,
   "commit": false,
@@ -74,7 +75,7 @@
       "login": "DynamicLoader",
       "name": "Yi Lu",
       "avatar_url": "https://avatars.githubusercontent.com/u/53362310?v=4",
-      "profile": "http://www.dyldr.top",
+      "profile": "https://octz.net",
       "contributions": [
         "code"
       ]
