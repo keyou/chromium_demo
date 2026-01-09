@@ -1,11 +1,10 @@
-#include "demo_gin/shell_runner_delegate.h"
+#include "demo/demo_gin/shell_runner_delegate.h"
+
 #include "base/logging.h"
+#include "demo/demo_gin/extends/async_demo.h"
+#include "demo/demo_gin/extends/console.h"
+#include "demo/demo_gin/extends/demo.h"
 #include "gin/object_template_builder.h"
-#include "demo_gin/extends/console.h"
-#include "demo_gin/extends/demo.h"
-
-#include "demo_gin/extends/async_demo.h"
-
 namespace demo {
 
 v8::Local<v8::ObjectTemplate> DemoShellRunnerDelegate::GetGlobalTemplate(
@@ -23,7 +22,7 @@ v8::Local<v8::ObjectTemplate> DemoShellRunnerDelegate::GetGlobalTemplate(
 
 
   // 注册AsyncDemo
-  demo::AsyncDemo::Register(isolate,global_tmpl);
+  demo::AsyncDemo::Register(isolate, global_tmpl);
 
   return global_tmpl;
 }

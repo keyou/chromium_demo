@@ -1,4 +1,4 @@
-#include "demo_gin/extends/async_demo.h"
+#include "demo/demo_gin/extends/async_demo.h"
 
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
@@ -17,9 +17,11 @@ void AsyncAdd(v8::Global<v8::Promise::Resolver> resolver,
               v8::Isolate* isolate,
               int a,
               int b) {
+  // 这里在单独的上下文运行，需要显式设置 isolate
+  v8::Isolate::Scope isolate_scope(isolate);
   // 创建微任务Scope
   v8::MicrotasksScope microtasks_scope(
-      isolate, v8::MicrotasksScope::kDoNotRunMicrotasks);
+      isolate, nullptr, v8::MicrotasksScope::kDoNotRunMicrotasks);
   v8::HandleScope handle_scope(isolate);
   // 将Persistent 转为Local
   v8::Local<v8::Context> context = original_context.Get(isolate);

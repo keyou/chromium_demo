@@ -1,5 +1,11 @@
 ## 更新日志
 
+### 2026.01.09
+- 升级 demo_gin 到 M141，主要更改：
+  1. `v8::MicrotasksScope::MicrotasksScope(Isolate* isolate, Type type)` 已被移除，参见 [5539888](https://chromium-review.googlesource.com/c/v8/v8/+/5539888)
+  2. 将 `extends` 部分作为一个 `component` 以规避 `GIN_EXPORT` 定义不统一的问题
+  3. 在 `AsyncAdd` 中加入 `v8::Isolate::Scope` 以修复此处 `v8::internal::g_current_isolate_` 为空导致 `v8::Integer::New` 触发 DCheck 的问题
+
 ### 2025.12.25
 - 在 Windows 平台上将 demo_skia 升级到 M141 (仅软件)，主要更改：
   1. 添加了 `WinSoftwareBitmapPresenter`，使用 GDI API 支持在 Windows 平台上呈现软件渲染的位图

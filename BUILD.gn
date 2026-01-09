@@ -53,6 +53,7 @@ group("demo") {
       # "demo_x11", windows不支持x11
       "demo_skia", # windows 使用 GDI 支持软件渲染
       "demo_viz",
+      "demo_gin",
     ]
   }
 

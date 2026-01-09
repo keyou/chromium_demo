@@ -50,7 +50,7 @@ Demo 列表：
 |              `demo_x11`              |                     演示使用 X11 创建透明窗口                     |   M80    |    N    |       Y       |
 |            `demo_x11_glx`            |                     演示在透明窗口中使用 glx                      |   M80    |    N    |       Y       |
 |            `demo_x11_egl`            |                     演示在透明窗口中使用 egl                      |   M80    |    N    |       Y       |
-|              `demo_gin`              |                演示使用 gin, 创建一个精简JS运行时                 |   M120   |         |               |
+|              `demo_gin`              |                演示使用 gin, 创建一个精简JS运行时                 |   M141   |    Y    |               |
 |             `demo_shell`             | 演示使用 content api, 创建一个精简的浏览器，支持 Linux 和 Android |   M80    |         |       Y       |
 
 *: 该 demo 仅在 Windows 平台上使用 GDI 支持软件渲染，Linux 平台应该支持软硬件渲染，需进一步测试。

@@ -4,7 +4,7 @@
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
-#include "demo_gin/shell_runner_delegate.h"
+#include "demo/demo_gin/shell_runner_delegate.h"
 #include "gin/array_buffer.h"
 #include "gin/public/isolate_holder.h"
 #include "gin/shell_runner.h"
