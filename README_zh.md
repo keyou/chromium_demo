@@ -22,7 +22,7 @@ Demo 列表：
 |         `demo_task_executor`         |   演示使用消息循环 SingleThreadTaskExecutor, 位于 demo_task 下    |   M141   |    Y    |               |
 |          `demo_task_thread`          |            演示在新线程中使用 task, 位于 demo_task 下             |   M141   |    Y    |               |
 |  `demo_callback_(once\|repeating)`   |                    演示 Bind&Callback 相关内容                    |   M141   |    Y    |               |
-|           `demo_linktest`            |                  演示错误的使用 gn 导致链接错误                   |   M120   |         |               |
+|           `demo_linktest`            |                  演示错误的使用 gn 导致链接错误                   |   M141   |    Y    |               |
 |      `demo_mojo_single_process`      |                   演示在单进程中使用 `mojo` 库                    |   M141   |    Y    |               |
 |     `demo_mojo_multiple_process`     |                   演示在多进程中使用 `mojo` 库                    |   M141   |    Y    |               |
 | `demo_mojo_multiple_process_binding` |             演示在多进程中使用 `mojo` 库的 binding 层             |   M141   |    Y    |               |

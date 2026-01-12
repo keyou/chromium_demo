@@ -30,7 +30,7 @@ Demo list:
 |         `demo_task_executor`         |                          Demonstrate using the message loop SingleThreadTaskExecutor                          |      M141      |    Y    |               |
 |          `demo_task_thread`          |                                Demonstrates the use of a task in a new thread                                 |      M141      |    Y    |               |
 |  `demo_callback_(once\|repeating)`   |                                      Demo Bind&Callback related content                                       |      M141      |    Y    |               |
-|           `demo_linktest`            |                             Demonstrates incorrect use of gn causing link errors                              |      M120      |         |               |
+|           `demo_linktest`            |                             Demonstrates incorrect use of gn causing link errors                              |      M141      |    Y    |               |
 |      `demo_mojo_single_process`      |                         Demonstrate the use of the `mojo` library in a single process                         |      M141      |    Y    |               |
 |     `demo_mojo_multiple_process`     |                        Demonstrate the use of the `mojo` library in multiple processes                        |      M141      |    Y    |               |
 | `demo_mojo_multiple_process_binding` |                Demonstrate using the binding layer of the `mojo` library in multiple processes                |      M141      |    Y    |               |
@@ -51,14 +51,14 @@ Demo list:
 |      `demo_viz_layer_offscreen`      |                    Demonstrate using VIZ's `CopyOutput` interface for off-screen rendering                    |      M80       |         |       Y       |
 |            `demo_cc_gui`             |                                Demonstrate using `cc` to display GUI interface                                |      M120      |         |               |
 |         `demo_cc_offscreen`          |                                Demonstrate using `cc` for off-screen rendering                                |      M120      |         |               |
-|             `demo_views`             |                               Demonstrate the use of `//ui/views` to create UI                                |      M120      |         |               |
+|             `demo_views`             |                               Demonstrate the use of `//ui/views` to create UI                                |      M141      |    Y    |               |
 |              `demo_apk`              |             Demonstrate the creation of Android applications, the use of base::android::* and JNI             |      M80       |         |       Y       |
 |         `demo_android_skia`          |             Demonstrate the use of Skia for software rendering and hardware rendering on Android              |      M80       |         |       Y       |
 |             `demo_skia`              |          Demonstrate the use of Skia for software rendering and hardware rendering on Windows/Linux           |     M141*      |    Y    |               |
 |              `demo_x11`              |                              Demonstrate using X11 to create transparent windows                              |      M80       |    N    |       Y       |
 |            `demo_x11_glx`            |                              Demonstrate the use of glx in a transparent window                               |      M80       |    N    |       Y       |
 |            `demo_x11_egl`            |                              Demonstrate the use of egl in a transparent window                               |      M80       |    N    |       Y       |
-|              `demo_gin`              |                           Demonstrate the use of gin to create a javascript runtime                           |      M120      |         |               |
+|              `demo_gin`              |                           Demonstrate the use of gin to create a javascript runtime                           |      M141      |    Y    |               |
 |             `demo_shell`             |      Demonstrate the use of content api to create a streamlined browser that supports Linux and Android       |      M80       |         |       Y       |
 
 *: This demo only uses GDI to support software on-screen presentation on Windows platform, Linux platform should support both software and hardware rendering, further testing is needed.

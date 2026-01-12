@@ -5,6 +5,7 @@
   - `views::WidgetDelegateView` 被标记为 `Deprecated`，并添加 PassKey 管控使用，参见 (6441736)[https://chromium-review.googlesource.com/c/chromium/src/+/6441736]。本例按注释直接继承自两个子类，并按照设计逻辑将 View 和 Delegate 拆开，通过 Delegate 内部 `SetContentsView()` 绑定 View 的实例。
   - 迁移 `views::Background` 到 `ui::ColorVariant`，带有方法重命名，参见[6331510](https://chromium-review.googlesource.com/c/chromium/src/+/6331510)
   - 从 [4518125](https://chromium-review.googlesource.com/c/chromium/src/+/4518125) 开始，Windows 上的 UI 需要一个 MTA 初始化的线程池。
+- 升级 demo_linktest 到 M141，并支持 Windows 下编译验证。
 
 ### 2026.01.09
 - 升级 demo_gin 到 M141，主要更改：
