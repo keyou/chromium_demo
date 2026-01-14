@@ -1,8 +1,8 @@
 #include <iostream>
 
-__attribute__((visibility("default"))) void aaa();
+#include "demo/demo_linktest/export.h"
 
-__attribute__((visibility("default"))) void bbb() {
-    std::cout << "bbbb";
-    aaa();
+void bbb() {
+  std::cout << "bbbb";
+  aaa();
 }

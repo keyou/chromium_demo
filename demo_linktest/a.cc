@@ -1,5 +1,7 @@
 #include <iostream>
 
-__attribute__((visibility("default"))) void aaa() {
-    std::cout << "aaaa";    
+#include "demo/demo_linktest/export.h"
+
+void aaa() {
+  std::cout << "aaaa";
 }

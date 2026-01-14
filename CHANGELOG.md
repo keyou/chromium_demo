@@ -1,5 +1,19 @@
 ## Changelog
 
+
+### 2026.01.12
+- Upgraded demo_views to M141 with the following main changes:
+  - `views::WidgetDelegateView` is marked as `Deprecated` and PassKey is added to control usage, see [6441736](https://chromium-review.googlesource.com/c/chromium/src/+/6441736). This example directly inherits from the two subclasses according to the comments, and separates View and Delegate according to the design logic, binding the View instance through `SetContentsView()` inside Delegate.
+  - Migrated `views::Background` to `ui::ColorVariant` with method renaming, see [6331510](https://chromium-review.googlesource.com/c/chromium/src/+/6331510)
+  - Starting from [4518125](https://chromium-review.googlesource.com/c/chromium/src/+/4518125), Windows UI requires a thread pool initialized with MTA.
+- Upgraded demo_linktest to M141 with Windows support.
+
+### 2026.01.09
+- Upgraded demo_gin to M141 with the following main changes:
+  1. `v8::MicrotasksScope::MicrotasksScope(Isolate* isolate, Type type)` has been removed, see [5539888](https://chromium-review.googlesource.com/c/v8/v8/+/5539888)
+  2. Moved the `extends` part as a separate `component` to avoid inconsistent `GIN_EXPORT` definition issues
+  3. Added `v8::Isolate::Scope` in `AsyncAdd` to fix the issue where `v8::internal::g_current_isolate_` is null causing `v8::Integer::New` to trigger DCheck
+
 ### 2025.12.25
 - Upgraded demo_skia to M141 on Windows platform (software only) with the following main changes:
   1. Added `WinSoftwareBitmapPresenter` to support presenting software rendered bitmaps on Windows platform using GDI API.

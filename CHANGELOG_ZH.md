@@ -1,5 +1,18 @@
 ## 更新日志
 
+### 2026.01.12
+- 升级 demo_views 到 M141，主要更改：
+  - `views::WidgetDelegateView` 被标记为 `Deprecated`，并添加 PassKey 管控使用，参见 (6441736)[https://chromium-review.googlesource.com/c/chromium/src/+/6441736]。本例按注释直接继承自两个子类，并按照设计逻辑将 View 和 Delegate 拆开，通过 Delegate 内部 `SetContentsView()` 绑定 View 的实例。
+  - 迁移 `views::Background` 到 `ui::ColorVariant`，带有方法重命名，参见[6331510](https://chromium-review.googlesource.com/c/chromium/src/+/6331510)
+  - 从 [4518125](https://chromium-review.googlesource.com/c/chromium/src/+/4518125) 开始，Windows 上的 UI 需要一个 MTA 初始化的线程池。
+- 升级 demo_linktest 到 M141，并支持 Windows 下编译验证。
+
+### 2026.01.09
+- 升级 demo_gin 到 M141，主要更改：
+  1. `v8::MicrotasksScope::MicrotasksScope(Isolate* isolate, Type type)` 已被移除，参见 [5539888](https://chromium-review.googlesource.com/c/v8/v8/+/5539888)
+  2. 将 `extends` 部分作为一个 `component` 以规避 `GIN_EXPORT` 定义不统一的问题
+  3. 在 `AsyncAdd` 中加入 `v8::Isolate::Scope` 以修复此处 `v8::internal::g_current_isolate_` 为空导致 `v8::Integer::New` 触发 DCheck 的问题
+
 ### 2025.12.25
 - 在 Windows 平台上将 demo_skia 升级到 M141 (仅软件)，主要更改：
   1. 添加了 `WinSoftwareBitmapPresenter`，使用 GDI API 支持在 Windows 平台上呈现软件渲染的位图

@@ -1,6 +1,4 @@
-
-__attribute__((visibility("default"))) void aaa();
-__attribute__((visibility("default"))) void bbb();
+#include "demo/demo_linktest/export.h"
 
 int main() {
     aaa();

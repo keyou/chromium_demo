@@ -17,6 +17,8 @@ group("demo") {
       "demo_ipc",
       "demo_memory",
       "demo_mojo",
+      "demo_linktest",
+      "demo_resources",
     ]
   }
 
@@ -26,13 +28,11 @@ group("demo") {
       "demo_gin",
       "demo_gl",
       "demo_mojo_v8",
-      "demo_resources",
       "demo_shell",
       "demo_skia",
       "demo_views",
       "demo_viz",
       "demo_x11",
-      "demo_linktest",
     ]
   }
 
@@ -45,7 +45,6 @@ group("demo") {
 
   if (is_win) {
     deps += [
-      "demo_resources",
       "demo_cc",
       "demo_gl",
       "demo_mojo_v8",
@@ -53,15 +52,10 @@ group("demo") {
       # "demo_x11", windows不支持x11
       "demo_skia", # windows 使用 GDI 支持软件渲染
       "demo_viz",
+      "demo_gin",
     ]
   }
 
-  if (is_mac) {
-    deps += [
-      "demo_resources",
-      "demo_linktest",
-    ]
-  }
 }
 
 executable("demo_exe") {

@@ -3,6 +3,7 @@
  */
 
 #include <memory>
+
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
@@ -15,9 +16,9 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "build/build_config.h"
 #include "components/viz/host/host_frame_sink_manager.h"
-#include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "mojo/core/embedder/embedder.h"
+#include "ui/accessibility/platform/ax_platform.h"
 #include "ui/aura/client/window_parenting_client.h"
 #include "ui/aura/env.h"
 #include "ui/aura/test/test_screen.h"
@@ -75,34 +76,49 @@
 #include "ui/base/win/scoped_ole_initializer.h"
 #endif
 
-// Maintain the UI controls and web view for content shell
-class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
+class DemoView : public views::View {
  public:
-  explicit DemoViewsWidgetDelegateView(base::OnceClosure on_close)
-      : on_close_(std::move(on_close)),
-        layout_provider_(std::make_unique<views::LayoutProvider>()) {
-    InitShellWindow();
-  }
-
- private:
-  void InitShellWindow() {
-    DLOG(INFO) << "InitShellWindow";
+  DemoView() {
+    SetBorder(views::CreateSolidBorder(1, SK_ColorGREEN));
     SetBackground(views::CreateSolidBackground(SK_ColorGRAY));
     // 设置布局管理器，为了简单这里不使用布局管理器
     // this->SetLayoutManager(std::make_unique<views::FillLayout>());
     // 添加一个使用 Material Design 的按钮
     auto button = std::make_unique<views::MdTextButton>(
-        base::BindRepeating(&DemoViewsWidgetDelegateView::ButtonPressed,
-                            base::Unretained(this)),
+        base::BindRepeating(&DemoView::ButtonPressed, base::Unretained(this)),
         u"MaterialButton");
     button->SetBounds(0, 0, 150, 50);
     button_ = AddChildView(std::move(button));
   }
 
+ private:
   void ButtonPressed(const ui::Event& event) {
     DLOG(INFO) << "ButtonPressed()";
   }
 
+  void OnPaint(gfx::Canvas* canvas) override {
+    DLOG(INFO) << "DemoViewsWidgetDelegateImpl::OnPaint()";
+    // 在views::OnPaint()中绘制背景色，它会覆盖这里的蓝色
+    canvas->FillRect(gfx::Rect(100, 50, 200, 50), SK_ColorBLUE);
+    views::View::OnPaint(canvas);
+    canvas->FillRect(gfx::Rect(100, 200, 150, 50), SK_ColorRED);
+  }
+
+  base::raw_ptr<views::MdTextButton> button_;
+};
+
+// Maintain the UI controls and web view for content shell
+class DemoViewsWidgetDelegateImpl : public views::WidgetDelegate
+/* public views::View */ {
+ public:
+  explicit DemoViewsWidgetDelegateImpl(base::OnceClosure on_close)
+      : on_close_(std::move(on_close)) {
+    DLOG(INFO) << "InitShellWindow";
+    SetHasWindowSizeControls(true);
+    SetContentsView(std::make_unique<DemoView>());
+  }
+
+ private:
   // Overridden from WidgetDelegateView
   bool CanMaximize() const override { return true; }
   bool CanMinimize() const override { return true; }
@@ -111,37 +127,18 @@ class DemoViewsWidgetDelegateView : public views::WidgetDelegateView {
     return u"Demo Widget";
   }
   void WindowClosing() override {
-    if (on_close_)
+    if (on_close_) {
       std::move(on_close_).Run();
+    }
   }
 
-  void OnPaint(gfx::Canvas* canvas) override {
-    DLOG(INFO) << "OnPaint()";
-    // 在views::OnPaint()中绘制背景色，它会覆盖这里的蓝色
-    canvas->FillRect(gfx::Rect(100, 50, 200, 50), SK_ColorBLUE);
-    views::WidgetDelegateView::OnPaint(canvas);
-    canvas->FillRect(gfx::Rect(100, 200, 150, 50), SK_ColorRED);
-  }
-
-  base::raw_ptr<views::MdTextButton> button_;
   base::OnceClosure on_close_;
-  std::unique_ptr<views::LayoutProvider> layout_provider_;
-};
-
-class SolidBackground : public views::Background {
- public:
-  explicit SolidBackground(SkColor color) { SetNativeControlColor(color); }
-
-  void Paint(gfx::Canvas* canvas, views::View* view) const override {
-    // Fill the background. Note that we don't constrain to the bounds as
-    // canvas is already clipped for us.
-    canvas->DrawColor(get_color());
-  }
 };
 
 class InkView : public views::View {
  public:
   InkView() {
+    SetBackground(views::CreateSolidBackground(SK_ColorTRANSPARENT));
     path_.moveTo(0, 0);
     paint_flags_.setColor(SK_ColorWHITE);
     paint_flags_.setStyle(cc::PaintFlags::Style::kStroke_Style);
@@ -149,12 +146,12 @@ class InkView : public views::View {
     SetBorder(views::CreateSolidBorder(1, SK_ColorRED));
   }
   void OnMouseMoved(const ui::MouseEvent& event) override {
-    DLOG(INFO) << "OnMouseMoved()";
+    DLOG(INFO) << "InkView::OnMouseMoved()";
     path_.lineTo(event.x(), event.y());
     SchedulePaint();
   }
   void OnPaint(gfx::Canvas* canvas) override {
-    DLOG(INFO) << "OnPaint()";
+    DLOG(INFO) << "InkView::OnPaint()";
     // 在views::OnPaint()中绘制背景色，它会覆盖这里的蓝色
     // canvas->DrawColor(SK_ColorGREEN);
     views::View::OnPaint(canvas);
@@ -163,6 +160,14 @@ class InkView : public views::View {
 
   SkPath path_;
   cc::PaintFlags paint_flags_;
+};
+
+class DemoAXPlatformDelegateImpl : public ui::AXPlatform::Delegate {
+ public:
+  ui::AXMode GetAccessibilityMode() override { return {}; }
+#if BUILDFLAG(IS_WIN)
+  ui::AXPlatform::ProductStrings GetProductStrings() override { return {}; }
+#endif
 };
 
 int main(int argc, char** argv) {
@@ -188,12 +193,21 @@ int main(int argc, char** argv) {
   // 创建主消息循环，等价于 MessagLoop
   base::SingleThreadTaskExecutor main_task_executor(base::MessagePumpType::UI);
   // 初始化线程池，会创建新的线程，在新的线程中会创建新消息循环MessageLoop
+#if BUILDFLAG(IS_WIN)
+
+  base::ThreadPoolInstance::Create("DemoViews");
+  base::ThreadPoolInstance::InitParams thread_pool_init_params(32);
+  thread_pool_init_params.common_thread_pool_environment = base::
+      ThreadPoolInstance::InitParams::CommonThreadPoolEnvironment::COM_MTA;
+  base::ThreadPoolInstance::Get()->Start(thread_pool_init_params);
+#else
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("DemoViews");
+#endif
   // Disabling Direct Composition works around the limitation that
   // InProcessContextFactory doesn't work with Direct Composition, causing the
   // window to not render. See http://crbug.com/936249.
-  gl::SetGlWorkarounds(gl::GlWorkarounds{.disable_direct_composition = true});
-
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      switches::kDisableDirectComposition);
   // 初始化mojo
   mojo::core::Init();
 
@@ -212,9 +226,8 @@ int main(int argc, char** argv) {
 
   // The ContextFactory must exist before any Compositors are created.
   viz::HostFrameSinkManager host_frame_sink_manager;
-  viz::ServerSharedBitmapManager shared_bitmap_manager;
   viz::FrameSinkManagerImpl frame_sink_manager(
-      (viz::FrameSinkManagerImpl::InitParams(&shared_bitmap_manager)));
+      (viz::FrameSinkManagerImpl::InitParams()));
   host_frame_sink_manager.SetLocalManager(&frame_sink_manager);
   frame_sink_manager.SetLocalClient(&host_frame_sink_manager);
   // 第三个参数需要设为 true 才能看到界面
@@ -234,6 +247,8 @@ int main(int argc, char** argv) {
 
   // 初始化font，非必须
   gfx::InitializeFonts();
+  DemoAXPlatformDelegateImpl ax_platform_delegate_impl;
+  ui::AXPlatform ax_platform(ax_platform_delegate_impl);
 
 #if defined(USE_AURA)
   wm::WMState wm_state;
@@ -252,21 +267,24 @@ int main(int argc, char** argv) {
   base::RunLoop run_loop;
 
   views::Widget* window_widget_ = new views::Widget;
-  views::Widget::InitParams params;
-  params.bounds = gfx::Rect(0, 0, 400, 300);
-  params.delegate = new DemoViewsWidgetDelegateView(run_loop.QuitClosure());
+  views::Widget::InitParams params(
+      views::Widget::InitParams::NATIVE_WIDGET_OWNS_WIDGET);
+  // params.bounds = gfx::Rect(0, 0, 400, 300);
+  params.delegate = new DemoViewsWidgetDelegateImpl(run_loop.QuitClosure());
+#if BUILDFLAG(IS_LINUX)
   params.wm_class_class = "demo_views";
   params.wm_class_name = params.wm_class_class;
+#endif  // BUILDFLAG(IS_LINUX)
   window_widget_->Init(std::move(params));
+  window_widget_->SetBounds(gfx::Rect(0, 0, 400, 300));
   window_widget_->Show();
 
   views::Widget::InitParams child_params(
+      views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET,
       views::Widget::InitParams::TYPE_CONTROL);
   child_params.parent = window_widget_->GetNativeView();
-  child_params.ownership = views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
   child_params.opacity = views::Widget::InitParams::WindowOpacity::kTranslucent;
   auto view = std::make_unique<InkView>();
-  view->SetBackground(std::make_unique<SolidBackground>(SK_ColorTRANSPARENT));
   views::Widget* child = new views::Widget;
   child->Init(std::move(child_params));
   child->SetBounds(gfx::Rect(50, 50, 120, 120));
