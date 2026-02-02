@@ -544,7 +544,6 @@ class Compositor
 
     auto layer_tree_frame_sink = std::make_unique<DemoLayerTreeFrameSink>(
         widget_, root_frame_sink_id_, root_local_surface_id_,
-        // BUG: 两侧都是 unique_ptr, 潜在 Double Free...
         frame_sink_manager_->GetWeakPtr(), task_runner);
 
     host_->SetViewportRectAndScale(gfx::Rect(size_), scale_,

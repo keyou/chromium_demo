@@ -1,7 +1,10 @@
 ## 更新日志
 
+### 2026.02.02
+- 升级 demo_cc_offscreen 到 M141，主要将 demo_cc_gui 的变动迁移过来
+
 ### 2026.01.22
-- 升级 demo_cc 到 M141，主要更改：
+- 升级 demo_cc_gui 到 M141，主要更改：
   - `viz::SharedBitmapReporter` 已不再是 `cc::LayerTreeFrameSink` 的基类，参见 [6164986](https://chromium-review.googlesource.com/c/chromium/src/+/6164986)
   - `DidCommit()`, `DidCommitAndDrawFrame()`, `DidCompletePageScaleAnimation()`, `DidObserveFirstScrollDelay()` 插入一个 `source_frame_number` 参数。
   - `FrameTimingDetails` 已添加到 `WebFrameWidgetImpl`，参见 [5331910](https://chromium-review.googlesource.com/c/chromium/src/+/5331910)。

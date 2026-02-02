@@ -49,8 +49,8 @@ Demo list:
 |          `demo_viz_gui_gpu`          |                        Demonstrate the use of `viz` for hardware accelerated rendering                        |      M80       |         |       Y       |
 |           `demo_viz_layer`           |                            Demonstrate the use of `viz` for interactive rendering                             |      M80       |         |       Y       |
 |      `demo_viz_layer_offscreen`      |                    Demonstrate using VIZ's `CopyOutput` interface for off-screen rendering                    |      M80       |         |       Y       |
-|            `demo_cc_gui`             |                                Demonstrate using `cc` to display GUI interface                                |      M120      |         |               |
-|         `demo_cc_offscreen`          |                                Demonstrate using `cc` for off-screen rendering                                |      M120      |         |               |
+|            `demo_cc_gui`             |                                Demonstrate using `cc` to display GUI interface                                |      M141      |    Y    |               |
+|         `demo_cc_offscreen`          |                                Demonstrate using `cc` for off-screen rendering                                |      M141      |    Y    |               |
 |             `demo_views`             |                               Demonstrate the use of `//ui/views` to create UI                                |      M141      |    Y    |               |
 |              `demo_apk`              |             Demonstrate the creation of Android applications, the use of base::android::* and JNI             |      M80       |         |       Y       |
 |         `demo_android_skia`          |             Demonstrate the use of Skia for software rendering and hardware rendering on Android              |      M80       |         |       Y       |

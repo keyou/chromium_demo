@@ -17,19 +17,23 @@
 #include "cc/trees/layer_tree_frame_sink.h"
 #include "cc/trees/layer_tree_frame_sink_client.h"
 #include "cc/trees/layer_tree_host.h"
+#include "cc/trees/layer_tree_host_single_thread_client.h"
 #include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "components/viz/demo/service/demo_service.h"
 #include "components/viz/host/host_frame_sink_manager.h"
+#include "components/viz/host/renderer_settings_creation.h"
 #include "components/viz/service/display/display.h"
 #include "components/viz/service/display/display_client.h"
 #include "components/viz/service/display/overlay_processor_stub.h"
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/output_surface_provider.h"
-#include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/service/display_embedder/software_output_surface.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "components/viz/service/frame_sinks/shared_image_interface_provider.h"
 #include "components/viz/service/main/viz_compositor_thread_runner_impl.h"
+#include "gpu/ipc/client/client_shared_image_interface.h"
 #include "include/core/SkColor.h"
+#include "ipc/service/gpu_init.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "third_party/skia/include/core/SkStream.h"
@@ -41,6 +45,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/skia_util.h"
+#include "ui/gl/init/gl_factory.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
@@ -84,8 +89,6 @@ class Layer : public cc::ContentLayerClient {
     content_layer_->SetBounds(bounds_.size());
   }
 
-  // ContentLayerClient implementation.
-  gfx::Rect PaintableRegion() const override { return bounds_; }
   // 绘制要显示的内容
   scoped_refptr<cc::DisplayItemList> PaintContentsToDisplayList() override {
     LOG(INFO) << "PaintableRegion: paint layer";
@@ -155,12 +158,11 @@ class OffscreenLayerTreeFrameSink
   OffscreenLayerTreeFrameSink(
       viz::FrameSinkId& frame_sink_id,
       viz::LocalSurfaceId local_surface_id,
-      viz::FrameSinkManagerImpl* frame_sink_manager,
+      base::WeakPtr<viz::FrameSinkManagerImpl> frame_sink_manager,
       scoped_refptr<base::SingleThreadTaskRunner> task_runner)
       : cc::LayerTreeFrameSink(nullptr,
                                nullptr,
                                std::move(task_runner),
-                               nullptr,
                                nullptr),
         root_frame_sink_id_(frame_sink_id),
         root_local_surface_id_(local_surface_id),
@@ -200,7 +202,8 @@ class OffscreenLayerTreeFrameSink
 
     auto overlay_processor = std::make_unique<viz::OverlayProcessorStub>();
     display_ = std::make_unique<viz::Display>(
-        frame_sink_manager_->shared_bitmap_manager(), settings,
+        frame_sink_manager_->GetGpuService()->shared_image_manager(),
+        frame_sink_manager_->GetGpuService()->gpu_scheduler(), settings,
         &debug_settings_, root_frame_sink_id_, nullptr,
         std::move(output_surface), std::move(overlay_processor),
         std::move(scheduler), task_runner);
@@ -216,6 +219,12 @@ class OffscreenLayerTreeFrameSink
   bool BindToClient(cc::LayerTreeFrameSinkClient* client) override {
     if (!cc::LayerTreeFrameSink::BindToClient(client))
       return false;
+    // BEGIN_M141_Workaround
+    shared_image_interface_ =
+        reinterpret_cast<gpu::ClientSharedImageInterface*>(
+            frame_sink_manager_->GetSharedImageInterface());
+    // END_M141_Workaround
+
     // 用于将OnBeginFrame请求转发到 cc::Scheduler 进行调度
     external_begin_frame_source_ =
         std::make_unique<viz::ExternalBeginFrameSource>(this);
@@ -231,6 +240,10 @@ class OffscreenLayerTreeFrameSink
     // one client is alive for this namespace at any given time.
     // support_.reset();
 
+    // BEGIN_M141_Workaround
+    shared_image_interface_ = nullptr;
+    // END_M141_Workaround
+
     cc::LayerTreeFrameSink::DetachFromClient();
   }
   // 接收由 cc 提交的 CF
@@ -244,9 +257,7 @@ class OffscreenLayerTreeFrameSink
                           cc::FrameSkippedReason reason) override {
     support_->DidNotProduceFrame(ack);
   }
-  void DidAllocateSharedBitmap(base::ReadOnlySharedMemoryRegion region,
-                               const viz::SharedBitmapId& id) override {}
-  void DidDeleteSharedBitmap(const viz::SharedBitmapId& id) override {}
+  void NotifyNewLocalSurfaceIdExpectedWhilePaused() override {}
 
   // ExternalBeginFrameSourceClient implementation:
   void OnNeedsBeginFrames(bool needs_begin_frames) override {
@@ -271,11 +282,10 @@ class OffscreenLayerTreeFrameSink
     // 用于告诉cc::Scheduler上一帧已经处理完了
     client_->DidReceiveCompositorFrameAck();
   }
-  void OnBeginFrame(
-      const ::viz::BeginFrameArgs& args,
-      const base::flat_map<uint32_t, ::viz::FrameTimingDetails>& details,
-      bool frame_ack,
-      std::vector<::viz::ReturnedResource> resources) override {
+
+  void OnBeginFrame(const viz::BeginFrameArgs& args,
+                    const viz::FrameTimingDetailsMap& timing_details,
+                    std::vector<viz::ReturnedResource> resources) override {
     LOG(INFO) << "OnBeginFrame: submit a new frame";
     if (support_->last_activated_local_surface_id() != root_local_surface_id_) {
       display_->SetLocalSurfaceId(root_local_surface_id_, 1.0f);
@@ -292,6 +302,7 @@ class OffscreenLayerTreeFrameSink
       std::vector<::viz::ReturnedResource> resources) override {}
   void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) override {}
+  void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) override {}
 
   // viz::DisplayClient overrides.
   void DisplayOutputSurfaceLost() override {}
@@ -304,13 +315,6 @@ class OffscreenLayerTreeFrameSink
   void DisplayDidCompleteSwapWithSize(const gfx::Size& pixel_size) override {}
   void DisplayAddChildWindowToBrowser(
       gpu::SurfaceHandle child_window) override {}
-  void SetPreferredFrameInterval(base::TimeDelta interval) override {}
-  base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
-      const viz::FrameSinkId& id,
-      viz::mojom::CompositorFrameSinkType* type) override {
-    return frame_sink_manager_->GetPreferredFrameIntervalForFrameSinkId(id,
-                                                                        type);
-  }
   void SetWideColorEnabled(bool enabled) override {}
 
   // 由于要将显示存储为图片，所以使用1FPS
@@ -321,7 +325,7 @@ class OffscreenLayerTreeFrameSink
   viz::ParentLocalSurfaceIdAllocator root_local_surface_id_allocator_;
   viz::LocalSurfaceId root_local_surface_id_;
   viz::FrameTokenGenerator frame_token_generator_;
-  std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
+  base::WeakPtr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   std::unique_ptr<viz::ExternalBeginFrameSource> external_begin_frame_source_;
   std::unique_ptr<viz::DelayBasedBeginFrameSource> begin_frame_source_;
   std::unique_ptr<viz::CompositorFrameSinkSupport> support_;
@@ -338,6 +342,7 @@ class Compositor
       public viz::HostFrameSinkClient {
  public:
   Compositor() {
+    InitializeGpuService();
     auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
     cc::LayerTreeSettings settings;
     settings.initial_debug_state.show_fps_counter = true;
@@ -372,15 +377,63 @@ class Compositor
   float scale_ = 1.0;
   scoped_refptr<cc::Layer> root_layer_;
   demo::Layer layer_;
-  std::unique_ptr<viz::ServerSharedBitmapManager> shared_bitmap_manager_;
   viz::FrameSinkId root_frame_sink_id_{0, 1};
   viz::ParentLocalSurfaceIdAllocator root_local_surface_id_allocator_;
   viz::LocalSurfaceId root_local_surface_id_;
   std::unique_ptr<cc::LayerTreeHost> host_;
 
+  std::unique_ptr<base::Thread> gpu_thread_;
+  std::unique_ptr<base::Thread> io_thread_;
+  std::unique_ptr<gpu::GpuInit> gpu_init_;
+  std::unique_ptr<viz::GpuServiceImpl> gpu_service_;
+  std::unique_ptr<viz::SharedImageInterfaceProvider>
+      shared_image_interface_provider_;
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   cc::TestTaskGraphRunner task_graph_runner_;
   std::unique_ptr<cc::AnimationHost> animation_host_;
+
+  void InitializeGpuService() {
+    base::WaitableEvent event;
+    gpu_thread_ = std::make_unique<base::Thread>("GpuMainThread");
+    CHECK(gpu_thread_->Start());
+    gpu_thread_->task_runner()->PostTask(
+        FROM_HERE, base::BindOnce(&Compositor::InitializeGpuServiceInternal,
+                                  base::Unretained(this), &event));
+    event.Wait();
+  }
+
+  void InitializeGpuServiceInternal(base::WaitableEvent* event) {
+    base::Thread::Options thread_options(base::MessagePumpType::IO, 0);
+    thread_options.thread_type = base::ThreadType::kDisplayCritical;
+    io_thread_ = std::make_unique<base::Thread>("GpuIOThread");
+    CHECK(io_thread_->StartWithOptions(std::move(thread_options)));
+
+    gpu_init_ = std::make_unique<gpu::GpuInit>();
+    viz::GpuServiceImpl::InitParams init_params;
+    init_params.watchdog_thread = gpu_init_->TakeWatchdogThread();
+    init_params.io_runner = io_thread_->task_runner();
+    init_params.vulkan_implementation = gpu_init_->vulkan_implementation();
+
+    gpu_service_ = std::make_unique<viz::GpuServiceImpl>(
+        gpu_init_->gpu_preferences(), gpu_init_->gpu_info(),
+        gpu_init_->gpu_feature_info(), gpu_init_->gpu_info_for_hardware_gpu(),
+        gpu_init_->gpu_feature_info_for_hardware_gpu(),
+        gpu_init_->gpu_extra_info(), std::move(init_params));
+
+    mojo::PendingRemote<viz::mojom::GpuHost> gpu_host_proxy;
+    std::ignore = gpu_host_proxy.InitWithNewPipeAndPassReceiver();
+
+    scoped_refptr<gl::GLSurface> default_offscreen_surface;
+
+    gpu_service_->InitializeWithHost(
+        std::move(gpu_host_proxy), gpu::GpuProcessShmCount(),
+        default_offscreen_surface, viz::mojom::GpuServiceCreationParams::New());
+
+    shared_image_interface_provider_ =
+        std::make_unique<viz::SharedImageInterfaceProvider>(gpu_service_.get());
+
+    event->Signal();
+  }
 
   // LayerTreeHostClient implementation.
   void WillBeginMainFrame() override {}
@@ -411,9 +464,26 @@ class Compositor
   void RequestNewLayerTreeFrameSink() override {
     auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
 
-    shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
-    frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
-        viz::FrameSinkManagerImpl::InitParams(shared_bitmap_manager_.get()));
+    // 初始化 FrameSinkManager, 正常是在 viz::VizCompositorThreadRunnerImpl
+    // 里面做的，这里单拿出来
+    viz::FrameSinkManagerImpl::InitParams frame_sink_init_params;
+    frame_sink_init_params.gpu_service = gpu_service_.get();
+    frame_sink_manager_ =
+        std::make_unique<viz::FrameSinkManagerImpl>(frame_sink_init_params);
+
+    // Demo 特化：伪造下列接口来初始化 FrameSinkManager
+    mojo::PendingRemote<viz::mojom::FrameSinkManager> frame_sink_manager;
+    mojo::PendingReceiver<viz::mojom::FrameSinkManager>
+        frame_sink_manager_receiver =
+            frame_sink_manager.InitWithNewPipeAndPassReceiver();
+    mojo::PendingRemote<viz::mojom::FrameSinkManagerClient>
+        frame_sink_manager_client;
+    std::ignore = frame_sink_manager_client.InitWithNewPipeAndPassReceiver();
+
+    frame_sink_manager_->BindAndSetClient(
+        std::move(frame_sink_manager_receiver), task_runner,
+        std::move(frame_sink_manager_client),
+        shared_image_interface_provider_.get());
 
     // 生成 root client 的 LocalSurfaceId
     root_local_surface_id_allocator_.GenerateId();
@@ -421,8 +491,8 @@ class Compositor
         root_local_surface_id_allocator_.GetCurrentLocalSurfaceId();
 
     auto layer_tree_frame_sink = std::make_unique<OffscreenLayerTreeFrameSink>(
-        root_frame_sink_id_, root_local_surface_id_, frame_sink_manager_.get(),
-        task_runner);
+        root_frame_sink_id_, root_local_surface_id_,
+        frame_sink_manager_->GetWeakPtr(), task_runner);
 
     host_->SetViewportRectAndScale(gfx::Rect(size_), scale_,
                                    root_local_surface_id_);
@@ -433,17 +503,18 @@ class Compositor
   void DidInitializeLayerTreeFrameSink() override {}
   void DidFailToInitializeLayerTreeFrameSink() override {}
   void WillCommit(const cc::CommitState&) override {}
-  void DidCommit(base::TimeTicks commit_start_time,
+  void DidCommit(int source_frame_number,
+                 base::TimeTicks commit_start_time,
                  base::TimeTicks commit_finish_time) override {}
-  void DidCommitAndDrawFrame() override {}
-  void DidReceiveCompositorFrameAck() override {}
-  void DidCompletePageScaleAnimation() override {}
+  void DidCommitAndDrawFrame(int source_frame_number) override {}
+  void DidCompletePageScaleAnimation(int source_frame_number) override {}
   void DidPresentCompositorFrame(
       uint32_t frame_token,
-      const gfx::PresentationFeedback& feedback) override {
-    TRACE_EVENT_MARK_WITH_TIMESTAMP1("cc,benchmark", "FramePresented",
-                                     feedback.timestamp, "environment",
-                                     "browser");
+      const viz::FrameTimingDetails& frame_timing_details) override {
+    TRACE_EVENT_MARK_WITH_TIMESTAMP1(
+        "cc,benchmark", "FramePresented",
+        frame_timing_details.presentation_feedback.timestamp, "environment",
+        "browser");
   }
   void RecordStartOfFrameMetrics() override {}
   void RecordEndOfFrameMetrics(
@@ -454,15 +525,13 @@ class Compositor
     return nullptr;
   }
   void DidObserveFirstScrollDelay(
+      int source_frame_number,
       base::TimeDelta first_scroll_delay,
       base::TimeTicks first_scroll_timestamp) override {}
   void UpdateCompositorScrollState(
       const cc::CompositorCommitData& commit_data) override {}
-  void NotifyThroughputTrackerResults(
+  void NotifyCompositorMetricsTrackerResults(
       cc::CustomTrackerResults results) override {}
-  std::unique_ptr<cc::WebVitalMetrics> GetWebVitalMetrics() override {
-    return nullptr;
-  }
 
   // cc::LayerTreeHostSingleThreadClient implementation.
   void DidSubmitCompositorFrame() override {}
@@ -507,6 +576,14 @@ int main(int argc, char** argv) {
       mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
   ui::RegisterPathProvider();
+
+  // Windows 下软件渲染的 workaround
+#if defined(OS_WIN)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  command_line->AppendSwitchASCII(switches::kUseGL,
+                                  gl::kGLImplementationDisabledName);
+  gl::init::InitializeGLOneOff(gl::GpuPreference::kDefault);
+#endif
 
   base::RunLoop run_loop;
 

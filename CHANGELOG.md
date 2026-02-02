@@ -1,5 +1,19 @@
 ## Changelog
 
+### 2026.02.02
+- Upgraded demo_cc_offscreen to M141, mainly adopt changes from demo_cc_gui
+
+### 2026.01.22
+- Upgraded demo_cc_gui to M141 with the following main changes:
+  - `viz::SharedBitmapReporter` is no longer a base class of `cc::LayerTreeFrameSink`, see [6164986](https://chromium-review.googlesource.com/c/chromium/src/+/6164986)
+  - `DidCommit()`, `DidCommitAndDrawFrame()`, `DidCompletePageScaleAnimation()`, `DidObserveFirstScrollDelay()` added a `source_frame_number` parameter.
+  - `FrameTimingDetails` has been added to `WebFrameWidgetImpl`, see [5331910](https://chromium-review.googlesource.com/c/chromium/src/+/5331910).
+  - `DidReceiveCompositorFrameAck()` has been removed from `LayerTreeHostClient`, see [5468167](https://chromium-review.googlesource.com/c/chromium/src/+/5468167).
+  - `ContentLayerClient::PaintableRegion()` has been removed, see [5190710](https://chromium-review.googlesource.com/c/chromium/src/+/5190710).
+  - `NotifyNewLocalSurfaceIdExpectedWhilePaused()` has been added to `cc::LayerTreeFrameSink`, see [6588556](https://chromium-review.googlesource.com/c/chromium/src/+/6588556).
+  - `ThroughputTracker` has been renamed to `CompositorMetricsTracker` for broader use in tracking metrics, see [6042895](https://chromium-review.googlesource.com/c/chromium/src/+/6042895).
+  - `WebVitalMetrics` has been removed, see [5822616](https://chromium-review.googlesource.com/c/chromium/src/+/5822616).
+  - Added GPU initialization logic and initialized FrameSinkManager to properly use SharedImageInterface. Since ClientSharedImageInterface was used by LayerTreeFrameSink but changed to SharedImageInterface by [7102838](https://crrev.com/c/7102838), to simplify the process model, a cast is performed in BindToClient to bypass this change.
 
 ### 2026.01.12
 - Upgraded demo_views to M141 with the following main changes:
