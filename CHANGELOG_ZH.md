@@ -1,8 +1,23 @@
 ## 更新日志
 
+### 2026.02.02
+- 升级 demo_cc_offscreen 到 M141，主要将 demo_cc_gui 的变动迁移过来
+
+### 2026.01.22
+- 升级 demo_cc_gui 到 M141，主要更改：
+  - `viz::SharedBitmapReporter` 已不再是 `cc::LayerTreeFrameSink` 的基类，参见 [6164986](https://chromium-review.googlesource.com/c/chromium/src/+/6164986)
+  - `DidCommit()`, `DidCommitAndDrawFrame()`, `DidCompletePageScaleAnimation()`, `DidObserveFirstScrollDelay()` 插入一个 `source_frame_number` 参数。
+  - `FrameTimingDetails` 已添加到 `WebFrameWidgetImpl`，参见 [5331910](https://chromium-review.googlesource.com/c/chromium/src/+/5331910)。
+  - 已从 `LayerTreeHostClient` 中移除 `DidReceiveCompositorFrameAck()`，参见 [5468167](https://chromium-review.googlesource.com/c/chromium/src/+/5468167)。
+  - `ContentLayerClient::PaintableRegion()` 已被移除，参见 [5190710](https://chromium-review.googlesource.com/c/chromium/src/+/5190710)。
+  - `NotifyNewLocalSurfaceIdExpectedWhilePaused()` 已被加入到 `cc::LayerTreeFrameSink`，参见 [6588556](https://chromium-review.googlesource.com/c/chromium/src/+/6588556)。
+  - `ThroughputTracker` 被重命名到 `CompositorMetricsTracker` 以更广泛地用于追踪 metrics，参见 [6042895](https://chromium-review.googlesource.com/c/chromium/src/+/6042895)。
+  - `WebVitalMetrics` 已被移除，参见 [5822616](https://chromium-review.googlesource.com/c/chromium/src/+/5822616)。
+  - 加入了 Gpu 初始化逻辑并初始化 FrameSinkManager 以正常使用 SharedImageInterface。其中因为 ClientSharedImageInterface 被 LayerTreeFrameSink 使用但被 [7102838](https://crrev.com/c/7102838) 改为 SharedImageInterface，此处为简化进程模型，特别在 BindToClient 中进行 cast 以绕过。
+
 ### 2026.01.12
 - 升级 demo_views 到 M141，主要更改：
-  - `views::WidgetDelegateView` 被标记为 `Deprecated`，并添加 PassKey 管控使用，参见 (6441736)[https://chromium-review.googlesource.com/c/chromium/src/+/6441736]。本例按注释直接继承自两个子类，并按照设计逻辑将 View 和 Delegate 拆开，通过 Delegate 内部 `SetContentsView()` 绑定 View 的实例。
+  - `views::WidgetDelegateView` 被标记为 `Deprecated`，并添加 PassKey 管控使用，参见 [6441736](https://chromium-review.googlesource.com/c/chromium/src/+/6441736)。本例按注释直接继承自两个子类，并按照设计逻辑将 View 和 Delegate 拆开，通过 Delegate 内部 `SetContentsView()` 绑定 View 的实例。
   - 迁移 `views::Background` 到 `ui::ColorVariant`，带有方法重命名，参见[6331510](https://chromium-review.googlesource.com/c/chromium/src/+/6331510)
   - 从 [4518125](https://chromium-review.googlesource.com/c/chromium/src/+/4518125) 开始，Windows 上的 UI 需要一个 MTA 初始化的线程池。
 - 升级 demo_linktest 到 M141，并支持 Windows 下编译验证。
